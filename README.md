@@ -1,7 +1,33 @@
-MY LETTERBOXD PROFILE ANALYSIS
-  
-  This project is all about exploring the movies I've enjoyed using the Letterboxd website, where I've been tracking my film-watching adventures for the past 3 years. Letterboxd keeps tabs on the movies I've seen, how I've rated them, and what other viewers think. I used all this data to dig deep into my movie preferences and see what interesting patterns and connections I could find.
+# Letterboxd ML Analyzer & Dashboard
 
-  I used a tool called Jupyter Notebooks to analyze the data and create cool charts. The main goal was to figure out what types of movies or directors I like, how I rate them, and if my tastes match up with other people on Letterboxd. The project turned out to be a fun way to learn more about my movie habits and see if there are any surprises in the data.
+An advanced, end-to-end data science portfolio project that scrapes your personal Letterboxd profile and performs deep statistical and machine learning analysis on your movie-watching habits.
 
-  In summary, it's a personal journey into the world of movies, exploring what I like and how it compares to others. The charts and numbers help tell the story of my movie-watching adventure!
+## Features
+
+*   **Automated Web Scraping:** Uses Playwright and BeautifulSoup to parse your Letterboxd profile, extracting ratings, watch dates, and deep metadata (Actors, Directors, Country, Language, Runtime) directly from LD+JSON scripts.
+*   **Bayesian Statistics:** Calculates Bayesian Averages to fairly rank Directors and Actors (accounting for sample size and global rating means).
+*   **Machine Learning (Random Forest):** Predicts how you would rate any unwatched movie based on your historical preferences (Genre, Actor one-hot encoding, Director habits, Runtime, and Release Year).
+*   **Temporal & Habit Analysis:** Tracks your "taste evolution" over the years, identifies binge-watching months, and analyzes your "backlog" habits (do you watch new releases or classics?).
+*   **Premium Dashboard UI:** A custom FastAPI backend serving a stunning, glassmorphism-styled dashboard using Vanilla JS and Chart.js.
+
+## Tech Stack
+*   **Backend:** Python (FastAPI)
+*   **Data Science:** Pandas, NumPy, Scikit-Learn, SciPy
+*   **Scraping:** Playwright, BeautifulSoup4
+*   **Frontend:** HTML5, CSS3 (Glassmorphism design), Vanilla JavaScript, Chart.js
+
+## How to Run
+
+1. Install dependencies:
+   ```bash
+   pip install pandas numpy scikit-learn scipy fastapi uvicorn playwright beautifulsoup4
+   playwright install
+   ```
+
+2. Start the API & Dashboard Server:
+   ```bash
+   python server.py
+   ```
+
+3. Open `http://localhost:8000` in your browser.
+4. Enter your Letterboxd username to begin the real-time scraping and analysis process!
