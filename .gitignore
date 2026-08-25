@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+movies_cache.json
+letterboxd-erdemstein-*/
+.env
+.DS_Store

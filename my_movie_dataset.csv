@@ -1,0 +1,604 @@
+movie_id,title_of_movie,my_rating,link_of_movie,Watch_Date,average_rating,genre_of_movie,Director,Actors,Release_Year,Country,Language,Runtime_minutes,Watched_number
+gaTc,Doctor Strange in the Multiverse of Madness,2.5,https://boxd.it/gaTc,2022-05-16,2.97,"['Fantasy', 'Action', 'Adventure']",Sam Raimi,[],,[],[],126,2258120
+nwRw,Spider-Man: No Way Home,,https://boxd.it/nwRw,2022-05-16,3.86,"['Adventure', 'Action', 'Science Fiction']",Jon Watts,[],,[],[],148,4138038
+28Vs,American Psycho,4.0,https://boxd.it/28Vs,2022-05-16,3.75,"['Crime', 'Drama', 'Thriller', 'Horror']",Mary Harron,[],,[],[],102,4098487
+8MH8,Doctor Strange,,https://boxd.it/8MH8,2022-05-16,3.5,"['Fantasy', 'Action', 'Adventure']",Scott Derrickson,[],,[],[],115,2211774
+2a9q,Fight Club,4.5,https://boxd.it/2a9q,2022-05-16,4.27,"['Drama', 'Thriller']",David Fincher,[],,[],[],139,5955813
+hTha,Parasite,4.5,https://boxd.it/hTha,2022-05-16,4.52,"['Thriller', 'Comedy', 'Drama']",Bong Joon Ho,[],,[],[],133,5768718
+29VI,Requiem for a Dream,4.5,https://boxd.it/29VI,2022-05-16,4.1,"['Drama', 'Crime']",Darren Aronofsky,[],,[],[],102,1760471
+Sw0,Black Swan,4.5,https://boxd.it/Sw0,2022-05-16,4.17,"['Drama', 'Thriller', 'Horror']",Darren Aronofsky,[],,[],[],108,3323806
+2aYo,K-PAX,4.0,https://boxd.it/2aYo,2022-05-16,3.39,"['Science Fiction', 'Drama', 'Mystery']",Iain Softley,[],,[],[],120,61453
+4VZ8,Interstellar,4.0,https://boxd.it/4VZ8,2022-05-16,4.46,"['Science Fiction', 'Drama', 'Adventure']",Christopher Nolan,[],,[],[],169,6296153
+8MHi,Thor: Ragnarok,,https://boxd.it/8MHi,2022-05-16,3.71,"['Comedy', 'Adventure', 'Science Fiction', 'Action']",Taika Waititi,[],,[],[],131,2504043
+2ahY,Good Will Hunting,3.5,https://boxd.it/2ahY,2022-05-16,4.39,['Drama'],Gus Van Sant,[],,[],[],127,3518017
+28MA,The Departed,4.0,https://boxd.it/28MA,2022-05-16,4.35,"['Thriller', 'Crime', 'Drama']",Martin Scorsese,[],,[],[],151,1704974
+16T8,The Adjustment Bureau,2.5,https://boxd.it/16T8,2022-05-16,3.22,"['Romance', 'Thriller', 'Science Fiction']",George Nolfi,[],,[],[],106,126259
+2b0k,The Dark Knight,4.0,https://boxd.it/2b0k,2022-05-16,4.5,"['Thriller', 'Action', 'Crime']",Christopher Nolan,[],,[],[],152,4748318
+2axs,Eyes Wide Shut,5.0,https://boxd.it/2axs,2022-05-16,3.98,"['Thriller', 'Drama', 'Mystery']",Stanley Kubrick,[],,[],[],159,1502112
+2a1Q,Full Metal Jacket,4.0,https://boxd.it/2a1Q,2022-05-16,4.2,"['Drama', 'War']",Stanley Kubrick,[],,[],[],117,1139245
+25A2,Barry Lyndon,,https://boxd.it/25A2,2022-05-16,4.41,"['Drama', 'History']",Stanley Kubrick,[],,[],[],188,457739
+2aSg,Dead Poets Society,5.0,https://boxd.it/2aSg,2022-05-16,4.36,['Drama'],Peter Weir,[],,[],[],129,3941478
+27q4,The Breakfast Club,3.5,https://boxd.it/27q4,2022-05-16,3.77,"['Drama', 'Comedy']",John Hughes,[],,[],[],98,2073858
+h4cS,Joker,3.5,https://boxd.it/h4cS,2022-05-16,3.85,"['Drama', 'Thriller', 'Crime']",Todd Phillips,[],,[],[],122,4845977
+9vEe,Avengers: Infinity War,,https://boxd.it/9vEe,2022-05-16,4.08,"['Action', 'Science Fiction', 'Adventure']",Anthony Russo,[],,[],[],149,3898252
+9vE4,Avengers: Endgame,,https://boxd.it/9vE4,2022-05-16,4.01,"['Science Fiction', 'Action', 'Adventure']",Anthony Russo,[],,[],[],181,3851066
+29zs,Se7en,4.5,https://boxd.it/29zs,2022-05-16,4.38,"['Mystery', 'Crime', 'Thriller']",David Fincher,[],,[],[],127,3905176
+17ue,The Social Network,3.5,https://boxd.it/17ue,2022-05-16,3.92,['Drama'],David Fincher,[],,[],[],121,2800029
+21ew,No Country for Old Men,4.5,https://boxd.it/21ew,2022-05-16,4.31,"['Crime', 'Thriller', 'Western']",Joel Coen,[],,[],[],122,2357757
+780m,Nightcrawler,4.0,https://boxd.it/780m,2022-05-16,4.04,"['Crime', 'Drama', 'Thriller']",Dan Gilroy,[],,[],[],118,1899018
+bkFu,Nocturnal Animals,4.0,https://boxd.it/bkFu,2022-05-16,3.71,"['Drama', 'Thriller']",Tom Ford,[],,[],[],116,672072
+2bcK,Memento,4.0,https://boxd.it/2bcK,2022-05-16,4.18,"['Thriller', 'Mystery']",Christopher Nolan,[],,[],[],113,2138131
+948A,The Handmaiden,4.5,https://boxd.it/948A,2022-05-18,4.4,"['Thriller', 'Romance', 'Drama']",Park Chan-wook,[],,[],[],4,854432
+20BO,21,3.0,https://boxd.it/20BO,2022-05-18,3.16,"['Crime', 'Drama']",Robert Luketic,[],,[],[],123,255233
+7bQA,Whiplash,3.5,https://boxd.it/7bQA,2022-05-18,4.42,"['Drama', 'Music', 'Thriller']",Damien Chazelle,[],,[],[],107,4722085
+2aIg,Batman Begins,3.5,https://boxd.it/2aIg,2022-05-18,3.85,"['Crime', 'Action', 'Drama']",Christopher Nolan,[],,[],[],140,2327128
+H3m,The Dark Knight Rises,3.5,https://boxd.it/H3m,2022-05-18,3.82,"['Thriller', 'Crime', 'Drama', 'Action']",Christopher Nolan,[],,[],[],165,2235494
+2cCk,Django Unchained,3.5,https://boxd.it/2cCk,2022-05-18,4.34,"['Drama', 'Western']",Quentin Tarantino,[],,[],[],165,3451774
+2a7Y,Spider-Man 3,2.5,https://boxd.it/2a7Y,2022-05-18,3.26,"['Science Fiction', 'Action', 'Adventure']",Sam Raimi,[],,[],[],139,1880331
+29Nu,The Shining,4.5,https://boxd.it/29Nu,2022-05-18,4.21,"['Horror', 'Thriller']",Stanley Kubrick,[],,[],[],144,3351334
+27US,Star Wars: Episode III – Revenge of the Sith,3.0,https://boxd.it/27US,2022-05-18,4.12,"['Science Fiction', 'Adventure', 'Action']",George Lucas,[],,[],[],140,2424333
+29B4,Persona,5.0,https://boxd.it/29B4,2022-05-18,4.37,['Drama'],Ingmar Bergman,[],,[],[],85,459607
+6YA,Primer,5.0,https://boxd.it/6YA,2022-05-18,3.56,"['Science Fiction', 'Drama', 'Thriller']",Shane Carruth,[],,[],[],77,183232
+297o,Mulholland Drive,5.0,https://boxd.it/297o,2022-05-18,4.26,"['Drama', 'Mystery', 'Thriller']",David Lynch,[],,[],[],147,1365037
+43bI,About Time,4.5,https://boxd.it/43bI,2022-05-18,4.08,"['Drama', 'Fantasy', 'Romance']",Richard Curtis,[],,[],[],123,1619267
+7YtA,The Theory of Everything,3.5,https://boxd.it/7YtA,2022-05-18,3.64,"['Romance', 'Drama']",James Marsh,[],,[],[],123,676843
+1USu,Awakenings,4.0,https://boxd.it/1USu,2022-05-18,3.99,['Drama'],Penny Marshall,[],,[],[],120,205084
+cTgG,Hunt for the Wilderpeople,4.0,https://boxd.it/cTgG,2022-05-18,4.06,"['Comedy', 'Drama', 'Adventure']",Taika Waititi,[],,[],[],101,394922
+1NOK,The Boy in the Striped Pyjamas,4.0,https://boxd.it/1NOK,2022-05-18,3.7,"['War', 'History', 'Drama']",Mark Herman,[],,[],[],94,1019663
+2b2q,Brokeback Mountain,3.5,https://boxd.it/2b2q,2022-05-18,4.16,"['Drama', 'Romance']",Ang Lee,[],,[],[],134,1665622
+jj4y,1917,4.0,https://boxd.it/jj4y,2022-05-18,4.13,"['Drama', 'War', 'History']",Sam Mendes,[],,[],[],119,1980950
+d0Y6,Dunkirk,4.0,https://boxd.it/d0Y6,2022-05-18,3.77,"['Action', 'Drama', 'War']",Christopher Nolan,[],,[],[],107,1983197
+aNGk,Arrival,4.0,https://boxd.it/aNGk,2022-05-18,4.14,"['Mystery', 'Science Fiction', 'Drama']",Denis Villeneuve,[],,[],[],116,2682434
+2FT0,The Intouchables,3.5,https://boxd.it/2FT0,2022-05-18,4.16,"['Drama', 'Comedy']",Olivier Nakache,[],,[],[],113,988250
+4O24,Her,4.0,https://boxd.it/4O24,2022-05-18,3.95,"['Science Fiction', 'Romance', 'Drama']",Spike Jonze,[],,[],[],126,2286749
+iEBG,Jojo Rabbit,3.5,https://boxd.it/iEBG,2022-05-18,4.04,"['War', 'Comedy', 'Drama']",Taika Waititi,[],,[],[],108,2334889
+29W2,When Harry Met Sally...,5.0,https://boxd.it/29W2,2022-05-18,4.06,"['Drama', 'Romance', 'Comedy']",Rob Reiner,[],,[],[],96,1288401
+29Wm,Life Is Beautiful,4.0,https://boxd.it/29Wm,2022-05-18,4.41,"['Comedy', 'Drama']",Roberto Benigni,[],,[],[],116,829636
+28PE,The Pursuit of Happyness,4.0,https://boxd.it/28PE,2022-05-18,4.01,['Drama'],Gabriele Muccino,[],,[],[],117,1190334
+2XOi,Celeste & Jesse Forever,3.5,https://boxd.it/2XOi,2022-05-18,3.33,"['Comedy', 'Romance', 'Drama']",Lee Toland Krieger,[],,[],[],91,62979
+20BE,Stay,4.0,https://boxd.it/20BE,2022-05-18,3.6,"['Drama', 'Mystery', 'Thriller']",Marc Forster,[],,[],[],99,167271
+kPL2,Fractured,1.5,https://boxd.it/kPL2,2022-05-18,3.16,"['Drama', 'Thriller']",Brad Anderson,[],,[],[],99,355571
+2auS,Inside Man,3.5,https://boxd.it/2auS,2022-05-18,3.71,"['Crime', 'Drama', 'Thriller']",Spike Lee,[],,[],[],129,324669
+29XE,The Usual Suspects,4.0,https://boxd.it/29XE,2022-05-18,4.09,"['Thriller', 'Drama', 'Crime']",Bryan Singer,[],,[],[],106,1088422
+293w,The Prestige,5.0,https://boxd.it/293w,2022-05-18,4.31,"['Science Fiction', 'Drama', 'Mystery']",Christopher Nolan,[],,[],[],130,2126066
+1skk,Inception,4.5,https://boxd.it/1skk,2022-05-18,4.24,"['Action', 'Adventure', 'Science Fiction']",Christopher Nolan,[],,[],[],148,4378442
+6bJM,Predestination,3.5,https://boxd.it/6bJM,2022-05-18,3.58,"['Science Fiction', 'Thriller']",Michael Spierig,[],,[],[],98,283698
+2bdI,Million Dollar Baby,3.5,https://boxd.it/2bdI,2022-05-18,4.05,['Drama'],Clint Eastwood,[],,[],[],132,502599
+5RFA,Birdman or (The Unexpected Virtue of Ignorance),4.0,https://boxd.it/5RFA,2022-05-18,4.0,"['Drama', 'Comedy']",Alejandro G. Iñárritu,[],,[],[],120,1247000
+1Efm,Avatar,3.0,https://boxd.it/1Efm,2022-05-18,3.77,"['Adventure', 'Science Fiction', 'Action']",James Cameron,[],,[],[],162,3232169
+k8dm,Free Guy,3.0,https://boxd.it/k8dm,2022-05-18,3.02,"['Comedy', 'Adventure', 'Science Fiction']",Shawn Levy,[],,[],[],115,1277793
+kn3w,The Trial of the Chicago 7,4.0,https://boxd.it/kn3w,2022-05-18,3.78,"['History', 'Drama']",Aaron Sorkin,[],,[],[],130,428856
+5xlK,Star Wars: The Rise of Skywalker,2.5,https://boxd.it/5xlK,2022-05-18,2.29,"['Adventure', 'Action', 'Science Fiction']",J.J. Abrams,[],,[],[],142,1518587
+mUm6,The Platform,3.0,https://boxd.it/mUm6,2022-05-18,3.23,"['Thriller', 'Drama', 'Science Fiction']",Galder Gaztelu-Urrutia,[],,[],[],95,975815
+fegG,Spider-Man: Far From Home,2.5,https://boxd.it/fegG,2022-05-18,3.42,"['Science Fiction', 'Adventure', 'Action']",Jon Watts,[],,[],[],129,2959545
+9vSA,Captain Marvel,,https://boxd.it/9vSA,2022-05-18,2.63,"['Science Fiction', 'Action', 'Adventure']",Ryan Fleck,[],,[],[],124,1801327
+kTDG,Black Mirror: Bandersnatch,,https://boxd.it/kTDG,2022-05-18,3.3,"['Science Fiction', 'Mystery', 'Thriller']",David Slade,[],,[],[],90,378844
+azpY,Spider-Man: Into the Spider-Verse,,https://boxd.it/azpY,2022-05-18,4.4,"['Adventure', 'Animation', 'Action', 'Science Fiction']",Bob Persichetti,[],,[],[],117,4897587
+f1TK,Bohemian Rhapsody,3.0,https://boxd.it/f1TK,2022-05-18,3.54,"['Music', 'Drama']",Bryan Singer,[],,[],[],135,1933198
+b8wA,Venom,2.0,https://boxd.it/b8wA,2022-05-18,3.01,"['Science Fiction', 'Action']",Ruben Fleischer,[],,[],[],112,1502160
+hErk,Green Book,4.0,https://boxd.it/hErk,2022-05-18,3.89,"['Drama', 'History', 'Comedy']",Peter Farrelly,[],,[],[],130,1274192
+cqUW,Ant-Man and the Wasp,,https://boxd.it/cqUW,2022-05-18,2.82,"['Adventure', 'Action', 'Science Fiction']",Peyton Reed,[],,[],[],119,1342963
+7IPg,Incredibles 2,,https://boxd.it/7IPg,2022-05-18,3.43,"['Family', 'Action', 'Animation', 'Adventure']",Brad Bird,[],,[],[],118,1560608
+dlLM,Deadpool 2,,https://boxd.it/dlLM,2022-05-18,3.49,"['Action', 'Comedy', 'Adventure']",David Leitch,[],,[],[],120,1877266
+aZes,Ready Player One,3.5,https://boxd.it/aZes,2022-05-18,3.37,"['Science Fiction', 'Adventure', 'Action']",Steven Spielberg,[],,[],[],140,1336672
+8MHs,Black Panther,,https://boxd.it/8MHs,2022-05-18,3.72,"['Adventure', 'Science Fiction', 'Action']",Ryan Coogler,[],,[],[],135,3020457
+5xme,Star Wars: The Last Jedi,,https://boxd.it/5xme,2022-05-18,2.85,"['Adventure', 'Action', 'Science Fiction']",Rian Johnson,[],,[],[],152,1702333
+buJm,Kingsman: The Golden Circle,2.5,https://boxd.it/buJm,2022-05-18,3.23,"['Crime', 'Action', 'Adventure', 'Comedy']",Matthew Vaughn,[],,[],[],141,841607
+bC8e,It,3.0,https://boxd.it/bC8e,2022-05-18,3.49,"['Drama', 'Thriller', 'Horror']",Andy Muschietti,[],,[],[],135,3038093
+aboM,Spider-Man: Homecoming,,https://boxd.it/aboM,2022-05-18,3.51,"['Action', 'Adventure', 'Science Fiction']",Jon Watts,[],,[],[],133,3303307
+5a9m,Pirates of the Caribbean: Dead Men Tell No Tales,,https://boxd.it/5a9m,2022-05-18,2.81,"['Action', 'Fantasy', 'Adventure']",Joachim Rønning,[],,[],[],129,695244
+8MxC,Guardians of the Galaxy Vol. 2,,https://boxd.it/8MxC,2022-05-18,3.61,"['Action', 'Science Fiction', 'Adventure']",James Gunn,[],,[],[],137,2341380
+bhF2,Baby Driver,3.5,https://boxd.it/bhF2,2022-05-18,3.71,"['Crime', 'Action']",Edgar Wright,[],,[],[],113,3201859
+7Piy,Logan,3.5,https://boxd.it/7Piy,2022-05-18,4.13,"['Drama', 'Science Fiction', 'Action']",James Mangold,[],,[],[],137,1530623
+7FPC,Fantastic Beasts and Where to Find Them,,https://boxd.it/7FPC,2022-05-18,3.21,"['Fantasy', 'Adventure']",David Yates,[],,[],[],133,1180261
+9row,Suicide Squad,0.5,https://boxd.it/9row,2022-05-18,2.31,"['Action', 'Adventure', 'Fantasy']",David Ayer,[],,[],[],122,1742463
+89Ja,Captain America: Civil War,,https://boxd.it/89Ja,2022-05-18,3.69,"['Adventure', 'Action', 'Science Fiction']",Joe Russo,[],,[],[],147,2458661
+6fBW,Batman v Superman: Dawn of Justice,0.5,https://boxd.it/6fBW,2022-05-18,2.5,"['Action', 'Fantasy', 'Adventure']",Zack Snyder,[],,[],[],152,1008569
+9fOC,Deadpool,,https://boxd.it/9fOC,2022-05-18,3.71,"['Action', 'Adventure', 'Comedy']",Tim Miller,[],,[],[],108,2922811
+8H5e,The Revenant,3.5,https://boxd.it/8H5e,2022-05-18,3.92,"['Adventure', 'Western', 'Drama']",Alejandro G. Iñárritu,[],,[],[],157,1484743
+4vru,Star Wars: The Force Awakens,,https://boxd.it/4vru,2022-05-18,3.23,"['Action', 'Adventure', 'Science Fiction']",J.J. Abrams,[],,[],[],136,1960521
+ajZw,The Big Short,3.5,https://boxd.it/ajZw,2022-05-18,3.85,"['Drama', 'Comedy']",Adam McKay,[],,[],[],131,1162424
+4ZLk,Hotel Transylvania 2,,https://boxd.it/4ZLk,2022-05-18,3.06,"['Fantasy', 'Family', 'Animation', 'Comedy']",Genndy Tartakovsky,[],,[],[],89,450677
+3vmW,Ant-Man,,https://boxd.it/3vmW,2022-05-18,3.22,"['Adventure', 'Science Fiction', 'Action']",Peyton Reed,[],,[],[],117,1813336
+6jCO,Minions,,https://boxd.it/6jCO,2022-05-18,3.13,"['Comedy', 'Family', 'Animation', 'Adventure']",Kyle Balda,[],,[],[],91,832354
+3qi6,Avengers: Age of Ultron,,https://boxd.it/3qi6,2022-05-18,3.31,"['Science Fiction', 'Action', 'Adventure']",Joss Whedon,[],,[],[],141,2217225
+6dxe,Kingsman: The Secret Service,3.5,https://boxd.it/6dxe,2022-05-18,3.77,"['Action', 'Comedy', 'Crime', 'Adventure']",Matthew Vaughn,[],,[],[],129,1511736
+4hka,The Hunger Games: Mockingjay – Part 1,,https://boxd.it/4hka,2022-05-18,3.41,"['Thriller', 'Science Fiction', 'Adventure']",Francis Lawrence,[],,[],[],123,1813690
+6aig,The Imitation Game,4.0,https://boxd.it/6aig,2022-05-18,3.85,"['Drama', 'War', 'Thriller', 'History']",Morten Tyldum,[],,[],[],113,1175788
+3VH2,Guardians of the Galaxy,,https://boxd.it/3VH2,2022-05-18,3.86,"['Adventure', 'Action', 'Science Fiction']",James Gunn,[],,[],[],121,3278971
+3utM,The Amazing Spider-Man 2,,https://boxd.it/3utM,2022-05-18,3.26,"['Science Fiction', 'Action', 'Adventure']",Marc Webb,[],,[],[],141,1772156
+3r58,Captain America: The Winter Soldier,,https://boxd.it/3r58,2022-05-18,3.79,"['Adventure', 'Science Fiction', 'Action']",Joe Russo,[],,[],[],136,2188725
+2CWU,The Wolverine,,https://boxd.it/2CWU,2022-05-18,3.04,"['Action', 'Science Fiction', 'Adventure']",James Mangold,[],,[],[],126,620553
+FRk,Man of Steel,,https://boxd.it/FRk,2022-05-18,3.08,"['Action', 'Adventure', 'Science Fiction']",Zack Snyder,[],,[],[],143,1007697
+52TQ,CM101MMXI Fundamentals,,https://boxd.it/52TQ,2022-05-18,4.06,"['Comedy', 'TV Movie', 'Documentary']",Murat Dündar,[],,[],[],139,13309
+2PXw,Rise of the Guardians,4.0,https://boxd.it/2PXw,2022-05-18,3.66,"['Fantasy', 'Family', 'Adventure', 'Action', 'Animation']",Peter Ramsey,[],,[],[],97,522877
+2DF6,Hotel Transylvania,,https://boxd.it/2DF6,2022-05-18,3.41,"['Comedy', 'Animation', 'Fantasy', 'Family']",Genndy Tartakovsky,[],,[],[],91,826550
+27PI,The Amazing Spider-Man,,https://boxd.it/27PI,2022-05-18,3.59,"['Science Fiction', 'Adventure', 'Action']",Marc Webb,[],,[],[],136,2290788
+2DEW,The Dictator,,https://boxd.it/2DEW,2022-05-18,3.01,['Comedy'],Larry Charles,[],,[],[],83,557495
+1xFW,The Avengers,,https://boxd.it/1xFW,2022-05-18,3.77,"['Science Fiction', 'Adventure', 'Action']",Joss Whedon,[],,[],[],143,2916757
+FPS,In Time,2.5,https://boxd.it/FPS,2022-05-18,3.01,"['Thriller', 'Science Fiction', 'Action']",Andrew Niccol,[],,[],[],109,537574
+28b0,Captain America: The First Avenger,,https://boxd.it/28b0,2022-05-18,3.38,"['Action', 'Adventure', 'Science Fiction']",Joe Johnston,[],,[],[],124,2072346
+1RYk,Harry Potter and the Deathly Hallows: Part 2,,https://boxd.it/1RYk,2022-05-18,4.04,"['Fantasy', 'Adventure']",David Yates,[],,[],[],130,2346068
+QN4,Green Lantern,,https://boxd.it/QN4,2022-05-18,1.63,"['Action', 'Adventure', 'Science Fiction']",Martin Campbell,[],,[],[],114,358234
+H4Y,Cars 2,,https://boxd.it/H4Y,2022-05-18,3.16,"['Animation', 'Comedy', 'Family', 'Adventure']",John Lasseter,[],,[],[],106,1089508
+27Z4,Pirates of the Caribbean: On Stranger Tides,,https://boxd.it/27Z4,2022-05-18,2.99,"['Adventure', 'Fantasy', 'Action']",Rob Marshall,[],,[],[],136,766868
+1WQU,Thor,,https://boxd.it/1WQU,2022-05-18,2.89,"['Action', 'Adventure', 'Fantasy']",Kenneth Branagh,[],,[],[],115,1793089
+NKc,Rio,,https://boxd.it/NKc,2022-05-18,3.54,"['Comedy', 'Family', 'Adventure', 'Animation']",Carlos Saldanha,[],,[],[],96,764061
+1RYu,Harry Potter and the Deathly Hallows: Part 1,,https://boxd.it/1RYu,2022-05-18,3.75,"['Adventure', 'Fantasy']",David Yates,[],,[],[],146,2166169
+1Aq6,Scott Pilgrim vs. the World,3.0,https://boxd.it/1Aq6,2022-05-18,3.89,"['Romance', 'Action', 'Comedy']",Edgar Wright,[],,[],[],113,2674417
+1WRo,Shrek Forever After,,https://boxd.it/1WRo,2022-05-18,3.03,"['Adventure', 'Family', 'Animation', 'Fantasy', 'Comedy']",Mike Mitchell,[],,[],[],93,720395
+1WZM,Iron Man 2,,https://boxd.it/1WZM,2022-05-18,3.06,"['Adventure', 'Science Fiction', 'Action']",Jon Favreau,[],,[],[],124,1908936
+1WRy,How to Train Your Dragon,,https://boxd.it/1WRy,2022-05-18,4.16,"['Fantasy', 'Family', 'Adventure', 'Animation']",Dean DeBlois,[],,[],[],98,2057131
+HGo,Eyyvah Eyvah,,https://boxd.it/HGo,2022-05-18,3.01,['Comedy'],Hakan Algül,[],,[],[],99,11992
+15Cg,Veda - Atatürk,,https://boxd.it/15Cg,2022-05-18,3.45,"['History', 'Drama']",Zülfü Livaneli,[],,[],[],114,4403
+1U82,Shutter Island,4.0,https://boxd.it/1U82,2022-05-18,4.2,"['Mystery', 'Drama', 'Thriller']",Martin Scorsese,[],,[],[],138,3708508
+1gnQ,Recep Ivedik 3,,https://boxd.it/1gnQ,2022-05-18,3.03,['Comedy'],Togan Gökbakar,[],,[],[],95,26843
+29FU,Harry Potter and the Half-Blood Prince,,https://boxd.it/29FU,2022-05-18,3.75,"['Adventure', 'Fantasy']",David Yates,[],,[],[],153,2209442
+1q4a,Hachi: A Dog's Tale,3.5,https://boxd.it/1q4a,2022-05-18,3.91,"['Drama', 'Family']",Lasse Hallström,[],,[],[],93,309279
+1JzG,Inglourious Basterds,4.0,https://boxd.it/1JzG,2022-05-18,4.37,"['War', 'Drama', 'Thriller']",Quentin Tarantino,[],,[],[],153,3895566
+1OEc,Up,4.0,https://boxd.it/1OEc,2022-05-18,4.1,"['Adventure', 'Family', 'Animation', 'Comedy']",Pete Docter,[],,[],[],96,3244631
+1jWY,Recep Ivedik 2,,https://boxd.it/1jWY,2022-05-18,3.09,['Comedy'],Togan Gökbakar,[],,[],[],110,27601
+1WPW,Yes Man,3.5,https://boxd.it/1WPW,2022-05-18,3.19,"['Romance', 'Comedy']",Peyton Reed,[],,[],[],104,437489
+1xGg,A.R.O.G,,https://boxd.it/1xGg,2022-05-18,3.65,"['Science Fiction', 'Fantasy', 'Comedy']",Cem Yılmaz,[],,[],[],127,41950
+ypy,Cars of the Revolution,,https://boxd.it/ypy,2022-05-18,3.52,['Drama'],Tolga Örnek,[],,[],[],115,5713
+1VEo,WALL·E,,https://boxd.it/1VEo,2022-05-18,4.24,"['Animation', 'Science Fiction', 'Family']",Andrew Stanton,[],,[],[],98,2883660
+1Yws,Kung Fu Panda,,https://boxd.it/1Yws,2022-05-18,3.93,"['Comedy', 'Family', 'Animation', 'Action']",Mark Osborne,[],,[],[],90,1769729
+28dA,Iron Man,,https://boxd.it/28dA,2022-05-18,3.81,"['Adventure', 'Science Fiction', 'Action']",Jon Favreau,[],,[],[],126,2740116
+1jX8,Recep Ivedik,,https://boxd.it/1jX8,2022-05-18,3.06,['Comedy'],Togan Gökbakar,[],,[],[],102,30904
+22Vw,Bee Movie,,https://boxd.it/22Vw,2022-05-18,3.01,"['Comedy', 'Family', 'Animation', 'Adventure']",Simon J. Smith,[],,[],[],91,886332
+29Qe,Harry Potter and the Order of the Phoenix,,https://boxd.it/29Qe,2022-05-18,3.72,"['Adventure', 'Fantasy']",David Yates,[],,[],[],138,2331960
+18U8,The Truman Show,4.0,https://boxd.it/18U8,2022-05-18,4.22,"['Comedy', 'Drama']",Peter Weir,[],,[],[],103,5209541
+4pDO,The Lego Movie,,https://boxd.it/4pDO,2022-05-19,3.87,"['Family', 'Fantasy', 'Comedy', 'Animation', 'Adventure']",Phil Lord,[],,[],[],100,1554644
+27Ii,Fantastic Four: Rise of the Silver Surfer,,https://boxd.it/27Ii,2022-05-19,2.54,"['Action', 'Science Fiction', 'Adventure']",Tim Story,[],,[],[],92,478867
+2aGu,Pirates of the Caribbean: At World's End,,https://boxd.it/2aGu,2022-05-19,3.64,"['Adventure', 'Action', 'Fantasy']",Gore Verbinski,[],,[],[],169,1074806
+29yY,Shrek the Third,,https://boxd.it/29yY,2022-05-19,3.0,"['Adventure', 'Comedy', 'Fantasy', 'Family', 'Animation']",Chris Miller,[],,[],[],93,960209
+27MO,Zodiac,4.0,https://boxd.it/27MO,2022-05-19,4.03,"['Crime', 'Mystery', 'Thriller']",David Fincher,[],,[],[],157,2104773
+290M,Ghost Rider,,https://boxd.it/290M,2022-05-19,2.59,"['Fantasy', 'Thriller', 'Action']",Mark Steven Johnson,[],,[],[],114,334535
+1XH0,Happy Feet,,https://boxd.it/1XH0,2022-05-19,3.08,"['Family', 'Animation', 'Comedy']",George Miller,[],,[],[],108,495639
+2bfk,Pirates of the Caribbean: Dead Man's Chest,,https://boxd.it/2bfk,2022-05-19,3.79,"['Action', 'Adventure', 'Fantasy']",Gore Verbinski,[],,[],[],151,1344462
+2wRk,Ice Age: The Meltdown,,https://boxd.it/2wRk,2022-05-19,3.2,"['Adventure', 'Family', 'Comedy', 'Animation']",Carlos Saldanha,[],,[],[],91,610581
+29ho,Cars,,https://boxd.it/29ho,2022-05-19,3.94,"['Adventure', 'Comedy', 'Animation', 'Family']",John Lasseter,[],,[],[],117,2058662
+29Ik,V for Vendetta,3.5,https://boxd.it/29Ik,2022-05-19,3.9,"['Thriller', 'Science Fiction', 'Action']",James McTeigue,[],,[],[],132,1001283
+29Qo,Harry Potter and the Goblet of Fire,,https://boxd.it/29Qo,2022-05-19,3.9,"['Adventure', 'Fantasy']",Mike Newell,[],,[],[],157,2632350
+2b68,Charlie and the Chocolate Factory,3.0,https://boxd.it/2b68,2022-05-19,3.37,"['Comedy', 'Adventure', 'Fantasy', 'Family']",Tim Burton,[],,[],[],115,1964799
+1sau,G.O.R.A.,,https://boxd.it/1sau,2022-05-19,3.88,"['Comedy', 'Science Fiction', 'Adventure']",Ömer Faruk Sorak,[],,[],[],127,52570
+1XLm,The Incredibles,,https://boxd.it/1XLm,2022-05-19,4.06,"['Animation', 'Family', 'Adventure', 'Action']",Brad Bird,[],,[],[],115,2506289
+2a88,Spider-Man 2,5.0,https://boxd.it/2a88,2022-05-19,3.94,"['Action', 'Science Fiction', 'Adventure']",Sam Raimi,[],,[],[],127,2545126
+29Qy,Harry Potter and the Prisoner of Azkaban,,https://boxd.it/29Qy,2022-05-19,4.15,"['Adventure', 'Fantasy']",Alfonso Cuarón,[],,[],[],141,3232542
+29z8,Shrek 2,,https://boxd.it/29z8,2022-05-19,4.12,"['Romance', 'Family', 'Comedy', 'Animation', 'Fantasy']",Andrew Adamson,[],,[],[],92,2165832
+2b5u,The Lord of the Rings: The Return of the King,,https://boxd.it/2b5u,2022-05-19,4.56,"['Action', 'Fantasy', 'Adventure']",Peter Jackson,[],,[],[],201,2434466
+70G,Pirates of the Caribbean: The Curse of the Black Pearl,,https://boxd.it/70G,2022-05-19,4.02,"['Fantasy', 'Adventure', 'Action']",Gore Verbinski,[],,[],[],143,2117653
+72i,Finding Nemo,,https://boxd.it/72i,2022-05-19,4.02,"['Adventure', 'Family', 'Animation']",Andrew Stanton,[],,[],[],100,2561932
+2b5E,The Lord of the Rings: The Two Towers,,https://boxd.it/2b5E,2022-05-19,4.44,"['Action', 'Fantasy', 'Adventure']",Peter Jackson,[],,[],[],179,2383295
+29QI,Harry Potter and the Chamber of Secrets,,https://boxd.it/29QI,2022-05-19,3.65,"['Adventure', 'Fantasy']",Chris Columbus,[],,[],[],161,2617798
+2aqc,The Pianist,4.0,https://boxd.it/2aqc,2022-05-19,4.41,"['War', 'Drama']",Roman Polanski,[],,[],[],150,1342185
+27V2,Star Wars: Episode II – Attack of the Clones,,https://boxd.it/27V2,2022-05-19,3.16,"['Science Fiction', 'Adventure', 'Action']",George Lucas,[],,[],[],142,1900729
+2a8i,Spider-Man,,https://boxd.it/2a8i,2022-05-19,3.88,"['Action', 'Science Fiction']",Sam Raimi,[],,[],[],121,2872706
+2b5O,The Lord of the Rings: The Fellowship of the Ring,,https://boxd.it/2b5O,2022-05-19,4.39,"['Adventure', 'Action', 'Fantasy']",Peter Jackson,[],,[],[],179,3199269
+29QS,Harry Potter and the Philosopher's Stone,,https://boxd.it/29QS,2022-05-19,3.83,"['Adventure', 'Fantasy']",Chris Columbus,[],,[],[],152,3219858
+2a46,"Monsters, Inc.",,https://boxd.it/2a46,2022-05-19,4.08,"['Comedy', 'Animation', 'Family', 'Fantasy']",Pete Docter,[],,[],[],92,2533243
+29zi,Shrek,,https://boxd.it/29zi,2022-05-19,4.12,"['Adventure', 'Fantasy', 'Family', 'Animation', 'Comedy']",Andrew Adamson,[],,[],[],90,2936196
+20i8,Cast Away,3.5,https://boxd.it/20i8,2022-05-19,3.9,"['Drama', 'Adventure']",Robert Zemeckis,[],,[],[],143,900612
+2b9m,Gladiator,4.0,https://boxd.it/2b9m,2022-05-19,4.2,"['Action', 'Adventure', 'Drama']",Ridley Scott,[],,[],[],155,2280244
+27Vc,Star Wars: Episode I – The Phantom Menace,,https://boxd.it/27Vc,2022-05-19,3.17,"['Science Fiction', 'Adventure', 'Action']",George Lucas,[],,[],[],136,2083401
+26vC,The Game,3.5,https://boxd.it/26vC,2022-05-19,3.83,"['Drama', 'Thriller', 'Mystery']",David Fincher,[],,[],[],129,672267
+2aHi,The Shawshank Redemption,3.5,https://boxd.it/2aHi,2022-05-19,4.6,"['Crime', 'Drama']",Frank Darabont,[],,[],[],142,3056104
+728,Forrest Gump,4.0,https://boxd.it/728,2022-05-19,4.19,"['Drama', 'Romance', 'Comedy']",Robert Zemeckis,[],,[],[],142,4217866
+27Vm,Return of the Jedi,4.0,https://boxd.it/27Vm,2022-05-19,4.11,"['Science Fiction', 'Adventure', 'Action']",Richard Marquand,[],,[],[],132,1970118
+27Vw,The Empire Strikes Back,4.5,https://boxd.it/27Vw,2022-05-19,4.4,"['Science Fiction', 'Adventure', 'Action']",Irvin Kershner,[],,[],[],124,2387492
+1Vwk,Escape from Alcatraz,4.0,https://boxd.it/1Vwk,2022-05-19,3.78,"['Drama', 'Thriller']",Don Siegel,[],,[],[],113,204054
+72s,Star Wars,4.0,https://boxd.it/72s,2022-05-19,4.16,"['Adventure', 'Science Fiction', 'Action']",George Lucas,[],,[],[],121,2796415
+2aeA,One Flew Over the Cuckoo's Nest,4.0,https://boxd.it/2aeA,2022-05-19,4.37,['Drama'],Miloš Forman,[],,[],[],135,1027758
+2b2A,Donnie Darko,4.0,https://boxd.it/2b2A,2022-05-19,3.98,"['Drama', 'Fantasy', 'Mystery']",Richard Kelly,[],,[],[],42,2483041
+7T2k,Ex Machina,3.5,https://boxd.it/7T2k,2022-05-19,3.96,"['Science Fiction', 'Drama']",Alex Garland,[],,[],[],108,1360138
+ixt6,Happy Death Day 2U,,https://boxd.it/ixt6,2022-05-19,2.73,"['Comedy', 'Horror', 'Science Fiction']",Christopher Landon,[],,[],[],100,258565
+jWEA,Knives Out,4.0,https://boxd.it/jWEA,2022-05-19,3.96,"['Mystery', 'Comedy', 'Crime']",Rian Johnson,[],,[],[],131,4269599
+2aoU,Cube,3.0,https://boxd.it/2aoU,2022-05-19,3.28,"['Science Fiction', 'Horror', 'Thriller', 'Mystery']",Vincenzo Natali,[],,[],[],90,270505
+o0Hc,Don't Look Up,3.0,https://boxd.it/o0Hc,2022-05-19,3.05,"['Drama', 'Science Fiction', 'Comedy']",Adam McKay,[],,[],[],138,2542135
+kOPW,The Guilty,3.0,https://boxd.it/kOPW,2022-05-19,2.96,"['Drama', 'Thriller']",Antoine Fuqua,[],,[],[],89,605619
+m99E,The Power of the Dog,3.5,https://boxd.it/m99E,2022-05-19,3.67,"['Western', 'Drama']",Jane Campion,[],,[],[],127,519233
+fA7G,Dune,4.0,https://boxd.it/fA7G,2022-05-19,3.89,"['Science Fiction', 'Adventure']",Denis Villeneuve,[],,[],[],155,4390901
+kLDI,Shang-Chi and the Legend of the Ten Rings,2.0,https://boxd.it/kLDI,2022-05-19,3.4,"['Adventure', 'Fantasy', 'Action']",Destin Daniel Cretton,[],,[],[],132,1573159
+fw6O,The Suicide Squad,3.0,https://boxd.it/fw6O,2022-05-19,3.48,"['Action', 'Comedy', 'Adventure']",James Gunn,[],,[],[],132,1545311
+lLBu,Fear Street: 1978,3.0,https://boxd.it/lLBu,2022-05-19,3.54,"['Drama', 'Horror', 'Mystery']",Leigh Janiak,[],,[],[],111,667077
+dd9A,Space Jam: A New Legacy,1.0,https://boxd.it/dd9A,2022-05-19,1.9,"['Animation', 'Adventure', 'Comedy', 'Family', 'Science Fiction']",Malcolm D. Lee,[],,[],[],115,285839
+lLBk,Fear Street: 1994,3.0,https://boxd.it/lLBk,2022-05-19,3.19,"['Horror', 'Mystery', 'Drama']",Leigh Janiak,[],,[],[],108,760959
+lE78,The Tomorrow War,1.0,https://boxd.it/lE78,2022-05-19,2.77,"['Adventure', 'Science Fiction', 'Action']",Chris McKay,[],,[],[],138,236602
+iT56,The Woman in the Window,2.0,https://boxd.it/iT56,2022-05-19,2.45,"['Crime', 'Thriller', 'Mystery']",Joe Wright,[],,[],[],100,237547
+leq4,Tenet,3.5,https://boxd.it/leq4,2022-05-19,3.46,"['Science Fiction', 'Action', 'Thriller']",Christopher Nolan,[],,[],[],150,1884394
+lCXQ,Palm Springs,3.5,https://boxd.it/lCXQ,2022-05-19,3.77,"['Romance', 'Science Fiction', 'Comedy']",Max Barbakow,[],,[],[],90,910736
+nahm,Recep Ivedik 6,,https://boxd.it/nahm,2022-05-19,2.2,['Comedy'],Togan Gökbakar,[],,[],[],110,16078
+2b7U,Snatch,4.0,https://boxd.it/2b7U,2022-05-19,4.05,"['Comedy', 'Crime']",Guy Ritchie,[],,[],[],103,857889
+YUs,No Strings Attached,,https://boxd.it/YUs,2022-05-19,2.82,"['Romance', 'Comedy']",Ivan Reitman,[],,[],[],107,277388
+71Y,American Beauty,4.0,https://boxd.it/71Y,2022-05-19,3.94,['Drama'],Sam Mendes,[],,[],[],122,1235810
+6YK,Eternal Sunshine of the Spotless Mind,3.5,https://boxd.it/6YK,2022-05-19,4.24,"['Science Fiction', 'Romance', 'Drama']",Michel Gondry,[],,[],[],108,3746336
+6hQu,Gone Girl,4.0,https://boxd.it/6hQu,2022-05-19,4.07,"['Drama', 'Mystery', 'Thriller']",David Fincher,[],,[],[],149,3269269
+4E5i,Prisoners,4.0,https://boxd.it/4E5i,2022-05-20,4.34,"['Thriller', 'Crime', 'Drama']",Denis Villeneuve,[],,[],[],153,2429007
+5Y3e,Chappie,3.0,https://boxd.it/5Y3e,2022-05-20,3.15,"['Science Fiction', 'Action', 'Crime']",Neill Blomkamp,[],,[],[],120,255948
+4v6m,All Good,,https://boxd.it/4v6m,2022-05-20,2.94,['Comedy'],Ersoy Güler,[],,[],[],98,5140
+eCrQ,Kill Bill: The Whole Bloody Affair,,https://boxd.it/eCrQ,2022-05-20,4.54,"['Action', 'Crime']",Quentin Tarantino,[],,[],[],254,315046
+2ahu,Being John Malkovich,4.0,https://boxd.it/2ahu,2022-05-20,4.07,"['Comedy', 'Drama', 'Fantasy']",Spike Jonze,[],,[],[],113,547849
+5xtO,Enemy,4.0,https://boxd.it/5xtO,2022-05-20,3.54,"['Mystery', 'Thriller']",Denis Villeneuve,[],,[],[],91,633271
+23zw,"Synecdoche, New York",5.0,https://boxd.it/23zw,2022-05-21,4.16,['Drama'],Charlie Kaufman,[],,[],[],124,295775
+1ZA6,Green Street Hooligans,3.5,https://boxd.it/1ZA6,2022-05-21,3.55,"['Crime', 'Drama']",Lexi Alexander,[],,[],[],109,142638
+8WPm,Sleeping with Other People,3.0,https://boxd.it/8WPm,2022-05-21,3.33,"['Romance', 'Comedy']",Leslye Headland,[],,[],[],100,83485
+3lyS,Rush,4.0,https://boxd.it/3lyS,2022-05-21,3.88,"['Drama', 'Action']",Ron Howard,[],,[],[],123,448009
+94Hg,The Nice Guys,4.0,https://boxd.it/94Hg,2022-05-22,3.83,"['Action', 'Comedy', 'Crime']",Shane Black,[],,[],[],116,1328169
+28p2,Freedom Writers,3.5,https://boxd.it/28p2,2022-05-22,3.79,"['Drama', 'Crime']",Richard LaGravenese,[],,[],[],123,258063
+epkW,Three Transitions,,https://boxd.it/epkW,2022-05-22,3.57,['Documentary'],Peter Campus,[],,[],[],5,2723
+ndN6,Crashing,4.5,https://boxd.it/ndN6,2022-05-22,4.09,"['Comedy', 'Drama']",George Kane,[],,[],[],180,34379
+dGNE,Lady Bird,3.5,https://boxd.it/dGNE,2022-05-28,3.81,"['Comedy', 'Drama']",Greta Gerwig,[],,[],[],94,3211432
+2aeK,Notting Hill,3.5,https://boxd.it/2aeK,2022-05-28,3.69,"['Comedy', 'Romance']",Roger Michell,[],,[],[],124,1553158
+DoK,Friends with Benefits,,https://boxd.it/DoK,2022-05-28,3.02,"['Comedy', 'Romance']",Will Gluck,[],,[],[],109,658959
+UIi,Love & Other Drugs,,https://boxd.it/UIi,2022-05-28,3.28,"['Comedy', 'Drama', 'Romance']",Edward Zwick,[],,[],[],112,606405
+205o,Hitch,,https://boxd.it/205o,2022-05-28,3.16,"['Romance', 'Comedy', 'Drama']",Andy Tennant,[],,[],[],118,315111
+7tnw,The Lobster,,https://boxd.it/7tnw,2022-05-28,3.73,"['Romance', 'Drama', 'Comedy']",Yorgos Lanthimos,[],,[],[],119,1199252
+awpm,6 Years,,https://boxd.it/awpm,2022-05-29,2.48,"['Drama', 'Romance']",Hannah Fidell,[],,[],[],80,28612
+yXA,Bad Teacher,,https://boxd.it/yXA,2022-06-02,2.51,['Comedy'],Jake Kasdan,[],,[],[],92,217434
+28ye,The Holiday,,https://boxd.it/28ye,2022-06-02,3.63,"['Comedy', 'Romance']",Nancy Meyers,[],,[],[],136,1054851
+27TK,Vanilla Sky,3.5,https://boxd.it/27TK,2022-06-02,3.57,"['Romance', 'Science Fiction', 'Mystery']",Cameron Crowe,[],,[],[],136,406838
+1Zlq,What Happens in Vegas,,https://boxd.it/1Zlq,2022-06-02,2.81,"['Comedy', 'Romance']",Tom Vaughan,[],,[],[],99,223025
+2aZm,Ocean's Eleven,,https://boxd.it/2aZm,2022-06-02,3.95,"['Thriller', 'Crime']",Steven Soderbergh,[],,[],[],116,1486373
+2aZ2,Ocean's Twelve,,https://boxd.it/2aZ2,2022-06-02,3.38,"['Crime', 'Thriller']",Steven Soderbergh,[],,[],[],125,596719
+2aEy,Ocean's Thirteen,,https://boxd.it/2aEy,2022-06-02,3.44,"['Crime', 'Thriller']",Steven Soderbergh,[],,[],[],122,433497
+eaai,Ocean's Eight,,https://boxd.it/eaai,2022-06-02,3.41,"['Crime', 'Action', 'Comedy']",Gary Ross,[],,[],[],111,1023945
+glS,Moneyball,3.5,https://boxd.it/glS,2022-06-02,3.93,['Drama'],Bennett Miller,[],,[],[],134,887912
+2aEI,Meet Joe Black,3.5,https://boxd.it/2aEI,2022-06-02,3.55,"['Drama', 'Romance', 'Fantasy']",Martin Brest,[],,[],[],178,525328
+1GjK,The Hangover,4.0,https://boxd.it/1GjK,2022-06-02,3.76,['Comedy'],Todd Phillips,[],,[],[],100,2129917
+PZI,The Hangover Part II,3.0,https://boxd.it/PZI,2022-06-02,3.19,['Comedy'],Todd Phillips,[],,[],[],102,904867
+3GNY,The Hangover Part III,3.0,https://boxd.it/3GNY,2022-06-02,2.8,['Comedy'],Todd Phillips,[],,[],[],100,608655
+5dz8,American Hustle,3.0,https://boxd.it/5dz8,2022-06-02,3.35,"['Crime', 'Drama']",David O. Russell,[],,[],[],138,424736
+28Tm,Blood Diamond,3.5,https://boxd.it/28Tm,2022-06-02,3.75,"['Action', 'Thriller', 'Drama']",Edward Zwick,[],,[],[],143,395585
+29VS,Catch Me If You Can,3.5,https://boxd.it/29VS,2022-06-02,4.06,"['Drama', 'Crime']",Steven Spielberg,[],,[],[],141,2643322
+ekeY,Wonder,4.0,https://boxd.it/ekeY,2022-06-02,3.62,"['Drama', 'Family']",Stephen Chbosky,[],,[],[],113,703324
+21hK,The 40 Year Old Virgin,3.0,https://boxd.it/21hK,2022-06-07,3.33,"['Romance', 'Comedy']",Judd Apatow,[],,[],[],116,731775
+2ZA8,The Perks of Being a Wallflower,4.0,https://boxd.it/2ZA8,2022-06-08,4.04,['Drama'],Stephen Chbosky,[],,[],[],103,3538557
+62hE,"Love, Rosie",4.0,https://boxd.it/62hE,2022-06-08,3.66,"['Drama', 'Romance', 'Comedy']",Christian Ditter,[],,[],[],102,671315
+Asu,One Day,3.0,https://boxd.it/Asu,2022-06-08,3.5,"['Drama', 'Romance']",Lone Scherfig,[],,[],[],107,443575
+D9A,"Crazy, Stupid, Love.",4.0,https://boxd.it/D9A,2022-06-08,3.73,"['Comedy', 'Romance', 'Drama']",Glenn Ficarra,[],,[],[],118,1712201
+70w,Kill Bill: Vol. 1,4.0,https://boxd.it/70w,2022-06-08,4.22,"['Crime', 'Action']",Quentin Tarantino,[],,[],[],111,3500152
+2au4,Kill Bill: Vol. 2,4.0,https://boxd.it/2au4,2022-06-08,4.11,"['Thriller', 'Action', 'Crime']",Quentin Tarantino,[],,[],[],136,1938571
+7zl2,Focus,1.5,https://boxd.it/7zl2,2022-06-08,3.15,"['Crime', 'Comedy', 'Romance']",Glenn Ficarra,[],,[],[],105,389897
+moju,Brother in Love,,https://boxd.it/moju,2022-06-08,3.19,"['Comedy', 'Family']",Onur Bilgetay,[],,[],[],109,9300
+yjHg,Brother in Love 2,,https://boxd.it/yjHg,2022-06-08,3.08,['Comedy'],Onur Bilgetay,[],,[],[],118,5503
+28sg,Liar Liar,,https://boxd.it/28sg,2022-06-08,3.35,"['Comedy', 'Fantasy']",Tom Shadyac,[],,[],[],86,453863
+1zGs,The Invention of Lying,,https://boxd.it/1zGs,2022-06-08,2.81,"['Comedy', 'Romance', 'Fantasy']",Ricky Gervais,[],,[],[],100,130466
+8lFu,Passengers,,https://boxd.it/8lFu,2022-06-08,2.92,"['Drama', 'Science Fiction', 'Romance']",Morten Tyldum,[],,[],[],116,740021
+2czK,Warcraft,,https://boxd.it/2czK,2022-06-08,2.56,"['Fantasy', 'Action', 'Adventure']",Duncan Jones,[],,[],[],123,176000
+f7DI,The Mountain II,,https://boxd.it/f7DI,2022-06-08,3.49,"['War', 'Drama']",Alper Çağlar,[],,[],[],135,15291
+7f6G,The Mountain,,https://boxd.it/7f6G,2022-06-08,3.47,"['War', 'Thriller', 'Action']",Alper Çağlar,[],,[],[],90,15936
+9ru0,Aquaman,,https://boxd.it/9ru0,2022-06-08,2.79,"['Fantasy', 'Action', 'Adventure']",James Wan,[],,[],[],143,931206
+67lG,The Man from U.N.C.L.E.,3.5,https://boxd.it/67lG,2022-06-08,3.49,"['Action', 'Comedy', 'Adventure']",Guy Ritchie,[],,[],[],116,356748
+oavA,Pocket Hercules: Naim Suleymanoglu,3.0,https://boxd.it/oavA,2022-06-08,3.52,['Drama'],Özer Feyzioğlu,[],,[],[],134,15764
+2o8m,Journey 2: The Mysterious Island,,https://boxd.it/2o8m,2022-06-08,2.59,"['Adventure', 'Science Fiction', 'Action']",Brad Peyton,[],,[],[],94,179745
+aZAy,The Magnificent Seven,3.0,https://boxd.it/aZAy,2022-06-08,3.21,"['Western', 'Action', 'Adventure']",Antoine Fuqua,[],,[],[],132,216336
+2Bsu,Now You See Me,,https://boxd.it/2Bsu,2022-06-08,3.48,"['Thriller', 'Crime']",Louis Leterrier,[],,[],[],116,1427483
+99fw,Now You See Me 2,,https://boxd.it/99fw,2022-06-08,3.13,"['Thriller', 'Crime']",Jon M. Chu,[],,[],[],129,822536
+hW3g,Stranger in My Pocket,,https://boxd.it/hW3g,2022-06-08,2.86,"['Comedy', 'Drama', 'Thriller']",Serra Yılmaz,[],,[],[],95,27027
+bUeE,Jumanji: Welcome to the Jungle,,https://boxd.it/bUeE,2022-06-08,3.16,"['Comedy', 'Fantasy', 'Adventure']",Jake Kasdan,[],,[],[],119,1290102
+pVfc,The Last Dance,4.5,https://boxd.it/pVfc,2022-06-08,4.45,['Documentary'],Jason Hehir,[],,[],[],491,154662
+buAY,Jack Reacher: Never Go Back,2.0,https://boxd.it/buAY,2022-06-08,2.69,"['Action', 'Crime', 'Drama', 'Thriller']",Edward Zwick,[],,[],[],118,128126
+20PG,Fun with Dick and Jane,,https://boxd.it/20PG,2022-06-08,2.94,"['Comedy', 'Crime']",Dean Parisot,[],,[],[],90,109289
+1WQK,The Last Airbender,0.5,https://boxd.it/1WQK,2022-06-08,1.2,"['Fantasy', 'Action', 'Adventure']",M. Night Shyamalan,[],,[],[],103,294656
+280c,Transformers,,https://boxd.it/280c,2022-06-08,3.39,"['Action', 'Science Fiction', 'Adventure']",Michael Bay,[],,[],[],144,895542
+20gG,Transformers: Revenge of the Fallen,,https://boxd.it/20gG,2022-06-08,2.76,"['Action', 'Adventure', 'Science Fiction']",Michael Bay,[],,[],[],150,500087
+16aC,Transformers: Dark of the Moon,,https://boxd.it/16aC,2022-06-08,2.87,"['Adventure', 'Action', 'Science Fiction']",Michael Bay,[],,[],[],154,450004
+3d1m,Transformers: Age of Extinction,2.0,https://boxd.it/3d1m,2022-06-08,2.31,"['Science Fiction', 'Adventure', 'Action']",Michael Bay,[],,[],[],165,350934
+hIgA,The Boy Who Harnessed the Wind,3.0,https://boxd.it/hIgA,2022-06-08,3.72,"['History', 'Drama']",Chiwetel Ejiofor,[],,[],[],113,95211
+gXGc,Uncut Gems,4.0,https://boxd.it/gXGc,2022-06-08,3.96,"['Crime', 'Thriller', 'Drama']",Josh Safdie,[],,[],[],136,1788635
+1Wzk,Patch Adams,4.0,https://boxd.it/1Wzk,2022-06-08,3.52,"['Comedy', 'Drama']",Tom Shadyac,[],,[],[],115,139086
+1U8m,Public Enemies,3.0,https://boxd.it/1U8m,2022-06-16,3.25,"['History', 'Crime', 'Drama']",Michael Mann,[],,[],[],140,207098
+2a1m,The Matrix,4.0,https://boxd.it/2a1m,2022-06-17,4.18,"['Science Fiction', 'Action']",Lana Wachowski,[],,[],[],136,3039849
+29R2,Oldboy,4.5,https://boxd.it/29R2,2022-06-26,4.36,"['Thriller', 'Mystery', 'Action']",Park Chan-wook,[],,[],[],120,1679802
+2awE,The Devil Wears Prada,4.0,https://boxd.it/2awE,2022-06-28,3.82,"['Comedy', 'Drama']",David Frankel,[],,[],[],109,3527258
+e5dG,Gifted,,https://boxd.it/e5dG,2022-06-28,3.71,"['Comedy', 'Drama']",Marc Webb,[],,[],[],101,387048
+22m2,Into the Wild,4.0,https://boxd.it/22m2,2022-06-29,3.85,"['Drama', 'Adventure']",Sean Penn,[],,[],[],148,662595
+fn3G,When We First Met,3.0,https://boxd.it/fn3G,2022-06-30,2.69,"['Fantasy', 'Romance', 'Comedy']",Ari Sandel,[],,[],[],97,91065
+fDz4,Happy Death Day,3.0,https://boxd.it/fDz4,2022-06-30,3.01,"['Horror', 'Mystery', 'Comedy']",Christopher Landon,[],,[],[],97,670815
+8SeG,The Martian,4.0,https://boxd.it/8SeG,2022-06-30,3.82,"['Drama', 'Science Fiction', 'Adventure']",Ridley Scott,[],,[],[],141,1917742
+b2JI,My All American,4.0,https://boxd.it/b2JI,2022-07-06,3.32,['Drama'],Angelo Pizzo,[],,[],[],118,5536
+mMAY,Thor: Love and Thunder,1.5,https://boxd.it/mMAY,2022-07-12,2.33,"['Action', 'Fantasy', 'Comedy']",Taika Waititi,[],,[],[],119,1698656
+lkba,Another Round,4.5,https://boxd.it/lkba,2022-07-12,4.1,"['Drama', 'Comedy']",Thomas Vinterberg,[],,[],[],117,706253
+d5nu,The Edge of Seventeen,3.0,https://boxd.it/d5nu,2022-07-12,3.53,"['Drama', 'Comedy']",Kelly Fremon Craig,[],,[],[],105,935228
+6P4,What's Your Number?,2.5,https://boxd.it/6P4,2022-07-13,3.02,"['Comedy', 'Romance']",Mark Mylod,[],,[],[],106,167364
+cS4,Rise of the Planet of the Apes,3.5,https://boxd.it/cS4,2022-07-15,3.69,"['Action', 'Thriller', 'Science Fiction', 'Drama']",Rupert Wyatt,[],,[],[],105,1012514
+3XyQ,Dawn of the Planet of the Apes,3.5,https://boxd.it/3XyQ,2022-07-15,3.86,"['Action', 'Thriller', 'Science Fiction', 'Drama']",Matt Reeves,[],,[],[],130,858486
+8FE2,War for the Planet of the Apes,3.0,https://boxd.it/8FE2,2022-07-15,3.83,"['War', 'Drama', 'Science Fiction']",Matt Reeves,[],,[],[],140,736902
+20Z2,There Will Be Blood,4.0,https://boxd.it/20Z2,2022-07-17,4.46,['Drama'],Paul Thomas Anderson,[],,[],[],158,1388018
+wk2k,Schumacher,,https://boxd.it/wk2k,2022-07-17,3.64,['Documentary'],Vanessa Nöcker,[],,[],[],112,36579
+sqFE,The Black Phone,3.5,https://boxd.it/sqFE,2022-07-17,3.33,"['Thriller', 'Horror']",Scott Derrickson,[],,[],[],103,1618443
+ifpg,Death on the Nile,2.0,https://boxd.it/ifpg,2022-07-19,2.73,"['Crime', 'Thriller', 'Mystery']",Kenneth Branagh,[],,[],[],127,473891
+23AO,10 Things I Hate About You,3.5,https://boxd.it/23AO,2022-07-20,4.07,"['Comedy', 'Drama', 'Romance']",Gil Junger,[],,[],[],97,4310829
+28Gs,Kingdom of Heaven,4.0,https://boxd.it/28Gs,2022-07-21,3.73,"['History', 'Drama', 'Action', 'Adventure', 'War']",Ridley Scott,[],,[],[],144,335981
+3ZqO,The Grand Budapest Hotel,4.5,https://boxd.it/3ZqO,2022-07-22,4.24,"['Comedy', 'Drama']",Wes Anderson,[],,[],[],100,3422407
+mQbe,The Last Duel,4.0,https://boxd.it/mQbe,2022-07-23,3.75,"['Thriller', 'History', 'Drama']",Ridley Scott,[],,[],[],153,358885
+dHjA,Murder on the Orient Express,3.0,https://boxd.it/dHjA,2022-07-24,3.17,"['Mystery', 'Drama', 'Crime']",Kenneth Branagh,[],,[],[],114,587175
+eOCm,Get Out,4.0,https://boxd.it/eOCm,2022-07-24,4.13,"['Horror', 'Mystery', 'Thriller']",Jordan Peele,[],,[],[],104,4694833
+iYBQ,The Gentlemen,4.0,https://boxd.it/iYBQ,2022-07-25,3.78,"['Crime', 'Action', 'Comedy']",Guy Ritchie,[],,[],[],113,674305
+eSjy,Aladdin,0.5,https://boxd.it/eSjy,2022-07-25,3.11,"['Fantasy', 'Romance', 'Family', 'Adventure']",Guy Ritchie,[],,[],[],127,773217
+8lDS,King Arthur: Legend of the Sword,3.0,https://boxd.it/8lDS,2022-07-25,2.9,"['Action', 'Drama', 'Fantasy']",Guy Ritchie,[],,[],[],126,195087
+dgSy,Split,3.5,https://boxd.it/dgSy,2022-07-25,3.54,"['Horror', 'Thriller']",M. Night Shyamalan,[],,[],[],117,1930351
+s1Ym,The Queen's Gambit,4.0,https://boxd.it/s1Ym,2022-07-25,4.24,['Drama'],Scott Frank,[],,[],[],393,1148958
+ttHA,Creating The Queen's Gambit,,https://boxd.it/ttHA,2022-07-25,3.75,['Documentary'],,[],,[],[],14,10106
+1Ygk,Clueless,4.5,https://boxd.it/1Ygk,2022-07-25,3.68,"['Comedy', 'Romance']",Amy Heckerling,[],,[],[],97,1986657
+G36,Kung Fu Panda 2,,https://boxd.it/G36,2022-07-27,3.79,"['Family', 'Action', 'Animation', 'Comedy']",Jennifer Yuh Nelson,[],,[],[],91,901120
+4uRQ,Kung Fu Panda 3,,https://boxd.it/4uRQ,2022-07-27,3.32,"['Adventure', 'Comedy', 'Action', 'Family', 'Animation']",Jennifer Yuh Nelson,[],,[],[],95,644484
+9roG,Wonder Woman,,https://boxd.it/9roG,2022-07-27,3.2,"['Action', 'Fantasy', 'Adventure']",Patty Jenkins,[],,[],[],141,1201077
+3OsE,Pitch Perfect,,https://boxd.it/3OsE,2022-07-27,3.65,"['Music', 'Comedy', 'Romance']",Jason Moore,[],,[],[],112,1430090
+24ui,Atonement,3.5,https://boxd.it/24ui,2022-07-29,4.02,"['Romance', 'Drama']",Joe Wright,[],,[],[],123,811679
+hqk,Monte Carlo,2.5,https://boxd.it/hqk,2022-07-29,3.4,"['Adventure', 'Comedy', 'Romance']",Thomas Bezucha,[],,[],[],109,292805
+75Yo,Alice Through the Looking Glass,,https://boxd.it/75Yo,2022-07-29,2.98,"['Family', 'Adventure', 'Fantasy']",James Bobin,[],,[],[],113,338245
+1VNg,Mean Girls,4.0,https://boxd.it/1VNg,2022-07-29,3.81,"['Comedy', 'Drama']",Mark Waters,[],,[],[],97,3419013
+37pM,Here Comes the Boom,3.0,https://boxd.it/37pM,2022-07-30,2.83,"['Comedy', 'Drama', 'Action']",Frank Coraci,[],,[],[],105,67113
+uObC,Home Team,,https://boxd.it/uObC,2022-07-30,2.51,"['Drama', 'Comedy', 'Family']",Charles Kinnane,[],,[],[],95,34874
+bhEo,True Memoirs of an International Assassin,,https://boxd.it/bhEo,2022-07-30,2.43,"['Comedy', 'Action']",Jeff Wadlow,[],,[],[],98,18561
+cOo6,Sing Street,4.0,https://boxd.it/cOo6,2022-08-01,4.06,"['Romance', 'Drama', 'Music', 'Comedy']",John Carney,[],,[],[],105,355356
+glCG,"Extremely Wicked, Shockingly Evil and Vile",4.0,https://boxd.it/glCG,2022-08-01,3.11,"['Drama', 'Crime']",Joe Berlinger,[],,[],[],111,245908
+FRE,The Croods,,https://boxd.it/FRE,2022-08-01,3.19,"['Adventure', 'Family', 'Comedy', 'Animation']",Chris Sanders,[],,[],[],99,556306
+2TTS,Wreck-It Ralph,4.0,https://boxd.it/2TTS,2022-08-01,3.62,"['Adventure', 'Comedy', 'Family', 'Animation']",Rich Moore,[],,[],[],101,1334434
+2NF6,Madagascar 3: Europe's Most Wanted,,https://boxd.it/2NF6,2022-08-01,3.18,"['Comedy', 'Family', 'Adventure', 'Animation']",Eric Darnell,[],,[],[],93,480110
+1W2K,Madagascar: Escape 2 Africa,,https://boxd.it/1W2K,2022-08-01,3.29,"['Animation', 'Family', 'Comedy', 'Adventure']",Eric Darnell,[],,[],[],89,631611
+5rje,Big Hero 6,,https://boxd.it/5rje,2022-08-01,3.86,"['Science Fiction', 'Comedy', 'Action', 'Family', 'Animation', 'Adventure']",Don Hall,[],,[],[],102,1813930
+kOf0,Ready or Not,3.5,https://boxd.it/kOf0,2022-08-02,3.5,"['Horror', 'Comedy']",Matt Bettinelli-Olpin,[],,[],[],96,1425283
+fSA2,Bad Times at the El Royale,3.5,https://boxd.it/fSA2,2022-08-03,3.47,"['Crime', 'Drama', 'Mystery', 'Thriller']",Drew Goddard,[],,[],[],141,286346
+26e2,Identity,3.5,https://boxd.it/26e2,2022-08-03,3.46,"['Mystery', 'Thriller']",James Mangold,[],,[],[],90,238599
+ohEO,Vacation Friends,3.0,https://boxd.it/ohEO,2022-08-04,2.78,['Comedy'],Clay Tarver,[],,[],[],103,41914
+4aRw,X-Men: Days of Future Past,4.0,https://boxd.it/4aRw,2022-08-05,3.72,"['Action', 'Science Fiction', 'Adventure']",Bryan Singer,[],,[],[],132,1089542
+1a7s,X-Men,,https://boxd.it/1a7s,2022-08-05,3.35,"['Science Fiction', 'Action', 'Adventure']",Bryan Singer,[],,[],[],104,972499
+29JC,Top Gun,3.5,https://boxd.it/29JC,2022-08-05,3.54,"['Action', 'Romance', 'Drama']",Tony Scott,[],,[],[],110,1231242
+gH0O,Once Upon a Time... in Hollywood,4.0,https://boxd.it/gH0O,2022-08-05,3.78,"['Thriller', 'Drama', 'Comedy']",Quentin Tarantino,[],,[],[],162,3272550
+2agG,The Green Mile,4.0,https://boxd.it/2agG,2022-08-07,4.3,"['Drama', 'Crime', 'Fantasy']",Frank Darabont,[],,[],[],189,1456761
+29CQ,Almost Famous,3.5,https://boxd.it/29CQ,2022-08-07,4.09,"['Drama', 'Music']",Cameron Crowe,[],,[],[],124,827550
+1W3I,Bride Wars,3.5,https://boxd.it/1W3I,2022-08-07,3.07,"['Romance', 'Comedy']",Gary Winick,[],,[],[],89,421285
+1XwG,How to Lose a Guy in 10 Days,4.0,https://boxd.it/1XwG,2022-08-07,3.82,"['Comedy', 'Romance']",Donald Petrie,[],,[],[],116,2417881
+1YZu,Flightplan,3.0,https://boxd.it/1YZu,2022-08-08,3.08,"['Mystery', 'Drama', 'Thriller']",Robert Schwentke,[],,[],[],98,139841
+fVqa,Skyscraper,,https://boxd.it/fVqa,2022-08-12,2.34,"['Adventure', 'Action', 'Thriller']",Rawson Marshall Thurber,[],,[],[],102,175137
+21x4,27 Dresses,,https://boxd.it/21x4,2022-08-12,3.48,"['Romance', 'Comedy']",Anne Fletcher,[],,[],[],111,1006190
+gEqE,Williams,4.0,https://boxd.it/gEqE,2022-08-13,3.7,['Documentary'],Morgan Matthews,[],,[],[],109,2037
+2aWi,Minority Report,4.0,https://boxd.it/2aWi,2022-08-16,3.79,"['Thriller', 'Science Fiction', 'Action']",Steven Spielberg,[],,[],[],145,576978
+4pD0,Edge of Tomorrow,2.0,https://boxd.it/4pD0,2022-08-16,3.78,"['Science Fiction', 'Action']",Doug Liman,[],,[],[],114,865397
+28F0,Collateral,4.0,https://boxd.it/28F0,2022-08-16,3.89,"['Crime', 'Drama', 'Thriller']",Michael Mann,[],,[],[],120,557025
+2a5e,Jaws,4.5,https://boxd.it/2a5e,2022-08-19,3.91,"['Adventure', 'Thriller', 'Horror']",Steven Spielberg,[],,[],[],124,1810684
+1T0Q,Mona Lisa Smile,4.0,https://boxd.it/1T0Q,2022-08-20,3.7,"['Romance', 'History', 'Drama']",Mike Newell,[],,[],[],117,245881
+24ho,Legends of the Fall,3.5,https://boxd.it/24ho,2022-08-22,3.57,"['Romance', 'Drama', 'Western', 'War']",Edward Zwick,[],,[],[],133,158021
+1Ola,Marley & Me,2.5,https://boxd.it/1Ola,2022-08-23,3.46,"['Family', 'Comedy']",David Frankel,[],,[],[],115,279437
+1tQG,Triangle,3.5,https://boxd.it/1tQG,2022-08-23,3.34,['Horror'],Christopher Smith,[],,[],[],99,199582
+gnV6,Us,3.5,https://boxd.it/gnV6,2022-08-24,3.63,"['Horror', 'Thriller', 'Mystery']",Jordan Peele,[],,[],[],116,2486101
+sDCe,Nope,3.5,https://boxd.it/sDCe,2022-08-24,3.66,"['Science Fiction', 'Horror', 'Thriller']",Jordan Peele,[],,[],[],130,2162581
+Vm8,Ghostbusters,3.0,https://boxd.it/Vm8,2022-08-25,2.35,"['Fantasy', 'Action', 'Comedy']",Paul Feig,[],,[],[],117,368045
+27Eg,Lorenzo's Oil,3.0,https://boxd.it/27Eg,2022-08-25,3.52,['Drama'],George Miller,[],,[],[],135,20645
+rgu,The Craigslist Killer,0.5,https://boxd.it/rgu,2022-08-26,1.8,"['Drama', 'Thriller']",Stephen Kay,[],,[],[],95,12651
+1DD8,Despicable Me,,https://boxd.it/1DD8,2022-08-26,3.67,"['Animation', 'Science Fiction', 'Comedy', 'Family', 'Crime']",Chris Renaud,[],,[],[],95,1349461
+29EW,Little Miss Sunshine,4.0,https://boxd.it/29EW,2022-08-26,4.22,"['Drama', 'Comedy']",Valerie Faris,[],,[],[],102,2458152
+1W2A,Sherlock Holmes,3.5,https://boxd.it/1W2A,2022-08-26,3.51,"['Mystery', 'Action', 'Adventure']",Guy Ritchie,[],,[],[],129,670590
+k3S,Sherlock Holmes: A Game of Shadows,3.0,https://boxd.it/k3S,2022-08-26,3.39,"['Mystery', 'Adventure', 'Action']",Guy Ritchie,[],,[],[],129,409203
+Ba2,Horrible Bosses,3.0,https://boxd.it/Ba2,2022-08-26,3.13,"['Crime', 'Comedy']",Seth Gordon,[],,[],[],98,382737
+3GAq,Grown Ups 2,,https://boxd.it/3GAq,2022-08-26,2.96,['Comedy'],Dennis Dugan,[],,[],[],101,580703
+169a,Grown Ups,2.5,https://boxd.it/169a,2022-08-26,3.38,['Comedy'],Dennis Dugan,[],,[],[],102,1007227
+cjr4,Top Gun: Maverick,4.0,https://boxd.it/cjr4,2022-08-27,3.98,"['Action', 'Drama']",Joseph Kosinski,[],,[],[],131,2369167
+BykM,"Love, Death & Robots: Bad Travelling",,https://boxd.it/BykM,2022-08-27,4.18,"['Mystery', 'Thriller', 'Adventure', 'Drama', 'Fantasy', 'Horror', 'Animation', 'Action']",David Fincher,[],,[],[],21,106057
+iQI,Tower Heist,2.0,https://boxd.it/iQI,2022-08-28,2.81,"['Action', 'Comedy']",Brett Ratner,[],,[],[],104,110569
+aS5y,Keeping Up with the Joneses,2.0,https://boxd.it/aS5y,2022-08-28,2.61,"['Comedy', 'Action']",Greg Mottola,[],,[],[],105,51821
+84xS,Zootopia,,https://boxd.it/84xS,2022-08-28,3.78,"['Animation', 'Family', 'Comedy', 'Adventure']",Byron Howard,[],,[],[],109,2206283
+2bcU,Before Sunrise,4.0,https://boxd.it/2bcU,2022-08-29,4.3,"['Romance', 'Drama']",Richard Linklater,[],,[],[],101,1584882
+1zyI,Remember Me,3.5,https://boxd.it/1zyI,2022-08-30,3.22,"['Romance', 'Drama']",Allen Coulter,[],,[],[],113,269061
+FRu,The Change-Up,2.5,https://boxd.it/FRu,2022-08-31,2.6,['Comedy'],David Dobkin,[],,[],[],112,124762
+2bg8,Heat,4.0,https://boxd.it/2bg8,2022-09-01,4.32,"['Crime', 'Action', 'Drama']",Michael Mann,[],,[],[],170,1273447
+h10u,It Chapter Two,,https://boxd.it/h10u,2022-09-01,2.95,"['Drama', 'Thriller', 'Horror']",Andy Muschietti,[],,[],[],169,1535456
+bk52,Niyazi Gül Dörtnala,,https://boxd.it/bk52,2022-09-02,2.7,['Comedy'],Hakan Algül,[],,[],[],106,2309
+lfkw,Money Trap,,https://boxd.it/lfkw,2022-09-02,2.7,"['Crime', 'Action', 'Comedy']",Yılmaz Erdoğan,[],,[],[],121,16655
+fmM6,Bygones Be Bygones,,https://boxd.it/fmM6,2022-09-02,2.99,['Comedy'],Hakan Algül,[],,[],[],103,2323
+yvJo,Cem Yılmaz: Diamond Elite Platinum Plus,,https://boxd.it/yvJo,2022-09-02,3.0,"['Comedy', 'TV Movie']",Cem Yılmaz,[],,[],[],94,14557
+fdo,Source Code,3.0,https://boxd.it/fdo,2022-09-02,3.5,"['Science Fiction', 'Mystery', 'Thriller']",Duncan Jones,[],,[],[],8,361063
+1Q7u,October Sky,4.0,https://boxd.it/1Q7u,2022-09-02,3.78,"['Drama', 'Family', 'History']",Joe Johnston,[],,[],[],107,154924
+29xw,Sleepers,3.5,https://boxd.it/29xw,2022-09-03,3.81,"['Drama', 'Crime', 'Thriller']",Barry Levinson,[],,[],[],147,238056
+kbJU,When They See Us,4.0,https://boxd.it/kbJU,2022-09-03,4.58,['Drama'],Ava DuVernay,[],,[],[],296,136528
+3C1m,The Wolf of Wall Street,4.0,https://boxd.it/3C1m,2022-09-07,4.0,"['Comedy', 'Drama', 'Crime']",Martin Scorsese,[],,[],[],180,4294492
+2auI,12 Angry Men,5.0,https://boxd.it/2auI,2022-09-07,4.63,['Drama'],Sidney Lumet,[],,[],[],97,1693956
+eDGs,The Batman,4.0,https://boxd.it/eDGs,2022-09-08,4.05,"['Crime', 'Mystery', 'Thriller']",Matt Reeves,[],,[],[],177,4221037
+2aeU,Love Actually,2.0,https://boxd.it/2aeU,2022-09-09,3.51,"['Romance', 'Drama', 'Comedy']",Richard Curtis,[],,[],[],135,1272342
+2b6M,Pretty Woman,3.0,https://boxd.it/2b6M,2022-09-16,3.72,"['Comedy', 'Romance']",Garry Marshall,[],,[],[],120,1336709
+1zyS,The Town,3.5,https://boxd.it/1zyS,2022-09-17,3.67,"['Crime', 'Thriller', 'Drama']",Ben Affleck,[],,[],[],125,396351
+iB2y,Always Be My Maybe,,https://boxd.it/iB2y,2022-09-19,3.07,"['Romance', 'Comedy']",Nahnatchka Khan,[],,[],[],102,178305
+VMK,How Do You Know,3.0,https://boxd.it/VMK,2022-09-19,2.34,"['Comedy', 'Drama', 'Romance']",James L. Brooks,[],,[],[],121,71316
+1W0a,Fear,3.0,https://boxd.it/1W0a,2022-09-19,3.08,"['Horror', 'Thriller']",James Foley,[],,[],[],97,202059
+euce,The Invisible Guest,4.0,https://boxd.it/euce,2022-09-19,3.96,"['Mystery', 'Thriller', 'Drama']",Oriol Paulo,[],,[],[],107,198387
+3Jsa,The Body,3.5,https://boxd.it/3Jsa,2022-09-19,3.64,"['Thriller', 'Mystery']",Oriol Paulo,[],,[],[],107,44050
+71Ks,Spy,,https://boxd.it/71Ks,2022-09-20,3.22,"['Action', 'Crime', 'Comedy']",Paul Feig,[],,[],[],120,269392
+gh7Y,Tag,4.0,https://boxd.it/gh7Y,2022-09-20,3.08,"['Action', 'Comedy']",Jeff Tomsic,[],,[],[],101,331101
+2amk,A Beautiful Mind,4.0,https://boxd.it/2amk,2022-09-22,3.88,"['Romance', 'Drama']",Ron Howard,[],,[],[],135,663662
+23R6,Gone Baby Gone,4.0,https://boxd.it/23R6,2022-09-27,3.75,"['Mystery', 'Crime', 'Drama']",Ben Affleck,[],,[],[],113,203675
+PP4,The Fighter,3.5,https://boxd.it/PP4,2022-09-27,3.85,['Drama'],David O. Russell,[],,[],[],116,288368
+1Y2i,Children of Men,4.5,https://boxd.it/1Y2i,2022-09-28,4.3,"['Science Fiction', 'Thriller', 'Action']",Alfonso Cuarón,[],,[],[],109,854462
+hAJE,Forgotten,3.0,https://boxd.it/hAJE,2022-09-30,3.8,"['Thriller', 'Crime', 'Mystery']",Chang Hang-jun,[],,[],[],108,267652
+ixu4,Jumanji: The Next Level,,https://boxd.it/ixu4,2022-10-02,2.89,"['Comedy', 'Adventure', 'Fantasy']",Jake Kasdan,[],,[],[],123,689835
+i4a,Midnight in Paris,3.5,https://boxd.it/i4a,2022-10-09,3.71,"['Comedy', 'Fantasy', 'Romance']",Woody Allen,[],,[],[],94,887239
+2a8W,Dogville,4.5,https://boxd.it/2a8W,2022-10-17,4.18,"['Thriller', 'Crime', 'Drama']",Lars von Trier,[],,[],[],178,216664
+28ws,Primal Fear,4.0,https://boxd.it/28ws,2022-10-23,4.02,"['Crime', 'Drama', 'Thriller']",Gregory Hoblit,[],,[],[],130,598502
+3wEC,The Hunt,5.0,https://boxd.it/3wEC,2022-12-22,4.29,['Drama'],Thomas Vinterberg,[],,[],[],116,662884
+oCkK,Glass Onion,3.5,https://boxd.it/oCkK,2023-01-02,3.38,"['Crime', 'Mystery', 'Comedy']",Rian Johnson,[],,[],[],140,2999769
+aSVk,Little Women,4.0,https://boxd.it/aSVk,2023-01-18,4.19,"['Drama', 'Romance']",Greta Gerwig,[],,[],[],135,2998072
+29Pq,Pulp Fiction,5.0,https://boxd.it/29Pq,2023-01-18,4.23,"['Comedy', 'Thriller', 'Crime']",Quentin Tarantino,[],,[],[],154,4514903
+2aNK,The Godfather,5.0,https://boxd.it/2aNK,2023-01-20,4.51,"['Crime', 'Drama']",Francis Ford Coppola,[],,[],[],175,2888026
+Doq,Just Go with It,,https://boxd.it/Doq,2023-01-24,3.28,"['Comedy', 'Romance']",Dennis Dugan,[],,[],[],117,660262
+1qAK,Alone,4.5,https://boxd.it/1qAK,2023-01-24,3.23,"['Romance', 'Drama']",Çağan Irmak,[],,[],[],113,57830
+1NQw,Paul Blart: Mall Cop,,https://boxd.it/1NQw,2023-01-25,2.59,"['Adventure', 'Comedy', 'Family', 'Action']",Steve Carr,[],,[],[],91,263563
+jID4,Vlad the Impaler,,https://boxd.it/jID4,2023-01-25,2.76,"['History', 'Drama', 'War']",Osman Kaya,[],,[],[],121,1001
+24u8,Pride & Prejudice,3.0,https://boxd.it/24u8,2023-01-27,4.15,"['Drama', 'Romance']",Joe Wright,[],,[],[],128,2270922
+aPvy,Rogue One: A Star Wars Story,4.5,https://boxd.it/aPvy,2023-01-27,3.84,"['Adventure', 'Action', 'Science Fiction']",Gareth Edwards,[],,[],[],133,1703367
+fRtu,Game Night,3.0,https://boxd.it/fRtu,2023-01-31,3.51,"['Mystery', 'Comedy', 'Crime']",John Francis Daley,[],,[],[],100,636559
+2aOe,Stand by Me,4.0,https://boxd.it/2aOe,2023-02-02,4.2,"['Adventure', 'Drama']",Rob Reiner,[],,[],[],89,1343198
+1TNy,Red Eye,2.0,https://boxd.it/1TNy,2023-02-08,3.16,"['Mystery', 'Thriller']",Wes Craven,[],,[],[],85,428144
+H08,All Quiet on the Western Front,4.0,https://boxd.it/H08,2023-02-09,4.1,"['Drama', 'War']",Edward Berger,[],,[],[],147,1234757
+a84k,Spotlight,4.0,https://boxd.it/a84k,2023-02-21,4.13,"['History', 'Drama']",Tom McCarthy,[],,[],[],129,638775
+2b92,"Lock, Stock and Two Smoking Barrels",4.5,https://boxd.it/2b92,2023-02-22,4.03,"['Crime', 'Comedy']",Guy Ritchie,[],,[],[],105,316531
+2l5a,Date Night,2.5,https://boxd.it/2l5a,2023-02-23,2.89,"['Adventure', 'Action', 'Comedy']",Shawn Levy,[],,[],[],88,136168
+23wi,American Gangster,4.0,https://boxd.it/23wi,2023-02-24,3.96,"['Crime', 'Drama']",Ridley Scott,[],,[],[],157,399116
+Tfa,It's Kind of a Funny Story,3.5,https://boxd.it/Tfa,2023-02-26,3.35,"['Romance', 'Comedy', 'Drama']",Anna Boden,[],,[],[],102,128154
+aaie,Puss in Boots: The Last Wish,5.0,https://boxd.it/aaie,2023-03-12,4.13,"['Animation', 'Family', 'Fantasy', 'Comedy', 'Adventure']",Joel Crawford,[],,[],[],103,1940096
+eL34,Puss in Boots,,https://boxd.it/eL34,2023-03-12,3.29,"['Adventure', 'Action', 'Animation', 'Comedy', 'Family']",Chris Miller,[],,[],[],90,495924
+1alk,Casino Royale,4.0,https://boxd.it/1alk,2023-03-14,4.04,"['Thriller', 'Action', 'Adventure']",Martin Campbell,[],,[],[],144,1081174
+1Vs8,Quantum of Solace,,https://boxd.it/1Vs8,2023-03-21,2.88,"['Thriller', 'Action', 'Adventure']",Marc Forster,[],,[],[],106,526971
+17Fc,Skyfall,3.5,https://boxd.it/17Fc,2023-03-22,3.96,"['Adventure', 'Thriller', 'Action']",Sam Mendes,[],,[],[],143,1061156
+jUk4,Everything Everywhere All at Once,5.0,https://boxd.it/jUk4,2023-03-26,4.24,"['Science Fiction', 'Adventure', 'Comedy', 'Action']",Daniel Scheinert,[],,[],[],140,4099691
+29ro,Saving Private Ryan,5.0,https://boxd.it/29ro,2023-03-30,4.26,"['History', 'Drama', 'War']",Steven Spielberg,[],,[],[],169,1575887
+nHOo,Murder Mystery 2,3.0,https://boxd.it/nHOo,2023-04-06,2.6,"['Action', 'Mystery', 'Adventure', 'Comedy', 'Crime']",Jeremy Garelick,[],,[],[],91,331810
+4k0s,The Conspiracy,3.5,https://boxd.it/4k0s,2023-04-20,3.07,"['Horror', 'Thriller']",Christopher MacBride,[],,[],[],85,17084
+29Js,The Sixth Sense,4.0,https://boxd.it/29Js,2023-04-30,4.11,"['Thriller', 'Mystery', 'Horror', 'Drama']",M. Night Shyamalan,[],,[],[],107,1490901
+lScm,The Menu,4.0,https://boxd.it/lScm,2023-04-30,3.53,"['Comedy', 'Horror']",Mark Mylod,[],,[],[],107,3307904
+5haQ,The Butterfly's Dream,4.0,https://boxd.it/5haQ,2023-05-02,3.7,"['History', 'Drama']",Yılmaz Erdoğan,[],,[],[],138,25000
+2a7u,Die Hard,3.5,https://boxd.it/2a7u,2023-05-03,4.06,"['Thriller', 'Action']",John McTiernan,[],,[],[],132,1260265
+1kMK,Yahşi Batı,,https://boxd.it/1kMK,2023-05-04,3.67,"['Comedy', 'Western', 'Adventure']",Ömer Faruk Sorak,[],,[],[],112,30966
+lcoK,Operation Cicero,,https://boxd.it/lcoK,2023-06-07,3.01,"['Drama', 'War', 'Crime', 'History']",Serdar Akar,[],,[],[],120,5249
+loRE,Promising Young Woman,4.0,https://boxd.it/loRE,2023-06-13,3.67,"['Crime', 'Drama', 'Thriller']",Emerald Fennell,[],,[],[],114,809222
+8BAU,The Lego Movie 2: The Second Part,,https://boxd.it/8BAU,2023-06-13,3.09,"['Action', 'Comedy', 'Adventure', 'Family', 'Animation']",Mike Mitchell,[],,[],[],107,350471
+h714,The King's Man,,https://boxd.it/h714,2023-06-16,2.86,"['Adventure', 'Thriller', 'Action']",Matthew Vaughn,[],,[],[],131,394247
+1key,The Deep End of the Ocean,,https://boxd.it/1key,2023-06-18,2.97,"['Mystery', 'Drama']",Ulu Grosbard,[],,[],[],106,37415
+dgS4,Hidden Figures,,https://boxd.it/dgS4,2023-06-20,3.92,"['Drama', 'History']",Theodore Melfi,[],,[],[],127,725366
+29d2,Mission: Impossible,,https://boxd.it/29d2,2023-06-20,3.64,"['Thriller', 'Action', 'Adventure']",Brian De Palma,[],,[],[],111,836443
+GWmi,Black Mirror: Joan Is Awful,,https://boxd.it/GWmi,2023-06-25,3.17,"['TV Movie', 'Drama', 'Thriller', 'Science Fiction']",Ally Pankiw,[],,[],[],56,214352
+ASiE,Elemental,,https://boxd.it/ASiE,2023-06-25,3.35,"['Comedy', 'Romance', 'Animation', 'Family']",Peter Sohn,[],,[],[],102,1144969
+k4aS,Black Mirror: San Junipero,,https://boxd.it/k4aS,2023-06-25,4.1,"['TV Movie', 'Drama', 'Thriller', 'Science Fiction']",Owen Harris,[],,[],[],61,241886
+B3qu,Black Mirror: White Christmas,,https://boxd.it/B3qu,2023-06-25,4.21,"['Thriller', 'Drama', 'Science Fiction', 'TV Movie']",Carl Tibbetts,[],,[],[],74,187726
+hRRq,Black Mirror: Shut Up and Dance,,https://boxd.it/hRRq,2023-06-25,4.16,"['TV Movie', 'Science Fiction', 'Drama', 'Thriller']",James Watkins,[],,[],[],52,208295
+hQYA,Black Mirror: Hang the DJ,,https://boxd.it/hQYA,2023-06-25,4.0,"['TV Movie', 'Romance', 'Science Fiction', 'Drama']",Tim Van Patten,[],,[],[],51,165771
+hQYK,Black Mirror: The National Anthem,,https://boxd.it/hQYK,2023-06-25,3.37,"['Drama', 'TV Movie', 'Thriller', 'Science Fiction']",Otto Bathurst,[],,[],[],44,176238
+bCLK,Barbie,4.0,https://boxd.it/bCLK,2023-07-29,3.68,"['Comedy', 'Fantasy', 'Adventure']",Greta Gerwig,[],,[],[],114,6045491
+wUow,Oppenheimer,4.5,https://boxd.it/wUow,2023-07-29,4.16,"['Drama', 'History']",Christopher Nolan,[],,[],[],181,4555224
+iRcE,Bodies Bodies Bodies,3.5,https://boxd.it/iRcE,2023-08-29,3.25,"['Comedy', 'Horror', 'Mystery']",Halina Reijn,[],,[],[],94,1211360
+2aWW,Saw,,https://boxd.it/2aWW,2023-08-30,3.68,"['Crime', 'Mystery', 'Horror']",James Wan,[],,[],[],103,1219975
+2b8y,Taxi Driver,4.5,https://boxd.it/2b8y,2023-09-11,4.1,"['Crime', 'Drama']",Martin Scorsese,[],,[],[],114,2511182
+o2Ta,Black Night,3.5,https://boxd.it/o2Ta,2023-09-11,3.49,"['Drama', 'Thriller', 'Crime']",Özcan Alper,[],,[],[],114,6193
+1y8,Fig Jam,4.0,https://boxd.it/1y8,2023-09-12,3.12,"['Romance', 'Drama']",Aytaç Ağırlar,[],,[],[],94,26093
+1EmM,(500) Days of Summer,,https://boxd.it/1EmM,2023-09-28,3.65,"['Romance', 'Comedy', 'Drama']",Marc Webb,[],,[],[],95,3337239
+uGf2,Bottoms,4.0,https://boxd.it/uGf2,2023-09-29,3.81,['Comedy'],Emma Seligman,[],,[],[],91,1528967
+5Fvy,22 Jump Street,3.5,https://boxd.it/5Fvy,2023-09-30,3.39,"['Action', 'Crime', 'Comedy']",Phil Lord,[],,[],[],112,885422
+J0,21 Jump Street,4.0,https://boxd.it/J0,2023-10-08,3.64,"['Crime', 'Action', 'Comedy']",Phil Lord,[],,[],[],109,1450759
+2aHM,Fargo,4.0,https://boxd.it/2aHM,2023-11-10,4.14,"['Crime', 'Comedy', 'Drama', 'Thriller']",Joel Coen,[],,[],[],98,1453655
+1YAk,A Knight's Tale,3.5,https://boxd.it/1YAk,2023-11-10,3.67,"['Drama', 'Romance', 'Action', 'Adventure']",Brian Helgeland,[],,[],[],133,328736
+29J8,Shaun of the Dead,1.0,https://boxd.it/29J8,2023-11-20,3.94,"['Horror', 'Comedy']",Edgar Wright,[],,[],[],99,1274165
+Msm,Incendies,4.5,https://boxd.it/Msm,2023-12-02,4.45,"['Mystery', 'Drama', 'War']",Denis Villeneuve,[],,[],[],131,647855
+hNVe,Hereditary,4.0,https://boxd.it/hNVe,2023-12-26,3.92,"['Thriller', 'Horror', 'Mystery']",Ari Aster,[],,[],[],128,2829402
+4W9M,Oculus,3.5,https://boxd.it/4W9M,2024-01-29,3.21,['Horror'],Mike Flanagan,[],,[],[],104,195819
+2agQ,Borat: Cultural Learnings of America for Make Benefit Glorious Nation of Kazakhstan,,https://boxd.it/2agQ,2024-02-05,3.72,['Comedy'],Larry Charles,[],,[],[],84,905211
+re0i,Leave the World Behind,,https://boxd.it/re0i,2024-02-05,2.85,"['Drama', 'Mystery', 'Thriller']",Sam Esmail,[],,[],[],140,859838
+y9aw,Society of the Snow,4.0,https://boxd.it/y9aw,2024-02-11,4.16,"['History', 'Drama']",J. A. Bayona,[],,[],[],143,1203030
+4VT0,Divergent,3.0,https://boxd.it/4VT0,2024-02-11,3.1,"['Adventure', 'Action', 'Science Fiction']",Neil Burger,[],,[],[],140,981474
+Arw0,Aftersun,4.5,https://boxd.it/Arw0,2024-02-17,4.21,['Drama'],Charlotte Wells,[],,[],[],101,1677705
+neO,Project X,4.0,https://boxd.it/neO,2024-05-09,3.4,['Comedy'],Nima Nourizadeh,[],,[],[],88,928602
+1ZsQ,A Lot Like Love,3.5,https://boxd.it/1ZsQ,2024-05-13,3.32,"['Romance', 'Comedy', 'Drama']",Nigel Cole,[],,[],[],107,52951
+1En6,Zombieland,4.0,https://boxd.it/1En6,2024-05-13,3.52,"['Comedy', 'Horror']",Ruben Fleischer,[],,[],[],88,1257722
+bgb6,Zombieland: Double Tap,3.0,https://boxd.it/bgb6,2024-05-13,3.05,"['Horror', 'Comedy']",Ruben Fleischer,[],,[],[],99,554776
+2aHW,The Silence of the Lambs,5.0,https://boxd.it/2aHW,2024-05-13,4.34,"['Crime', 'Thriller', 'Horror', 'Drama']",Jonathan Demme,[],,[],[],119,3286966
+zl06,A Man Called Otto,4.0,https://boxd.it/zl06,2024-07-31,3.68,"['Drama', 'Comedy']",Marc Forster,[],,[],[],126,569269
+DfWG,Bandırma Füze Kulübü,3.5,https://boxd.it/DfWG,2024-07-31,3.35,"['Drama', 'History']",Ömer Faruk Sorak,[],,[],[],111,1316
+HLro,8x8,,https://boxd.it/HLro,2024-09-08,3.15,['Drama'],Kıvanç Sezer,[],,[],[],78,680
+8uN8,Kendime İyi Bak,,https://boxd.it/8uN8,2024-09-08,3.09,"['Comedy', 'Romance', 'Drama']",Ruhi Yapıcı,[],,[],[],88,1636
+u8Cc,Ticket to Paradise,,https://boxd.it/u8Cc,2024-09-09,2.75,"['Romance', 'Comedy', 'Drama']",Ol Parker,[],,[],[],104,197646
+hHpQ,Instant Family,4.0,https://boxd.it/hHpQ,2024-11-17,3.49,"['Drama', 'Comedy']",Sean Anders,[],,[],[],118,330386
+DOV4,It's What's Inside,4.0,https://boxd.it/DOV4,2025-02-25,3.47,"['Science Fiction', 'Comedy', 'Mystery']",Greg Jardin,[],,[],[],105,559506
+3L08,Stuck in Love,4.0,https://boxd.it/3L08,2025-02-25,3.53,"['Drama', 'Romance', 'Comedy']",Josh Boone,[],,[],[],97,124290
+2AU8,We Bought a Zoo,3.5,https://boxd.it/2AU8,2025-02-27,3.27,"['Drama', 'Family', 'Comedy']",Cameron Crowe,[],,[],[],124,178912
+6lCG,Chef,2.5,https://boxd.it/6lCG,2025-02-28,3.7,['Comedy'],Jon Favreau,[],,[],[],114,487985
+22r2,The Mist,3.0,https://boxd.it/22r2,2025-03-03,3.45,"['Thriller', 'Science Fiction', 'Horror']",Frank Darabont,[],,[],[],126,498025
+9SAE,Me and Earl and the Dying Girl,2.5,https://boxd.it/9SAE,2025-03-04,3.87,"['Comedy', 'Drama']",Alfonso Gomez-Rejon,[],,[],[],105,293722
+fVNI,Guardians of the Galaxy Vol. 3,4.0,https://boxd.it/fVNI,2025-03-05,3.99,"['Action', 'Science Fiction', 'Adventure']",James Gunn,[],,[],[],150,2322969
+OkP8,Chasing the Wind,,https://boxd.it/OkP8,2025-03-06,2.79,['Romance'],Engin Erden,[],,[],[],96,16493
+24PK,My Girl,4.0,https://boxd.it/24PK,2025-03-10,3.79,"['Comedy', 'Drama']",Howard Zieff,[],,[],[],103,361354
+20eU,"Definitely, Maybe",4.0,https://boxd.it/20eU,2025-03-11,3.34,"['Romance', 'Comedy']",Adam Brooks,[],,[],[],112,142331
+gzu2,The Peanut Butter Falcon,4.0,https://boxd.it/gzu2,2025-03-12,3.85,"['Drama', 'Adventure', 'Comedy']",Tyler Nilson,[],,[],[],97,321768
+kPuK,Champion,3.5,https://boxd.it/kPuK,2025-03-15,3.59,"['Romance', 'Drama']",Ahmet Katıksız,[],,[],[],129,10375
+pUfA,Dune: Part Two,4.5,https://boxd.it/pUfA,2025-03-15,4.38,"['Adventure', 'Science Fiction']",Denis Villeneuve,[],,[],[],167,3594655
+kSz4,Spider-Man: Across the Spider-Verse,4.5,https://boxd.it/kSz4,2025-03-15,4.4,"['Animation', 'Science Fiction', 'Adventure', 'Action']",Justin K. Thompson,[],,[],[],140,4013750
+pZCY,The Hunger Games: The Ballad of Songbirds & Snakes,3.0,https://boxd.it/pZCY,2025-03-15,3.59,"['Action', 'Science Fiction']",Francis Lawrence,[],,[],[],157,1968077
+txP4,Last Summer,,https://boxd.it/txP4,2025-03-19,2.71,"['Drama', 'Romance']",Ozan Açıktan,[],,[],[],101,12906
+1Ql2,The Man from Earth,4.0,https://boxd.it/1Ql2,2025-03-19,3.78,"['Drama', 'Science Fiction']",Richard Schenkman,[],,[],[],87,160508
+2pgc,Ted,3.0,https://boxd.it/2pgc,2025-03-30,3.13,"['Comedy', 'Fantasy']",Seth MacFarlane,[],,[],[],107,1151397
+6oCY,Ted 2,1.0,https://boxd.it/6oCY,2025-03-31,2.9,"['Comedy', 'Fantasy']",Seth MacFarlane,[],,[],[],115,450437
+a5fa,La La Land,4.5,https://boxd.it/a5fa,2025-04-17,4.13,"['Drama', 'Comedy', 'Romance']",Damien Chazelle,[],,[],[],129,5128013
+yjVM,F1,4.5,https://boxd.it/yjVM,2025-07-16,3.65,"['Drama', 'Action']",Joseph Kosinski,[],,[],[],156,2061446
+1Yey,Happy Gilmore,4.0,https://boxd.it/1Yey,2025-08-10,3.43,['Comedy'],Dennis Dugan,[],,[],[],92,751126
+E9IU,Superman,4.5,https://boxd.it/E9IU,2025-08-10,3.83,"['Science Fiction', 'Adventure', 'Action']",James Gunn,[],,[],[],130,3322994
+mP6C,The Fantastic 4: First Steps,3.0,https://boxd.it/mP6C,2025-08-10,3.34,"['Action', 'Science Fiction', 'Adventure']",Matt Shakman,[],,[],[],115,2291254
+hDPg,Searching,3.5,https://boxd.it/hDPg,2025-08-10,3.71,"['Drama', 'Thriller', 'Mystery']",Aneesh Chaganty,[],,[],[],102,337797
+2aBa,True Romance,4.0,https://boxd.it/2aBa,2025-08-20,3.95,"['Romance', 'Crime', 'Action']",Tony Scott,[],,[],[],121,313291
+EMTM,Weapons,3.0,https://boxd.it/EMTM,2025-09-02,3.58,"['Horror', 'Mystery']",Zach Cregger,[],,[],[],129,3224705
+sS1W,Missing,3.5,https://boxd.it/sS1W,2025-09-03,3.48,"['Thriller', 'Mystery', 'Drama']",Nicholas D. Johnson,[],,[],[],111,369775
+dR3i,Wind River,3.5,https://boxd.it/dR3i,2025-09-24,3.84,"['Mystery', 'Thriller', 'Crime']",Taylor Sheridan,[],,[],[],107,369690
+6IP4,Project Almanac,3.5,https://boxd.it/6IP4,2025-10-04,3.18,"['Science Fiction', 'Thriller']",Dean Israelite,[],,[],[],106,80978
+L6ec,Deep Cover,1.5,https://boxd.it/L6ec,2025-10-22,3.21,"['Action', 'Comedy', 'Crime']",Tom Kingsley,[],,[],[],99,67560
+yohi,Barbarian,3.5,https://boxd.it/yohi,2025-10-29,3.43,"['Horror', 'Thriller', 'Mystery']",Zach Cregger,[],,[],[],103,1617757
+rXBe,When Evil Lurks,2.5,https://boxd.it/rXBe,2025-10-29,3.52,"['Horror', 'Thriller']",Demián Rugna,[],,[],[],100,444179
+XDGM,Soyut Dışavurumcu Bir Dostluğun Anatomisi Veyahut Yan Yana,,https://boxd.it/XDGM,2025-12-30,3.68,"['Comedy', 'Drama']",Mert Baykal,[],,[],[],148,51651
+20hO,Superbad,4.0,https://boxd.it/20hO,2025-12-30,3.88,['Comedy'],Greg Mottola,[],,[],[],113,2386557
+Cg6,Arthur Christmas,4.0,https://boxd.it/Cg6,2025-12-30,3.55,"['Animation', 'Drama', 'Family', 'Comedy']",Sarah Smith,[],,[],[],97,135694
+XYj0,D.I.S.C.O.,,https://boxd.it/XYj0,2026-03-06,3.29,"['Comedy', 'Action']",Ömer Faruk Sorak,[],,[],[],102,19962
+Off0,Marty Supreme,,https://boxd.it/Off0,2026-03-06,4.03,"['Thriller', 'Drama']",Josh Safdie,[],,[],[],150,3049300
+uAKS,Wake Up Dead Man,,https://boxd.it/uAKS,2026-03-12,3.78,"['Comedy', 'Thriller', 'Mystery']",Rian Johnson,[],,[],[],145,2295282
+2ads,Casino,5.0,https://boxd.it/2ads,2026-03-12,4.22,"['Crime', 'Drama']",Martin Scorsese,[],,[],[],179,811011
+2aCs,Once Upon a Time in America,,https://boxd.it/2aCs,2026-03-12,4.22,"['Crime', 'Drama']",Sergio Leone,[],,[],[],139,327274
+NP5y,The Rip,,https://boxd.it/NP5y,2026-03-12,3.13,"['Action', 'Crime', 'Thriller']",Joe Carnahan,[],,[],[],113,370408
+218e,Coach Carter,,https://boxd.it/218e,2026-03-12,3.86,"['Drama', 'History']",Thomas Carter,[],,[],[],136,341746
+1UNE,The Notebook,,https://boxd.it/1UNE,2026-03-12,3.89,"['Romance', 'Drama']",Nick Cassavetes,[],,[],[],123,2876668
+28xK,School of Rock,5.0,https://boxd.it/28xK,2026-03-12,3.8,"['Music', 'Family', 'Comedy']",Richard Linklater,[],,[],[],110,1275833
+D4nK,Trap,2.0,https://boxd.it/D4nK,2026-03-17,2.61,"['Crime', 'Thriller', 'Horror']",M. Night Shyamalan,[],,[],[],105,1106772
+103iK,HIS & HERS,4.0,https://boxd.it/103iK,2026-03-17,3.65,"['Crime', 'Drama', 'Mystery']",William Oldroyd,[],,[],[],262,132732
+x3yq,Peaky Blinders: The Immortal Man,,https://boxd.it/x3yq,2026-03-22,3.13,"['Crime', 'Drama']",Tom Harper,[],,[],[],112,306512
+7eJi,X-Men: Apocalypse,,https://boxd.it/7eJi,2026-03-22,2.7,"['Science Fiction', 'Action', 'Fantasy']",Bryan Singer,[],,[],[],144,776825
+FOA,X-Men: First Class,,https://boxd.it/FOA,2026-03-22,3.62,"['Science Fiction', 'Adventure', 'Action']",Matthew Vaughn,[],,[],[],132,993300
+1So8,The Wrestler,4.5,https://boxd.it/1So8,2026-03-24,4.09,"['Drama', 'Romance']",Darren Aronofsky,[],,[],[],109,236289
+2DjO,Mad Max: Fury Road,,https://boxd.it/2DjO,2026-03-24,4.17,"['Science Fiction', 'Adventure', 'Action']",George Miller,[],,[],[],121,2244280
+fYde,Big Little Lies,4.0,https://boxd.it/fYde,2026-03-24,4.35,['Drama'],Jean-Marc Vallée,[],,[],[],702,190830
+1yIM,Paranormal Activity,4.0,https://boxd.it/1yIM,2026-03-24,2.91,"['Horror', 'Mystery']",Oren Peli,[],,[],[],86,482954
+1NQ2,Rings,,https://boxd.it/1NQ2,2026-03-24,1.78,['Horror'],F. Javier Gutiérrez,[],,[],[],102,47297
+Dh8e,The Conjuring: Last Rites,,https://boxd.it/Dh8e,2026-03-24,2.8,['Horror'],Michael Chaves,[],,[],[],136,992544
+2TnW,Sinister,,https://boxd.it/2TnW,2026-03-24,3.4,"['Thriller', 'Horror', 'Mystery']",Scott Derrickson,[],,[],[],110,803210
+8Niy,Goodnight Mommy,4.0,https://boxd.it/8Niy,2026-03-24,3.35,"['Thriller', 'Mystery', 'Horror']",Severin Fiala,[],,[],[],100,168028
+EzA8,Anyone But You,,https://boxd.it/EzA8,2026-03-24,2.82,"['Romance', 'Comedy']",Will Gluck,[],,[],[],103,2045914
+3SWS,The Internship,3.5,https://boxd.it/3SWS,2026-03-24,2.9,['Comedy'],Shawn Levy,[],,[],[],119,239062
+1HiS,The Proposal,,https://boxd.it/1HiS,2026-03-24,3.39,"['Romance', 'Comedy', 'Drama']",Anne Fletcher,[],,[],[],108,1027787
+7AOE,The Intern,4.0,https://boxd.it/7AOE,2026-03-24,3.37,['Comedy'],Nancy Meyers,[],,[],[],121,610286
+1Tnq,Mamma Mia!,,https://boxd.it/1Tnq,2026-03-24,3.87,"['Comedy', 'Romance']",Phyllida Lloyd,[],,[],[],108,2341959
+h0w,Kramer vs. Kramer,4.5,https://boxd.it/h0w,2026-03-25,4.09,['Drama'],Robert Benton,[],,[],[],105,204452
+HxlQ,Nonnas,3.0,https://boxd.it/HxlQ,2026-03-28,3.22,['Comedy'],Stephen Chbosky,[],,[],[],112,133033
+j3NM,Sharp Objects,4.0,https://boxd.it/j3NM,2026-03-30,4.32,"['Mystery', 'Drama', 'Crime']",Jean-Marc Vallée,[],,[],[],422,186830
+pEeQ,Project Hail Mary,4.5,https://boxd.it/pEeQ,2026-04-02,4.32,"['Comedy', 'Science Fiction', 'Adventure']",Phil Lord,[],,[],[],156,4272826
+OA2w,The Drama,3.5,https://boxd.it/OA2w,2026-04-06,3.65,"['Romance', 'Drama', 'Comedy']",Kristoffer Borgli,[],,[],[],105,2650536
+h8oI,Long Shot,4.0,https://boxd.it/h8oI,2026-04-06,3.66,"['Documentary', 'Crime']",Jacob LaMendola,[],,[],[],40,13472
+GZY,Gravity,2.5,https://boxd.it/GZY,2026-04-08,3.52,"['Thriller', 'Science Fiction', 'Drama']",Alfonso Cuarón,[],,[],[],91,916654
+p3O8,The Map of Tiny Perfect Things,5.0,https://boxd.it/p3O8,2026-04-08,3.31,"['Romance', 'Fantasy']",Ian Samuels,[],,[],[],99,136364
+jq8s,Deadpool & Wolverine,,https://boxd.it/jq8s,2026-04-08,3.46,"['Science Fiction', 'Action', 'Comedy']",Shawn Levy,[],,[],[],128,2979787
+210a,Juno,4.0,https://boxd.it/210a,2026-04-08,3.74,"['Comedy', 'Romance', 'Drama']",Jason Reitman,[],,[],[],96,1651380
+rac,Bridesmaids,,https://boxd.it/rac,2026-04-09,3.42,"['Comedy', 'Romance']",Paul Feig,[],,[],[],125,725355
+AO8q,Conclave,4.0,https://boxd.it/AO8q,2026-04-09,3.92,"['Drama', 'Thriller']",Edward Berger,[],,[],[],120,1994690
+mkbG,Chernobyl,4.5,https://boxd.it/mkbG,2026-04-10,4.62,['Drama'],Johan Renck,[],,[],[],327,781412
+xouu,No Hard Feelings,3.0,https://boxd.it/xouu,2026-04-10,2.95,"['Comedy', 'Romance']",Gene Stupnitsky,[],,[],[],103,1480726
+igNS,Booksmart,4.0,https://boxd.it/igNS,2026-04-10,3.69,['Comedy'],Olivia Wilde,[],,[],[],102,932178
+qW26,Bullet Train,4.0,https://boxd.it/qW26,2026-04-10,3.63,"['Comedy', 'Thriller', 'Action']",David Leitch,[],,[],[],126,2364574
+2Hzw,Turbo,,https://boxd.it/2Hzw,2026-04-10,2.77,"['Family', 'Animation']",David Soren,[],,[],[],96,322137
+f3i2,Now You See Me: Now You Don't,3.0,https://boxd.it/f3i2,2026-04-12,2.97,"['Thriller', 'Crime']",Ruben Fleischer,[],,[],[],112,618677
+zanS,The Substance,4.0,https://boxd.it/zanS,2026-04-19,3.73,"['Horror', 'Science Fiction']",Coralie Fargeat,[],,[],[],141,3781826
+1YAu,Scent of a Woman,2.5,https://boxd.it/1YAu,2026-04-19,3.97,['Drama'],Martin Brest,[],,[],[],156,516335
+1JTQ,Adventureland,3.5,https://boxd.it/1JTQ,2026-04-22,3.32,"['Romance', 'Comedy', 'Drama']",Greg Mottola,[],,[],[],107,215799
+2Pa,The Girl with the Dragon Tattoo,4.0,https://boxd.it/2Pa,2026-04-24,3.91,"['Crime', 'Mystery', 'Thriller']",David Fincher,[],,[],[],158,676664
+29FA,GoodFellas,4.0,https://boxd.it/29FA,2026-05-04,4.46,"['Crime', 'Drama']",Martin Scorsese,[],,[],[],145,2309444
+aJ5E,The Secret Life of Pets,2.5,https://boxd.it/aJ5E,2026-05-08,2.9,"['Family', 'Comedy', 'Adventure', 'Animation']",Chris Renaud,[],,[],[],86,503392
+2agc,Reservoir Dogs,,https://boxd.it/2agc,2026-05-21,4.14,"['Crime', 'Thriller']",Quentin Tarantino,[],,[],[],99,1696835
+DUHM,One Battle After Another,4.0,https://boxd.it/DUHM,2026-05-24,4.12,"['Thriller', 'Comedy', 'Action', 'Crime']",Paul Thomas Anderson,[],,[],[],162,2824661
+zi5M,Michael,,https://boxd.it/zi5M,2026-06-01,3.61,"['Music', 'Drama']",Antoine Fuqua,[],,[],[],128,1780219
+PNqo,Obsession,4.5,https://boxd.it/PNqo,2026-06-08,4.08,"['Thriller', 'Horror']",Curry Barker,[],,[],[],109,4566854
+vHza,The Holdovers,4.0,https://boxd.it/vHza,2026-06-10,4.26,"['Drama', 'Comedy']",Alexander Payne,[],,[],[],133,1622796
+MDJY,Disclosure Day,3.0,https://boxd.it/MDJY,2026-06-13,3.05,"['Thriller', 'Science Fiction']",Steven Spielberg,[],,[],[],146,1007352
+EY6W,Backrooms,,https://boxd.it/EY6W,2026-06-22,3.33,"['Mystery', 'Science Fiction', 'Horror']",Kane Parsons,[],,[],[],111,2850664
+29qA,Toy Story,,https://boxd.it/29qA,2026-06-22,4.11,"['Adventure', 'Comedy', 'Animation', 'Family']",John Lasseter,[],,[],[],81,2704878
+ESyU,Supergirl,3.5,https://boxd.it/ESyU,2026-07-04,2.98,"['Action', 'Science Fiction', 'Adventure']",Craig Gillespie,[],,[],[],108,726234
+mJVk,Voicemails for Isabelle,3.0,https://boxd.it/mJVk,2026-07-04,3.48,"['Comedy', 'Romance', 'Drama']",Leah McKendrick,[],,[],[],119,742104
+2aAG,Mystic River,3.5,https://boxd.it/2aAG,2026-07-18,3.88,"['Mystery', 'Drama', 'Thriller', 'Crime']",Clint Eastwood,[],,[],[],138,576980
+1XRk,The Break-Up,3.5,https://boxd.it/1XRk,2026-07-25,2.76,"['Comedy', 'Romance']",Peyton Reed,[],,[],[],106,186451
+4srQ,We're the Millers,4.0,https://boxd.it/4srQ,2026-07-25,3.34,"['Comedy', 'Crime']",Rawson Marshall Thurber,[],,[],[],110,806512
+iEBm,Murder Mystery,,https://boxd.it/iEBm,2026-07-25,2.83,"['Crime', 'Comedy', 'Mystery']",Kyle Newacheck,[],,[],[],98,566569
+1vps,Love Happens,,https://boxd.it/1vps,2026-07-25,2.54,"['Romance', 'Drama']",Brandon Camp,[],,[],[],109,19637
+29TW,Troy,3.5,https://boxd.it/29TW,2026-07-29,3.5,"['Action', 'History', 'War']",Wolfgang Petersen,[],,[],[],163,734503
+rUk0,American Murder: The Family Next Door,,https://boxd.it/rUk0,2026-08-04,3.32,"['Documentary', 'Crime']",Jenny Popplewell,[],,[],[],83,85550
+2aNq,The Godfather Part II,4.5,https://boxd.it/2aNq,2026-08-09,4.59,"['Drama', 'Crime']",Francis Ford Coppola,[],,[],[],202,1510268
+ACJE,Spider-Man: Brand New Day,3.5,https://boxd.it/ACJE,2026-08-25,4.06,"['Science Fiction', 'Action', 'Adventure']",Destin Daniel Cretton,[],,[],[],145,3595763
