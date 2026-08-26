@@ -29,8 +29,6 @@ const PALETTE = Object.values(COLORS);
 
 // ── DOM refs ──────────────────────────────────────────────────
 const $  = (sel) => document.querySelector(sel);
-const btnScrape   = $('#btn-scrape');
-const inputUser   = $('#username-input');
 const statusBadge = $('#status-badge');
 
 // ── Chart instances (so we can destroy before re-creating) ───
@@ -51,42 +49,12 @@ async function api(path, opts = {}) {
 
 // ── Set badge ─────────────────────────────────────────────────
 function setBadge(text, cls) {
+    if (!statusBadge) return;
     statusBadge.textContent = text;
     statusBadge.className = `badge badge-${cls}`;
 }
 
-// ── Scrape flow ───────────────────────────────────────────────
-btnScrape.addEventListener('click', async () => {
-    const username = inputUser.value.trim();
-    if (!username) return;
-
-    btnScrape.disabled = true;
-    setBadge('Scraping…', 'running');
-
-    try {
-        await api(`/api/scrape?username=${encodeURIComponent(username)}`, { method: 'POST' });
-        // Poll until done
-        await pollScrape();
-    } catch (e) {
-        setBadge('Error', 'error');
-        btnScrape.disabled = false;
-    }
-});
-
-async function pollScrape() {
-    const poll = async () => {
-        const status = await api('/api/status');
-        if (status.scrape.running) {
-            setBadge(`Scraping… ${status.scrape.movies_done} done`, 'running');
-            setTimeout(poll, 2000);
-        } else {
-            setBadge('Done ✓', 'done');
-            btnScrape.disabled = false;
-            await loadDashboard();
-        }
-    };
-    setTimeout(poll, 2000);
-}
+let dashboardLoaded = false;
 
 // ── Load all dashboard data ───────────────────────────────────
 async function loadDashboard() {
@@ -662,12 +630,5 @@ function renderScatterFromStats(stats) {
 }
 
 // ── Init ──────────────────────────────────────────────────────
-(async () => {
-    const status = await api('/api/status');
-    if (status.dataset.exists && status.dataset.rows > 0) {
-        setBadge(`${status.dataset.rows} movies`, 'done');
-        await loadDashboard();
-    } else {
-        setBadge('No data', 'idle');
-    }
-})();
+// Dashboard loads on-demand when user clicks "Dashboard'a Geç"
+// No auto-init needed; Wrapped flow handles everything.

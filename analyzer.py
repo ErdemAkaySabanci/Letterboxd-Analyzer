@@ -57,7 +57,7 @@ def bayesian_average(ratings, C, m):
 # 1. Advanced Statistical Depth
 # ---------------------------------------------------------------------------
 
-def bayesian_director_analysis(df: pd.DataFrame, m: int = 3) -> dict:
+def bayesian_director_analysis(df: pd.DataFrame, m: int = 1) -> dict:
     """Calculate Bayesian averages for directors."""
     sub = df.dropna(subset=["Director", "my_rating"]).copy()
     if sub.empty:
@@ -97,7 +97,7 @@ def bayesian_director_analysis(df: pd.DataFrame, m: int = 3) -> dict:
     result = sorted(result, key=lambda x: x["bayesian_avg"], reverse=True)
     return {"directors": result, "global_mean": round(global_mean, 2)}
 
-def bayesian_actor_analysis(df: pd.DataFrame, m: int = 4) -> dict:
+def bayesian_actor_analysis(df: pd.DataFrame, m: int = 1) -> dict:
     """Calculate Bayesian averages for actors."""
     sub = df.dropna(subset=["my_rating"]).copy()
     if "Actors" not in sub.columns or sub.empty:
@@ -370,6 +370,95 @@ def summary_stats(df: pd.DataFrame) -> dict:
         "unique_genres": int(genres_count),
         "unique_directors": int(directors_count),
     }
+
+def wrapped_summary(df: pd.DataFrame) -> dict:
+    """Pre-compute all data needed for the Wrapped storytelling cards."""
+    df = clean_dataset(df)
+
+    total_movies = len(df)
+    rated_movies = int(df["my_rating"].notna().sum())
+    total_minutes = pd.to_numeric(df.get("Runtime_minutes"), errors="coerce").sum()
+    total_hours = round(total_minutes / 60, 1) if pd.notna(total_minutes) else 0
+    total_days = round(total_hours / 24, 1)
+    avg_my = round(df["my_rating"].mean(), 2) if rated_movies > 0 else None
+
+    # --- Top director (Bayesian) ---
+    bay_dir = bayesian_director_analysis(df, m=1)
+    top_director = None
+    if bay_dir["directors"]:
+        d = bay_dir["directors"][0]
+        top_director = {
+            "name": d["director"],
+            "movie_count": d["movie_count"],
+            "bayesian_avg": d["bayesian_avg"],
+            "my_avg": d["my_avg"],
+            "people_avg": d.get("people_avg"),
+        }
+
+    # --- Top 5 genres ---
+    genre_data = genre_distribution(df)
+    top_genres = genre_data["genres"][:5] if genre_data["genres"] else []
+
+    # --- Controversial movies (separate loved vs hated) ---
+    cont_df = df.dropna(subset=["my_rating", "average_rating"]).copy()
+    cont_df["diff"] = cont_df["my_rating"] - cont_df["average_rating"]
+
+    loved_df = cont_df[cont_df["diff"] > 0].nlargest(3, "diff")
+    hated_df = cont_df[cont_df["diff"] < 0].nsmallest(3, "diff")
+
+    loved_by_you = [
+        {"title": r["title_of_movie"], "my_rating": float(r["my_rating"]),
+         "average_rating": float(r["average_rating"]), "diff": round(r["diff"], 2)}
+        for _, r in loved_df.iterrows()
+    ]
+    hated_by_you = [
+        {"title": r["title_of_movie"], "my_rating": float(r["my_rating"]),
+         "average_rating": float(r["average_rating"]), "diff": round(r["diff"], 2)}
+        for _, r in hated_df.iterrows()
+    ]
+
+    # --- Busiest month ---
+    binge = binge_habits(df)
+    busiest_month = None
+    if binge.get("counts"):
+        max_idx = binge["counts"].index(max(binge["counts"]))
+        busiest_month = {
+            "month": binge["months"][max_idx],
+            "count": binge["counts"][max_idx],
+        }
+
+    # --- Taste evolution ---
+    temporal = temporal_evolution(df)
+
+    # --- Watch date range ---
+    if "Watch_Date" in df.columns:
+        dates = df["Watch_Date"].dropna()
+        first_watch = str(dates.min().date()) if len(dates) > 0 else None
+        last_watch = str(dates.max().date()) if len(dates) > 0 else None
+    else:
+        first_watch = last_watch = None
+
+    # --- Unique directors count ---
+    unique_directors = df["Director"].nunique() if "Director" in df.columns else 0
+
+    return {
+        "total_movies": total_movies,
+        "rated_movies": rated_movies,
+        "total_hours": total_hours,
+        "total_days": total_days,
+        "avg_rating": avg_my,
+        "unique_directors": unique_directors,
+        "top_director": top_director,
+        "top_genres": top_genres,
+        "loved_by_you": loved_by_you,
+        "hated_by_you": hated_by_you,
+        "busiest_month": busiest_month,
+        "taste_evolution": temporal,
+        "binge_months": binge,
+        "first_watch": first_watch,
+        "last_watch": last_watch,
+    }
+
 
 def full_analysis(df: pd.DataFrame) -> dict:
     """Run every analysis and return a combined dict."""

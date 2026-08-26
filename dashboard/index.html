@@ -3,202 +3,352 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Letterboxd Profile Analysis – Dashboard</title>
-    <meta name="description" content="Interactive dashboard analysing your Letterboxd movie-watching habits, ratings, directors, and ML-driven recommendations." />
+    <title>Letterboxd Wrapped — Your Movie Story</title>
+    <meta name="description" content="Discover your movie-watching personality with stunning visuals. Spotify Wrapped, but for your Letterboxd profile." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/dashboard/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/dashboard/style.css?v=3" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
-    <!-- ───────── Header ───────── -->
-    <header id="app-header">
-        <div class="header-inner">
-            <div class="logo">
-                <span class="logo-icon">🎬</span>
-                <h1>Letterboxd<span class="accent">Analysis</span></h1>
+
+    <!-- ═══════════ 1. LANDING PAGE ═══════════ -->
+    <section id="landing" class="page active">
+        <div class="landing-bg-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+        <div class="landing-content">
+            <div class="landing-logo">
+                <span class="landing-icon">🎬</span>
+                <h1>Letterboxd<span class="accent">Wrapped</span></h1>
             </div>
-            <div class="header-controls">
-                <input type="text" id="username-input" placeholder="Letterboxd username" value="Erdemstein" />
-                <!-- Scraping disabled due to Cloudflare; using Export data -->
-                <button id="btn-scrape" class="btn btn-primary" style="display:none;">
-                    <span class="btn-icon">🔄</span> Scrape &amp; Analyse
-                </button>
-                <span id="status-badge" class="badge badge-idle">Idle</span>
+            <p class="landing-subtitle">Film zevkini keşfet. Spotify Wrapped, ama Letterboxd profilin için.</p>
+
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-icon">📁</div>
+                <p class="drop-zone-text">Letterboxd export ZIP dosyanı buraya sürükle</p>
+                <p class="drop-zone-or">— veya —</p>
+                <label class="btn-file-select">
+                    <span>Dosya Seç</span>
+                    <input type="file" id="file-input" accept=".zip" hidden />
+                </label>
+                <p id="file-name" class="file-name-display"></p>
+            </div>
+
+            <button id="btn-discover" class="btn-discover" disabled>
+                <span>Keşfet</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+
+            <p class="landing-hint">
+                Letterboxd → Settings → Import & Export → Export Your Data
+            </p>
+        </div>
+    </section>
+
+    <!-- ═══════════ 2. LOADING SCREEN ═══════════ -->
+    <section id="loading" class="page">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <span class="spinner-icon">🎬</span>
+            </div>
+            <p id="loading-message" class="loading-msg">Profil taranıyor...</p>
+            <div class="loading-progress">
+                <div id="loading-bar" class="loading-bar-fill"></div>
+            </div>
+            <p id="loading-step" class="loading-step">Adım 1/7</p>
+        </div>
+    </section>
+
+    <!-- ═══════════ 3. WRAPPED STORY ═══════════ -->
+    <section id="wrapped" class="page">
+        <!-- Card 1: Opening — Total hours -->
+        <div class="wrapped-card" id="card-opening">
+            <div class="wrapped-card-inner">
+                <p class="wrapped-eyebrow">Toplam film deneyimin</p>
+                <h2 class="wrapped-big-number" id="w-total-hours">—</h2>
+                <p class="wrapped-big-label">saatini filmlere ayırdın</p>
+                <div class="wrapped-sub-stats">
+                    <div class="wrapped-sub">
+                        <span class="wrapped-sub-value" id="w-total-movies">—</span>
+                        <span class="wrapped-sub-label">Film</span>
+                    </div>
+                    <div class="wrapped-sub">
+                        <span class="wrapped-sub-value" id="w-total-days">—</span>
+                        <span class="wrapped-sub-label">Tam Gün</span>
+                    </div>
+                    <div class="wrapped-sub">
+                        <span class="wrapped-sub-value" id="w-avg-rating">—</span>
+                        <span class="wrapped-sub-label">Ort. Puan</span>
+                    </div>
+                </div>
             </div>
         </div>
-    </header>
 
-    <!-- ───────── Main ───────── -->
-    <main id="app-main">
-        <!-- Summary cards row -->
-        <section id="summary-row" class="card-row">
-            <div class="stat-card glass" id="card-total">
-                <span class="stat-label">Movies Rated</span>
-                <span class="stat-value" id="stat-total">–</span>
+        <!-- Card 2: Favorite Director -->
+        <div class="wrapped-card" id="card-director">
+            <div class="wrapped-card-inner">
+                <p class="wrapped-eyebrow">En sevdiğin yönetmen</p>
+                <h2 class="wrapped-director-name" id="w-dir-name">—</h2>
+                <div class="wrapped-director-compare">
+                    <div class="compare-block you">
+                        <span class="compare-label">Senin Puanın</span>
+                        <span class="compare-value" id="w-dir-my">—</span>
+                    </div>
+                    <div class="compare-vs">vs</div>
+                    <div class="compare-block users">
+                        <span class="compare-label">Toplumun Puanı</span>
+                        <span class="compare-value" id="w-dir-people">—</span>
+                    </div>
+                </div>
+                <p class="wrapped-detail" id="w-dir-detail"></p>
             </div>
-            <div class="stat-card glass" id="card-avg-my">
-                <span class="stat-label">My Avg Rating</span>
-                <span class="stat-value" id="stat-avg-my">–</span>
-            </div>
-            <div class="stat-card glass" id="card-avg-user">
-                <span class="stat-label">Users Avg Rating</span>
-                <span class="stat-value" id="stat-avg-user">–</span>
-            </div>
-            <div class="stat-card glass" id="card-genres">
-                <span class="stat-label">Unique Genres</span>
-                <span class="stat-value" id="stat-genres">–</span>
-            </div>
-            <div class="stat-card glass" id="card-directors">
-                <span class="stat-label">Unique Directors</span>
-                <span class="stat-value" id="stat-directors">–</span>
-            </div>
-        </section>
+        </div>
 
-        <!-- Charts grid -->
-        <section class="chart-grid">
-            <!-- Rating distribution -->
-            <div class="chart-card glass" id="chart-card-rating-dist">
-                <h2>Rating Distribution</h2>
-                <canvas id="chart-rating-dist"></canvas>
+        <!-- Card 3: Taste Profile — Genres -->
+        <div class="wrapped-card" id="card-genres">
+            <div class="wrapped-card-inner">
+                <p class="wrapped-eyebrow">Zevk profilin</p>
+                <h2 class="wrapped-section-title">En Çok İzlediğin Türler</h2>
+                <div id="w-genre-bars" class="wrapped-genre-bars"></div>
             </div>
+        </div>
 
-            <!-- My Rating vs Avg Rating scatter -->
-            <div class="chart-card glass" id="chart-card-scatter">
-                <h2>My Rating vs. User Average</h2>
-                <canvas id="chart-scatter"></canvas>
-            </div>
-
-            <!-- Runtime bar chart -->
-            <div class="chart-card glass" id="chart-card-runtime">
-                <h2>Movies by Runtime</h2>
-                <canvas id="chart-runtime-counts"></canvas>
-            </div>
-
-            <!-- Avg rating per runtime -->
-            <div class="chart-card glass" id="chart-card-runtime-avg">
-                <h2>Avg Rating by Runtime</h2>
-                <canvas id="chart-runtime-avg"></canvas>
-            </div>
-
-            <!-- Correlation heatmap -->
-            <div class="chart-card glass wide" id="chart-card-corr">
-                <h2>Correlation Matrix</h2>
-                <canvas id="chart-corr"></canvas>
-            </div>
-
-            <!-- Genre distribution -->
-            <div class="chart-card glass wide" id="chart-card-genres">
-                <h2>Genre Breakdown</h2>
-                <canvas id="chart-genres"></canvas>
-            </div>
-
-            <!-- Director dot chart -->
-            <div class="chart-card glass wide" id="chart-card-directors">
-                <h2>Director Ratings: You vs. Users</h2>
-                <canvas id="chart-directors"></canvas>
-            </div>
-
-            <!-- Temporal trend -->
-            <div class="chart-card glass wide" id="chart-card-temporal">
-                <h2>Taste Evolution (Avg Rating by Year)</h2>
-                <canvas id="chart-temporal"></canvas>
-            </div>
-
-            <!-- Binge Habits -->
-            <div class="chart-card glass" id="chart-card-binge">
-                <h2>Binge Habits (by Month)</h2>
-                <canvas id="chart-binge"></canvas>
-            </div>
-
-            <!-- Backlog vs New -->
-            <div class="chart-card glass" id="chart-card-backlog">
-                <h2>Backlog vs New Releases</h2>
-                <canvas id="chart-backlog"></canvas>
-            </div>
-            
-            <!-- Diversity: Countries & Languages -->
-            <div class="chart-card glass wide" id="chart-card-diversity">
-                <h2>Diversity: Top Countries & Languages</h2>
-                <div style="display:flex; justify-content:space-between;">
-                    <div style="width:48%;"><canvas id="chart-countries"></canvas></div>
-                    <div style="width:48%;"><canvas id="chart-languages"></canvas></div>
+        <!-- Card 4: Controversial Movies -->
+        <div class="wrapped-card" id="card-controversial">
+            <div class="wrapped-card-inner">
+                <p class="wrapped-eyebrow">Aykırı zevklerin</p>
+                <div class="controversial-split">
+                    <div class="controversial-col">
+                        <h3 class="controversial-heading loved">❤️ Sen Sevdin, Toplum Sevmedi</h3>
+                        <div id="w-loved" class="controversial-list"></div>
+                    </div>
+                    <div class="controversial-col">
+                        <h3 class="controversial-heading hated">💔 Toplum Sevdi, Sen Sevmedin</h3>
+                        <div id="w-hated" class="controversial-list"></div>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Bayesian Directors -->
-            <div class="chart-card glass wide" id="chart-card-bayesian-dir">
-                <h2>Top Directors (Bayesian Average)</h2>
-                <canvas id="chart-bayesian-dir"></canvas>
-            </div>
-            
-            <!-- Bayesian Actors -->
-            <div class="chart-card glass wide" id="chart-card-bayesian-act">
-                <h2>Top Actors (Bayesian Average)</h2>
-                <canvas id="chart-bayesian-act"></canvas>
-            </div>
-            
-            <!-- Controversial Movies -->
-            <div class="chart-card glass wide" id="chart-card-controversial">
-                <h2>🔥 Most Controversial Movies (You vs Users)</h2>
-                <canvas id="chart-controversial"></canvas>
-            </div>
-            
-            <!-- Actor-Director Collaborations -->
-            <div class="chart-card glass wide" id="chart-card-collabs">
-                <h2>Top Actor-Director Collaborations</h2>
-                <canvas id="chart-collabs"></canvas>
-            </div>
-        </section>
+        </div>
 
-        <!-- ML & Recommendations -->
-        <section class="ml-section">
-            <div class="chart-card glass" id="card-ml-models">
-                <h2>🤖 ML Model Comparison</h2>
-                <div id="ml-models-content" class="ml-content">
-                    <p class="placeholder-text">Click <strong>Scrape &amp; Analyse</strong> to train models.</p>
+        <!-- Card 5: Time Trend -->
+        <div class="wrapped-card" id="card-trend">
+            <div class="wrapped-card-inner">
+                <p class="wrapped-eyebrow">Zevkin nasıl değişti?</p>
+                <h2 class="wrapped-section-title">Yıllara Göre Ortalama Puanın</h2>
+                <div class="wrapped-chart-container">
+                    <canvas id="w-chart-trend"></canvas>
                 </div>
             </div>
+        </div>
 
-            <div class="chart-card glass" id="card-feature-importance">
-                <h2>Feature Importance</h2>
-                <canvas id="chart-feature-importance"></canvas>
-            </div>
-
-            <div class="chart-card glass wide" id="card-recommendations">
-                <h2>🎯 Recommended Directors to Explore</h2>
-                <div id="recommendations-content" class="ml-content">
-                    <p class="placeholder-text">Recommendations appear after analysis.</p>
+        <!-- Card 6: Binge Month -->
+        <div class="wrapped-card" id="card-binge">
+            <div class="wrapped-card-inner">
+                <p class="wrapped-eyebrow">İzleme alışkanlıkların</p>
+                <h2 class="wrapped-big-number" id="w-binge-month">—</h2>
+                <p class="wrapped-big-label">en çok film izlediğin ay</p>
+                <p class="wrapped-detail" id="w-binge-count"></p>
+                <div class="wrapped-chart-container small">
+                    <canvas id="w-chart-binge"></canvas>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- Stats detail -->
-        <section class="stats-detail">
-            <div class="chart-card glass" id="card-chi-square">
-                <h2>Chi-Square Test</h2>
-                <p class="sub">Runtime × Rating Independence</p>
-                <div id="chi-square-content" class="stat-detail-content"></div>
+        <!-- Card 7: Summary / Shareable -->
+        <div class="wrapped-card" id="card-summary">
+            <div class="wrapped-card-inner" id="shareable-card">
+                <div class="summary-card-content">
+                    <div class="summary-logo">🎬 Letterboxd<span class="accent">Wrapped</span></div>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="summary-val" id="s-movies">—</span>
+                            <span class="summary-lbl">Film</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-val" id="s-hours">—</span>
+                            <span class="summary-lbl">Saat</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-val" id="s-directors">—</span>
+                            <span class="summary-lbl">Yönetmen</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-val" id="s-avg">—</span>
+                            <span class="summary-lbl">Ort. Puan</span>
+                        </div>
+                    </div>
+                    <div class="summary-fav">
+                        <span class="summary-fav-label">Favori Yönetmen</span>
+                        <span class="summary-fav-name" id="s-fav-dir">—</span>
+                    </div>
+                    <div class="summary-watermark">letterboxd-wrapped</div>
+                </div>
             </div>
-            <div class="chart-card glass" id="card-pearson">
-                <h2>Pearson Correlation</h2>
-                <p class="sub">My Rating ↔ Average Rating</p>
-                <div id="pearson-content" class="stat-detail-content"></div>
+            <div class="wrapped-actions">
+                <button id="btn-download" class="btn-action">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    PNG İndir
+                </button>
+                <button id="btn-to-dashboard" class="btn-action btn-primary-action">
+                    Dashboard'a Geç →
+                </button>
             </div>
-            <div class="chart-card glass" id="card-dir-corr">
-                <h2>Director Correlation</h2>
-                <p class="sub">Your Avg ↔ Users Avg per Director</p>
-                <div id="dir-corr-content" class="stat-detail-content"></div>
-            </div>
-        </section>
-    </main>
+        </div>
+    </section>
 
-    <!-- ───────── Footer ───────── -->
-    <footer id="app-footer">
-        <p>Letterboxd Profile Analysis &bull; CS210 Project &bull; Erdem Akay</p>
-    </footer>
+    <!-- ═══════════ 4. DASHBOARD (existing) ═══════════ -->
+    <section id="dashboard" class="page">
+        <!-- Header -->
+        <header id="app-header">
+            <div class="header-inner">
+                <div class="logo">
+                    <span class="logo-icon">🎬</span>
+                    <h1>Letterboxd<span class="accent">Analysis</span></h1>
+                </div>
+                <div class="header-controls">
+                    <button id="btn-back-wrapped" class="btn btn-small">← Wrapped'a Dön</button>
+                    <span id="status-badge" class="badge badge-done" id="dash-movie-count"></span>
+                </div>
+            </div>
+        </header>
 
-    <script src="/dashboard/app.js"></script>
+        <main id="app-main">
+            <!-- Summary cards row -->
+            <section id="summary-row" class="card-row">
+                <div class="stat-card glass" id="card-total">
+                    <span class="stat-label">Movies Rated</span>
+                    <span class="stat-value" id="stat-total">–</span>
+                </div>
+                <div class="stat-card glass" id="card-avg-my">
+                    <span class="stat-label">My Avg Rating</span>
+                    <span class="stat-value" id="stat-avg-my">–</span>
+                </div>
+                <div class="stat-card glass" id="card-avg-user">
+                    <span class="stat-label">Users Avg Rating</span>
+                    <span class="stat-value" id="stat-avg-user">–</span>
+                </div>
+                <div class="stat-card glass" id="card-genres-dash">
+                    <span class="stat-label">Unique Genres</span>
+                    <span class="stat-value" id="stat-genres">–</span>
+                </div>
+                <div class="stat-card glass" id="card-directors-dash">
+                    <span class="stat-label">Unique Directors</span>
+                    <span class="stat-value" id="stat-directors">–</span>
+                </div>
+            </section>
+
+            <!-- Charts grid -->
+            <section class="chart-grid">
+                <div class="chart-card glass" id="chart-card-rating-dist">
+                    <h2>Rating Distribution</h2>
+                    <canvas id="chart-rating-dist"></canvas>
+                </div>
+                <div class="chart-card glass" id="chart-card-scatter">
+                    <h2>My Rating vs. User Average</h2>
+                    <canvas id="chart-scatter"></canvas>
+                </div>
+                <div class="chart-card glass" id="chart-card-runtime">
+                    <h2>Movies by Runtime</h2>
+                    <canvas id="chart-runtime-counts"></canvas>
+                </div>
+                <div class="chart-card glass" id="chart-card-runtime-avg">
+                    <h2>Avg Rating by Runtime</h2>
+                    <canvas id="chart-runtime-avg"></canvas>
+                </div>
+                <div class="chart-card glass wide" id="chart-card-corr">
+                    <h2>Correlation Matrix</h2>
+                    <canvas id="chart-corr"></canvas>
+                </div>
+                <div class="chart-card glass wide" id="chart-card-genres-chart">
+                    <h2>Genre Breakdown</h2>
+                    <canvas id="chart-genres"></canvas>
+                </div>
+                <div class="chart-card glass wide" id="chart-card-directors">
+                    <h2>Director Ratings: You vs. Users</h2>
+                    <canvas id="chart-directors"></canvas>
+                </div>
+                <div class="chart-card glass wide" id="chart-card-temporal">
+                    <h2>Taste Evolution (Avg Rating by Year)</h2>
+                    <canvas id="chart-temporal"></canvas>
+                </div>
+                <div class="chart-card glass" id="chart-card-binge">
+                    <h2>Binge Habits (by Month)</h2>
+                    <canvas id="chart-binge"></canvas>
+                </div>
+                <div class="chart-card glass" id="chart-card-backlog">
+                    <h2>Backlog vs New Releases</h2>
+                    <canvas id="chart-backlog"></canvas>
+                </div>
+                <div class="chart-card glass wide" id="chart-card-bayesian-dir">
+                    <h2>Top Directors (Bayesian Average)</h2>
+                    <canvas id="chart-bayesian-dir"></canvas>
+                </div>
+                <div class="chart-card glass wide" id="chart-card-bayesian-act">
+                    <h2>Top Actors (Bayesian Average)</h2>
+                    <canvas id="chart-bayesian-act"></canvas>
+                </div>
+                <div class="chart-card glass wide" id="chart-card-controversial">
+                    <h2>🔥 Most Controversial Movies (You vs Users)</h2>
+                    <canvas id="chart-controversial"></canvas>
+                </div>
+                <div class="chart-card glass wide" id="chart-card-collabs">
+                    <h2>Top Actor-Director Collaborations</h2>
+                    <canvas id="chart-collabs"></canvas>
+                </div>
+            </section>
+
+            <!-- ML & Recommendations -->
+            <section class="ml-section">
+                <div class="chart-card glass" id="card-ml-models">
+                    <h2>🤖 ML Model Comparison</h2>
+                    <div id="ml-models-content" class="ml-content">
+                        <p class="placeholder-text">Analiz yükleniyor...</p>
+                    </div>
+                </div>
+                <div class="chart-card glass" id="card-feature-importance">
+                    <h2>Feature Importance</h2>
+                    <canvas id="chart-feature-importance"></canvas>
+                </div>
+                <div class="chart-card glass wide" id="card-recommendations">
+                    <h2>🎯 Recommended Directors to Explore</h2>
+                    <div id="recommendations-content" class="ml-content">
+                        <p class="placeholder-text">Öneriler yükleniyor...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats detail -->
+            <section class="stats-detail">
+                <div class="chart-card glass" id="card-chi-square">
+                    <h2>Chi-Square Test</h2>
+                    <p class="sub">Runtime × Rating Independence</p>
+                    <div id="chi-square-content" class="stat-detail-content"></div>
+                </div>
+                <div class="chart-card glass" id="card-pearson">
+                    <h2>Pearson Correlation</h2>
+                    <p class="sub">My Rating ↔ Average Rating</p>
+                    <div id="pearson-content" class="stat-detail-content"></div>
+                </div>
+                <div class="chart-card glass" id="card-dir-corr">
+                    <h2>Director Correlation</h2>
+                    <p class="sub">Your Avg ↔ Users Avg per Director</p>
+                    <div id="dir-corr-content" class="stat-detail-content"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer id="app-footer">
+            <p>Letterboxd Wrapped &bull; Built with ❤️ &bull; Erdem Akay</p>
+        </footer>
+    </section>
+
+    <script src="/dashboard/wrapped.js?v=2"></script>
+    <script src="/dashboard/app.js?v=2"></script>
 </body>
 </html>
