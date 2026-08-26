@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnBack = document.getElementById('btn-back-wrapped');
     if (btnBack) {
         btnBack.addEventListener('click', () => {
+            localStorage.setItem('lbx_page', 'wrapped');
             showPage('wrapped');
             setTimeout(initWrappedObserver, 100);
         });
@@ -102,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDashboard = document.getElementById('btn-to-dashboard');
     if (btnDashboard) {
         btnDashboard.addEventListener('click', () => {
+            localStorage.setItem('lbx_page', 'dashboard');
             showPage('dashboard');
             if (typeof loadDashboard === 'function') {
                 loadDashboard();
@@ -120,6 +122,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     showPage('wrapped');
                 }, 1000);
             });
+    }
+
+    // Restore state if refreshed
+    const savedPage = localStorage.getItem('lbx_page');
+    const savedWrapped = localStorage.getItem('lbx_wrapped');
+    
+    if (savedPage === 'dashboard' && savedWrapped) {
+        renderWrappedCards(JSON.parse(savedWrapped));
+        showPage('dashboard');
+        if (typeof loadDashboard === 'function') {
+            loadDashboard();
+        }
+    } else if (savedPage === 'wrapped' && savedWrapped) {
+        renderWrappedCards(JSON.parse(savedWrapped));
+        showPage('wrapped');
     }
 });
 
@@ -147,6 +164,9 @@ function startWrappedFlow(file) {
                 barEl.style.background = '#ef4444';
                 return;
             }
+
+            // Save wrapped data to localStorage
+            localStorage.setItem('lbx_wrapped', JSON.stringify(data.wrapped));
 
             // Simulate progress steps for visual effect
             msgEl.textContent = '⭐ Analiz tamamlandı!';
