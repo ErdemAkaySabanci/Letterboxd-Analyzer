@@ -222,6 +222,44 @@ async def start_scrape(username: str = "Erdemstein", background_tasks: Backgroun
     return {"message": "Use /api/upload-zip instead", "username": username}
 
 
+import requests
+
+async def fetch_poster(url: str) -> str:
+    """Fetch the og:image poster for a Letterboxd movie."""
+    try:
+        def fetch():
+            return requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0"})
+            
+        response = await asyncio.to_thread(fetch)
+        if response.status_code == 200:
+            html = response.text
+            import re
+            match = re.search(r'property="og:image" content="(.*?)"', html)
+            if match:
+                return match.group(1)
+    except Exception:
+        pass
+    return ""
+
+async def enrich_wrapped_with_posters(w: dict) -> dict:
+    """Fetch posters concurrently for loved and hated movies."""
+    import re
+    tasks = []
+    movies = w.get("loved_by_you", []) + w.get("hated_by_you", [])
+    for m in movies:
+        # Generate the URL from the title if link is not present
+        slug = re.sub(r'[^a-z0-9]+', '-', m["title"].lower()).strip('-')
+        url = f"https://letterboxd.com/film/{slug}/"
+        tasks.append(fetch_poster(url))
+        
+    posters = await asyncio.gather(*tasks)
+    
+    # Assign posters back
+    for i, m in enumerate(movies):
+        m["poster"] = posters[i]
+        
+    return w
+
 @app.post("/api/upload-zip")
 async def upload_zip(file: UploadFile = File(...)):
     """Upload a Letterboxd export ZIP and parse it into a dataset."""
@@ -229,14 +267,16 @@ async def upload_zip(file: UploadFile = File(...)):
         zip_bytes = await file.read()
         df = _parse_letterboxd_zip(zip_bytes)
         df.to_csv(CSV_PATH, index=False, encoding="utf-8")
-
-        # Immediately compute wrapped summary
-        result = wrapped_summary(df)
+        
+        # Calculate summary and enrich with posters
+        w = wrapped_summary(df)
+        w = await enrich_wrapped_with_posters(w)
+        
         return clean_nans({
             "status": "success",
             "total_movies": len(df),
             "rated_movies": int(df["my_rating"].notna().sum()),
-            "wrapped": result,
+            "wrapped": w,
         })
     except Exception as e:
         traceback.print_exc()

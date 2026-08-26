@@ -713,3 +713,37 @@ body {
 .stat-card:nth-child(3) { animation-delay: 0.15s; }
 .stat-card:nth-child(4) { animation-delay: 0.20s; }
 .stat-card:nth-child(5) { animation-delay: 0.25s; }
+
+/* Controversial Movies and Posters */
+.controversial-movie {
+  background: rgba(255,255,255,0.03);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.8rem;
+  border-left: 3px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.controversial-poster {
+  width: 50px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+.controversial-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.controversial-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.controversial-diff {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.controversial-diff .you { color: var(--accent-1); font-weight: bold; }
+.controversial-diff .them { color: var(--accent-2); font-weight: bold; }

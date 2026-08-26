@@ -215,24 +215,32 @@ function renderWrappedCards(w) {
     hatedContainer.innerHTML = '';
 
     (w.loved_by_you || []).forEach(m => {
+        const posterHtml = m.poster ? `<img src="${m.poster}" class="controversial-poster" alt="poster" />` : '';
         lovedContainer.innerHTML += `
             <div class="controversial-movie">
-                <div class="controversial-title">${m.title}</div>
-                <div class="controversial-diff">
-                    Sen: <span class="you">${m.my_rating}★</span> · Toplum: <span class="them">${m.average_rating}★</span>
-                    · Fark: +${m.diff}
+                ${posterHtml}
+                <div class="controversial-info">
+                    <div class="controversial-title">${m.title}</div>
+                    <div class="controversial-diff">
+                        Sen: <span class="you">${m.my_rating}★</span> · Toplum: <span class="them">${m.average_rating}★</span>
+                        · Fark: +${m.diff}
+                    </div>
                 </div>
             </div>
         `;
     });
 
     (w.hated_by_you || []).forEach(m => {
+        const posterHtml = m.poster ? `<img src="${m.poster}" class="controversial-poster" alt="poster" />` : '';
         hatedContainer.innerHTML += `
             <div class="controversial-movie">
-                <div class="controversial-title">${m.title}</div>
-                <div class="controversial-diff">
-                    Sen: <span class="you">${m.my_rating}★</span> · Toplum: <span class="them">${m.average_rating}★</span>
-                    · Fark: ${m.diff}
+                ${posterHtml}
+                <div class="controversial-info">
+                    <div class="controversial-title">${m.title}</div>
+                    <div class="controversial-diff">
+                        Sen: <span class="you">${m.my_rating}★</span> · Toplum: <span class="them">${m.average_rating}★</span>
+                        · Fark: ${m.diff}
+                    </div>
                 </div>
             </div>
         `;
