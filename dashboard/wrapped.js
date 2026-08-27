@@ -20,7 +20,12 @@ function showPage(id) {
             setTimeout(initWrappedObserver, 100);
         }
         if (id === 'dashboard') {
-            window.scrollTo(0, 0);
+            // Use requestAnimationFrame so the DOM has rendered before we scroll
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+            });
         }
     }
 }
@@ -203,8 +208,12 @@ function renderWrappedCards(w) {
         document.getElementById('w-dir-name').textContent = w.top_director.name;
         document.getElementById('w-dir-my').textContent = w.top_director.my_avg + '★';
         document.getElementById('w-dir-people').textContent = w.top_director.people_avg ? w.top_director.people_avg + '★' : '—';
+        const movieWord = w.top_director.movie_count === 1 ? 'filmini izledin' : 'filmini izledin';
+        const estimateNote = w.top_director.is_estimate
+            ? ' · (Yalnızca 1 film — daha fazla izledikçe güncellenir)'
+            : '';
         document.getElementById('w-dir-detail').textContent =
-            `${w.top_director.movie_count} filmini izledin · Bayesian Ort: ${w.top_director.bayesian_avg}★`;
+            `${w.top_director.movie_count} ${movieWord} · Bayesian Ort: ${w.top_director.bayesian_avg}★${estimateNote}`;
     }
 
     // Card 3: Genres

@@ -382,17 +382,22 @@ def wrapped_summary(df: pd.DataFrame) -> dict:
     total_days = round(total_hours / 24, 1)
     avg_my = round(df["my_rating"].mean(), 2) if rated_movies > 0 else None
 
-    # --- Top director (Bayesian) ---
-    bay_dir = bayesian_director_analysis(df, m=1)
+    # --- Top director (Bayesian, min 2 films) ---
+    # Require at least 2 films to call someone a "favorite director".
+    # Fall back to min=1 only if the user has no directors with 2+ films.
+    bay_dir_2 = bayesian_director_analysis(df, m=2)
+    bay_dir_1 = bayesian_director_analysis(df, m=1)
     top_director = None
-    if bay_dir["directors"]:
-        d = bay_dir["directors"][0]
+    dirs_to_use = bay_dir_2["directors"] if bay_dir_2["directors"] else bay_dir_1["directors"]
+    if dirs_to_use:
+        d = dirs_to_use[0]
         top_director = {
             "name": d["director"],
             "movie_count": d["movie_count"],
             "bayesian_avg": d["bayesian_avg"],
             "my_avg": d["my_avg"],
             "people_avg": d.get("people_avg"),
+            "is_estimate": len(bay_dir_2["directors"]) == 0,  # flag if only 1-film dirs available
         }
 
     # --- Top 5 genres ---
