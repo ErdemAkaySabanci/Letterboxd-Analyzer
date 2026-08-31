@@ -285,6 +285,92 @@ body::after {
     animation: shake 0.4s;
 }
 .opt.faded { opacity: 0.34; }
+
+/* ── Per-kind card layouts ────────────────────────────────────
+   `kind` comes from the server (quiz.py). It describes what the
+   answer *is*, so a run of questions varies in shape instead of
+   repeating one template thirteen times. */
+
+/* number — counts and percentages, set as figures */
+.quiz-body[data-kind="number"] .options,
+.quiz-body[data-kind="rating"] .options { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 780px) {
+    .quiz-body[data-kind="number"] .options,
+    .quiz-body[data-kind="rating"] .options { grid-template-columns: repeat(2, 1fr); }
+}
+.quiz-body[data-kind="number"] .opt {
+    text-align: center; padding: 1.55rem 0.6rem;
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(1.5rem, 3.8vw, 2.3rem);
+    letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+}
+
+/* rating — a star value, drawn as stars */
+.quiz-body[data-kind="rating"] .opt {
+    display: grid; gap: 0.3rem; justify-items: center;
+    text-align: center; padding: 1.35rem 0.6rem;
+}
+.opt-stars {
+    color: var(--accent); font-size: 1.1rem;
+    letter-spacing: 0.08em; line-height: 1;
+}
+.opt-num {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(1.3rem, 3.2vw, 1.9rem);
+    letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+}
+
+/* person — a name, billed like a marquee. No uppercase: the page is
+   lang="tr", so CSS would turn "Fiennes" into "FİENNES". */
+.quiz-body[data-kind="person"] .opt {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(1.05rem, 2.4vw, 1.5rem); line-height: 1.08;
+    letter-spacing: -0.02em; padding: 1.25rem 1.25rem;
+}
+
+/* title — a film, set in italics, one per line */
+.quiz-body[data-kind="title"] .options { grid-template-columns: 1fr; }
+.quiz-body[data-kind="title"] .opt {
+    font-style: italic; font-size: 1.12rem; padding: 0.95rem 1.25rem;
+}
+
+/* poster — the film itself is the subject, so it sits beside the question
+   instead of stacked above it, and the right column carries the text. */
+.q-split { display: grid; gap: 1.6rem; }
+@media (min-width: 781px) {
+    .q-split {
+        grid-template-columns: minmax(170px, 250px) 1fr;
+        gap: 2.8rem; align-items: center;
+    }
+    .q-split .q-poster { width: 100%; margin-bottom: 0; }
+    .q-split .q-prompt { max-width: none; }
+}
+.quiz-body[data-kind="poster"] .q-poster {
+    width: clamp(150px, 26vw, 205px);
+    transform: rotate(-2.5deg);
+    margin-bottom: 1.7rem;
+}
+.quiz-body[data-kind="poster"] .options { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 780px) {
+    .quiz-body[data-kind="poster"] .options { grid-template-columns: repeat(2, 1fr); }
+}
+.quiz-body[data-kind="poster"] .opt {
+    display: grid; gap: 0.3rem; justify-items: center;
+    text-align: center; padding: 1.2rem 0.6rem;
+}
+
+/* cast — three names carry the question, so they get the display type */
+.q-cast { list-style: none; margin: 0 0 1.8rem; display: grid; gap: 0.2rem; }
+.q-cast li {
+    position: relative; padding-left: 1.15rem;
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(1.3rem, 3.6vw, 2.1rem); line-height: 1.16; letter-spacing: -0.025em;
+}
+.q-cast li::before {
+    content: ''; position: absolute; left: 0; top: 0.55em;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+}
+.quiz-body[data-kind="cast"] .opt { font-style: italic; }
 @keyframes shake {
     0%,100% { transform: translateX(0); }
     25% { transform: translateX(-6px); } 75% { transform: translateX(6px); }

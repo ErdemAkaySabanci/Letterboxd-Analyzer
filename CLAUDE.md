@@ -72,3 +72,5 @@ Design language is dark, poster-forward, with a per-section accent (`data-accent
 - In `chart()`, the merged `plugins`/`scales` must come *after* `...config.options`, or a caller that sets either one drops the defaults.
 - Ratings cluster in a narrow band (~2.8–4.0); a 0–5 bar makes every genre look identical. Scale to the observed range.
 - Watch dates are *log* dates. A bulk import on signup day skews any "busiest month/day" stat, and `diary.csv` (the only source of real watch dates) is usually near-empty.
+- The page is `lang="tr"`, so CSS `text-transform: uppercase` turns "Fiennes" into
+  "FİENNES". Never uppercase a person's name.

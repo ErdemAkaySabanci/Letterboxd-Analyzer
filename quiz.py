@@ -43,9 +43,22 @@ def pct(n) -> str:
     return f"%{n}'{suffix}"
 
 
-def _question(qid, eyebrow, prompt, options, answer, reveal, accent, poster=None):
+def _question(qid, eyebrow, prompt, options, answer, reveal, accent, kind="plain",
+              poster=None):
+    """
+    `kind` picks the card layout on the client. It describes what the *answer*
+    is, so a run of questions varies in shape instead of repeating one template:
+
+        number  a count or percentage — set as large figures
+        rating  a star value — drawn as stars
+        person  a director or actor name
+        title   a film title
+        poster  the film's poster is the subject, shown large
+        cast    a list of actors is the prompt material
+    """
     return {
         "id": qid,
+        "kind": kind,
         "eyebrow": eyebrow,
         "prompt": prompt,
         "options": options,
@@ -107,7 +120,7 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             f"{len(rated)} filmden {int((rated >= 3.5).sum())} tanesi geçer not aldı. "
             + ("Sen eleştirmen değilsin, hayransın." if generous >= 65 else
                "Kolay beğenmiyorsun." if generous <= 45 else "Dengeli bir izleyicisin."),
-            "amber",
+            "amber", kind="number",
         ))
 
         # --- Signature rating: the score you hand out on autopilot ---
@@ -121,7 +134,7 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             "En sık verdiğin puan hangisi?",
             options, answer,
             f"{int((rated == mode).sum())} film — tüm puanlarının {pct(share)} tek bir değerde toplanmış.",
-            "violet",
+            "violet", kind="rating",
         ))
 
         # --- Five stars: scarcity as self-portrait ---
@@ -133,7 +146,7 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             options, answer,
             f"Puanladıklarının {pct(fives / len(rated) * 100)}. "
             f"Beş yıldızı hak eden {fives} film.",
-            "crimson",
+            "crimson", kind="number",
         ))
 
     # --- Decade: which era raised you ---
@@ -149,7 +162,7 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             options, answer,
             f"{int(decades.iloc[0])} film. "
             + " · ".join(f"{int(d)}'ler {int(c)}" for d, c in decades.head(4).items()),
-            "sky",
+            "sky", kind="number",
         ))
 
     # --- Time capsule: all four are films they actually watched ---
@@ -164,7 +177,7 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             options, answer,
             f"{oldest.iloc[0]['title_of_movie']} — {int(oldest.iloc[0]['Release_Year'])}. "
             "Dördü de senin izlediğin filmler.",
-            "amber",
+            "amber", kind="title",
         ))
 
     # --- Unrated: the ones you never had an opinion about ---
@@ -176,7 +189,7 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             f"{len(df)} filmden kaçını puanlamadan bıraktın?",
             options, answer,
             f"Her {round(len(df) / unrated)} filmden biri sessiz kaldı.",
-            "mint",
+            "mint", kind="number",
         ))
 
     return questions
@@ -204,7 +217,7 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             options, answer,
             f"{most} — {int(counts.iloc[0])} film. " + " · ".join(
                 f"{d} {int(c)}" for d, c in counts.head(4).items()),
-            "sky",
+            "sky", kind="person",
         ))
 
     stats = rated_dirs.groupby("Director")["my_rating"].agg(["size", "mean"])
@@ -221,7 +234,7 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             options, answer,
             f"{best} — {int(eligible.iloc[0]['size'])} film, ortalama "
             f"{eligible.iloc[0]['mean']:.2f}. En çok izlediğin {counts.index[0]} idi.",
-            "violet",
+            "violet", kind="person",
         ))
 
         # --- Toxic relationship: many films, mediocre scores ---
@@ -237,7 +250,7 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
                 f"{worst} adlı yönetmenin {worst_n} filmini izlemişsin. Ortalama kaç verdin?",
                 options, answer,
                 f"{worst_n} film. Ortalama {worst_avg:.2f}. Bu bir ilişki mi, bağımlılık mı?",
-                "crimson",
+                "crimson", kind="rating",
             ))
 
     # --- Confession: the beloved film you couldn't stand ---
@@ -256,7 +269,7 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             options, answer,
             f"Dünya bayıldı, sen {worst['my_rating']:.1f} verdin. "
             f"Aradaki fark {abs(worst['diff']):.2f} puan.",
-            "crimson",
+            "crimson", kind="poster",
             poster=worst.get("poster") or None,
         ))
 
@@ -273,7 +286,7 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             options, answer,
             f"{total} ülke. Ama {pct(share)} sadece üçünden: "
             + " · ".join(f"{n} {c}" for n, c in top3),
-            "mint",
+            "mint", kind="number",
         ))
 
     # --- Mirror: the humbling one ---
@@ -291,7 +304,7 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             f"Letterboxd kitlesi bu filmlere ortalama {crowd:.2f} verdi. Ya sen?",
             options, answer,
             f"Sen {mine:.2f}, kitle {crowd:.2f}. {verdict}",
-            "amber",
+            "amber", kind="rating",
         ))
 
     # --- Cast: three names, one film ---
@@ -306,7 +319,7 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             "Bu üç isim hangi filmde bir arada?",
             options, answer,
             f"{pick['title_of_movie']} — {pick.get('Director') or 'bilinmeyen yönetmen'}",
-            "violet",
+            "violet", kind="cast",
         ))
         questions[-1]["hint"] = pick["Actors"][:3]
 

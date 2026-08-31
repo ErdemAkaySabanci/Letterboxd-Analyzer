@@ -49,6 +49,23 @@ const Quiz = (() => {
             (_, i) => `<span class="${i < index ? 'seen' : ''}"></span>`).join('');
     }
 
+    /** Half-star glyphs for a rating option; '' when the value isn't a
+        clean half-step (averages like 3.62 read better as a bare number). */
+    function stars(value) {
+        const v = parseFloat(String(value).replace(',', '.'));
+        if (!Number.isFinite(v) || v <= 0 || v > 5) return '';
+        if (Math.abs(v * 2 - Math.round(v * 2)) > 1e-9) return '';
+        return '★'.repeat(Math.floor(v)) + (v % 1 ? '½' : '');
+    }
+
+    function option(kind, label, i) {
+        const inner = (kind === 'rating' || kind === 'poster') && stars(label)
+            ? `<span class="opt-stars">${stars(label)}</span>
+               <span class="opt-num">${esc(label)}</span>`
+            : `<span class="opt-label">${esc(label)}</span>`;
+        return `<button class="opt" data-i="${i}">${inner}</button>`;
+    }
+
     function render() {
         drawRail();
 
@@ -65,23 +82,33 @@ const Quiz = (() => {
         }
 
         const q = questions[index];
+        const kind = q.kind || 'plain';
         stage.dataset.accent = q.accent || 'amber';
+        // The layout is picked by `kind`, so consecutive questions don't all
+        // look like the same card. See _question() in quiz.py.
+        body.dataset.kind = kind;
 
         const poster = q.poster
             ? `<img class="q-poster" src="${esc(q.poster)}" alt="" loading="lazy" />` : '';
-        const hint = q.hint?.length
-            ? `<div class="q-hint">${q.hint.map(h => `<span>${esc(h)}</span>`).join('')}</div>` : '';
+        const hint = !q.hint?.length ? ''
+            : kind === 'cast'
+                ? `<ul class="q-cast">${q.hint.map(h => `<li>${esc(h)}</li>`).join('')}</ul>`
+                : `<div class="q-hint">${q.hint.map(h => `<span>${esc(h)}</span>`).join('')}</div>`;
 
-        body.innerHTML = `
+        const text = `
             <p class="q-eyebrow">${esc(q.eyebrow)}</p>
-            ${poster}
             <h2 class="q-prompt">${esc(q.prompt)}</h2>
             ${hint}
             <div class="options" id="opts">
-                ${q.options.map((o, i) =>
-                    `<button class="opt" data-i="${i}">${esc(o)}</button>`).join('')}
+                ${q.options.map((o, i) => option(kind, o, i)).join('')}
             </div>
             <div id="after"></div>`;
+
+        // On a poster question the film is the subject, so it sits beside the
+        // question rather than above it.
+        body.innerHTML = kind === 'poster' && poster
+            ? `<div class="q-split">${poster}<div class="q-col">${text}</div></div>`
+            : poster + text;
 
         body.querySelectorAll('.opt').forEach(btn =>
             btn.addEventListener('click', () => answer(Number(btn.dataset.i))));
