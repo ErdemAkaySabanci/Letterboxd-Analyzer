@@ -36,7 +36,7 @@ mimetypes.add_type('text/css', '.css')
 mimetypes.add_type('application/javascript', '.js')
 
 import sessions
-from analyzer import full_analysis, instant_summary, wrapped_summary
+from analyzer import films_matching, full_analysis, instant_summary, wrapped_summary
 from data_manager import load_cache as load_film_cache, scrape_films
 from ml_models import explain_predictions
 from quiz import build_full_quiz, build_instant_quiz
@@ -329,6 +329,36 @@ async def get_stats(session: str = ""):
         return error
     try:
         return clean_nans(full_analysis(df))
+    except Exception as e:
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/api/films")
+async def get_films(session: str = "", director: str = "", actor: str = "",
+                    genre: str = "", country: str = "", language: str = "",
+                    decade: int | None = None, limit: int = 60):
+    """
+    The films behind a chapter row — the drill-down a click opens.
+
+    Filters are the labels the chapters already render (a director's name, a
+    genre, a decade's first year), so the client passes back what it displayed.
+    They combine with AND; with no filter this is the whole library.
+    """
+    df, error = _require(session)
+    if error:
+        return error
+    try:
+        return clean_nans(films_matching(
+            df,
+            director=director or None,
+            actor=actor or None,
+            genre=genre or None,
+            country=country or None,
+            language=language or None,
+            decade=decade,
+            limit=max(1, min(limit, 300)),
+        ))
     except Exception as e:
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"error": str(e)})

@@ -312,6 +312,73 @@ def most_watched_people(df: pd.DataFrame, top_n: int = 10) -> dict:
     return {"directors": directors, "actors": actors}
 
 
+def films_matching(df: pd.DataFrame, director=None, actor=None, genre=None,
+                   country=None, language=None, decade=None, limit=60) -> dict:
+    """
+    The films behind one row of a chapter — what a click on "Nolan · 10 film"
+    should open.
+
+    Every filter matches exactly the value the chapters already display, so the
+    client can hand a row label straight back without normalising it. Filters
+    combine with AND; passing none returns the whole library. Rated films come
+    first (highest first), because an unrated backlog entry is never what the
+    user clicked to see.
+    """
+    df = clean_dataset(df)
+
+    def has(column, value):
+        return df[column].apply(lambda v: isinstance(v, list) and value in v)
+
+    masks = []
+    if director and "Director" in df.columns:
+        masks.append(df["Director"] == director)
+    if actor and "Actors" in df.columns:
+        masks.append(has("Actors", actor))
+    if genre and "genre_of_movie" in df.columns:
+        masks.append(has("genre_of_movie", genre))
+    if country and "Country" in df.columns:
+        masks.append(has("Country", country))
+    if language and "Language" in df.columns:
+        masks.append(has("Language", language))
+    if decade is not None and "Release_Year" in df.columns:
+        start = int(decade)
+        masks.append(df["Release_Year"].between(start, start + 9))
+
+    hits = df
+    for mask in masks:
+        hits = hits[mask.reindex(hits.index, fill_value=False)]
+
+    rated = hits["my_rating"].dropna()
+    ordered = hits.sort_values(
+        ["my_rating", "Release_Year"], ascending=[False, False], na_position="last")
+
+    def as_film(row):
+        year = row.get("Release_Year")
+        runtime = row.get("Runtime_minutes")
+        rating = row.get("my_rating")
+        crowd = row.get("average_rating")
+        return {
+            "title": row.get("title_of_movie"),
+            "year": int(year) if pd.notna(year) else None,
+            "my_rating": float(rating) if pd.notna(rating) else None,
+            "average_rating": round(float(crowd), 2) if pd.notna(crowd) else None,
+            "runtime": int(runtime) if pd.notna(runtime) else None,
+            "director": row.get("Director") or None,
+            "poster": row.get("poster") or "",
+            "link": row.get("link_of_movie") or "",
+        }
+
+    films = [as_film(r) for _, r in ordered.head(limit).iterrows()]
+    return {
+        "count": int(len(hits)),
+        "rated_count": int(len(rated)),
+        "my_avg": round(float(rated.mean()), 2) if len(rated) else None,
+        "total_runtime": int(hits["Runtime_minutes"].dropna().sum())
+                         if "Runtime_minutes" in hits.columns else 0,
+        "films": films,
+    }
+
+
 def decade_distribution(df: pd.DataFrame) -> dict:
     """How the library spreads across release decades."""
     years = df["Release_Year"].dropna() if "Release_Year" in df.columns else pd.Series(dtype=float)
