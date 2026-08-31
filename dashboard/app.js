@@ -588,10 +588,47 @@ function wireButtons() {
     });
 }
 
+/**
+ * URL hooks. A stored session otherwise sends every visit straight to the
+ * analysis, with no way back to the test:
+ *   #test  replay the quiz on the stored session, without re-uploading
+ *   #yeni  drop the session and start over from the landing page
+ * Returns true when the hook took over the screen.
+ */
+async function runHook(hook) {
+    if (hook !== 'test' && hook !== 'yeni') return false;
+    history.replaceState(null, '', location.pathname);
+
+    if (hook === 'yeni') { $('btn-again').click(); return true; }
+
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {}
+    if (!stored?.session) return false;
+
+    session = stored.session;
+    quizResult = null;
+    loadAnalysis.done = false;
+    try {
+        const state = await api(`/api/status?session=${session}`);
+        if (!state.exists) { clear(); return false; }
+        startQuiz(state.scrape);
+        return true;
+    } catch {
+        clear();
+        return false;
+    }
+}
+
+
 async function boot() {
     wireLanding();
     wireButtons();
     paintPosterWall();
+
+    // Hash hooks run on load *and* on hashchange: typing #test into the bar of
+    // an already-open page is a fragment navigation, so nothing reloads.
+    window.addEventListener('hashchange', () => runHook(location.hash.slice(1)));
+    if (await runHook(location.hash.slice(1))) return;
 
     let stored = null;
     try { stored = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {}
