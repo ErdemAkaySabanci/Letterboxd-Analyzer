@@ -1,6 +1,11 @@
 __pycache__/
 *.pyc
 movies_cache.json
+film_cache.json
+film_cache.json.tmp
+sessions/
 letterboxd-erdemstein-*/
 .env
 .DS_Store
+test_export.zip
+my_movie_dataset.csv

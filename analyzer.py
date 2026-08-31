@@ -11,6 +11,13 @@ import numpy as np
 from scipy.stats import pearsonr, chi2_contingency
 from collections import Counter
 
+# How many films before we'll call someone a favourite. This doubles as the
+# Bayesian prior weight: at exactly this many films a person sits halfway
+# between their own average and the global mean, so one 5-star outlier can't
+# outrank a director you've followed for ten films.
+MIN_DIRECTOR_FILMS = 4
+MIN_ACTOR_FILMS = 4
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -57,7 +64,7 @@ def bayesian_average(ratings, C, m):
 # 1. Advanced Statistical Depth
 # ---------------------------------------------------------------------------
 
-def bayesian_director_analysis(df: pd.DataFrame, m: int = 1) -> dict:
+def bayesian_director_analysis(df: pd.DataFrame, m: int = MIN_DIRECTOR_FILMS) -> dict:
     """Calculate Bayesian averages for directors."""
     sub = df.dropna(subset=["Director", "my_rating"]).copy()
     if sub.empty:
@@ -97,7 +104,7 @@ def bayesian_director_analysis(df: pd.DataFrame, m: int = 1) -> dict:
     result = sorted(result, key=lambda x: x["bayesian_avg"], reverse=True)
     return {"directors": result, "global_mean": round(global_mean, 2)}
 
-def bayesian_actor_analysis(df: pd.DataFrame, m: int = 1) -> dict:
+def bayesian_actor_analysis(df: pd.DataFrame, m: int = MIN_ACTOR_FILMS) -> dict:
     """Calculate Bayesian averages for actors."""
     sub = df.dropna(subset=["my_rating"]).copy()
     if "Actors" not in sub.columns or sub.empty:
@@ -145,9 +152,20 @@ def controversial_movies(df: pd.DataFrame, top_n: int = 10) -> dict:
             "my_rating": float(row["my_rating"]),
             "average_rating": float(row["average_rating"]),
             "diff": round(row["diff"], 2),
-            "abs_diff": round(row["abs_diff"], 2)
+            "abs_diff": round(row["abs_diff"], 2),
+            "poster": row.get("poster") or "",
         })
     return {"controversial": result}
+
+
+def rating_scatter(df: pd.DataFrame) -> dict:
+    """Every rated film as an (crowd, you) point — the full cloud, not a top-N."""
+    sub = df.dropna(subset=["my_rating", "average_rating"])
+    return {
+        "points": [{"x": float(r["average_rating"]), "y": float(r["my_rating"]),
+                    "t": r["title_of_movie"]}
+                   for _, r in sub.iterrows()]
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -236,22 +254,71 @@ def diversity_analysis(df: pd.DataFrame) -> dict:
     }
 
 def actor_director_network(df: pd.DataFrame) -> dict:
-    """Find most frequent actor-director collaborations in watched list."""
+    """Most frequent actor–director pairings across the watched list."""
     sub = df.dropna(subset=["Director"]).copy()
-    collabs = []
-    
+    collabs = Counter()
+
     for _, row in sub.iterrows():
-        d = row["Director"]
-        acts = row.get("Actors", [])
-        if isinstance(acts, list):
-            for a in acts:
-                if isinstance(a, str):
-                    collabs.append(f"{a} & {d}")
-                    
-    counts = Counter(collabs).most_common(10)
+        director = row["Director"]
+        cast = row.get("Actors", [])
+        if not isinstance(cast, list):
+            continue
+        for actor in cast:
+            # Directors who act in their own films would otherwise pair with
+            # themselves ("Taika Waititi & Taika Waititi").
+            if isinstance(actor, str) and actor != director:
+                collabs[(actor, director)] += 1
+
     return {
-        "top_collaborations": [{"pair": k, "count": v} for k, v in counts]
+        "top_collaborations": [
+            {"pair": f"{actor} & {director}", "actor": actor,
+             "director": director, "count": count}
+            for (actor, director), count in collabs.most_common(10)
+        ]
     }
+
+
+def most_watched_people(df: pd.DataFrame, top_n: int = 10) -> dict:
+    """
+    Who you watch most, by film count across the whole library.
+
+    Kept separate from the Bayesian rankings on purpose: the person you watch
+    most is often not the one you rate highest, and that gap is the story.
+    """
+    directors = []
+    if "Director" in df.columns:
+        for name, count in df["Director"].dropna().value_counts().head(top_n).items():
+            rated = df[(df["Director"] == name)]["my_rating"].dropna()
+            directors.append({
+                "name": name,
+                "count": int(count),
+                "my_avg": round(float(rated.mean()), 2) if len(rated) else None,
+            })
+
+    actor_counts = Counter(
+        a for cast in df.get("Actors", []) if isinstance(cast, list)
+        for a in cast if isinstance(a, str)
+    )
+    actors = []
+    for name, count in actor_counts.most_common(top_n):
+        appeared = df[df["Actors"].apply(lambda c: isinstance(c, list) and name in c)]
+        rated = appeared["my_rating"].dropna()
+        actors.append({
+            "name": name,
+            "count": int(count),
+            "my_avg": round(float(rated.mean()), 2) if len(rated) else None,
+        })
+
+    return {"directors": directors, "actors": actors}
+
+
+def decade_distribution(df: pd.DataFrame) -> dict:
+    """How the library spreads across release decades."""
+    years = df["Release_Year"].dropna() if "Release_Year" in df.columns else pd.Series(dtype=float)
+    if years.empty:
+        return {"labels": [], "counts": []}
+    counts = (years // 10 * 10).astype(int).value_counts().sort_index()
+    return {"labels": [f"{d}'ler" for d in counts.index], "counts": [int(c) for c in counts]}
 
 # ---------------------------------------------------------------------------
 # 4. Restored Basic Stats
@@ -360,16 +427,69 @@ def summary_stats(df: pd.DataFrame) -> dict:
     rated = df["my_rating"].notna().sum()
     avg_my = round(df["my_rating"].mean(), 2) if rated > 0 else None
     
-    genres_count = len(set(g for sublist in df.get("genre_of_movie", []) if isinstance(sublist, list) for g in sublist))
-    directors_count = df["Director"].nunique() if "Director" in df.columns else 0
-    
+    def unique_in(column):
+        return len({v for lst in df.get(column, []) if isinstance(lst, list) for v in lst})
+
     return {
         "total_movies": int(total),
         "rated_movies": int(rated),
         "avg_my_rating": avg_my,
-        "unique_genres": int(genres_count),
-        "unique_directors": int(directors_count),
+        "unique_genres": unique_in("genre_of_movie"),
+        "unique_directors": int(df["Director"].nunique()) if "Director" in df.columns else 0,
+        "unique_countries": unique_in("Country"),
+        "unique_languages": unique_in("Language"),
     }
+
+def instant_summary(df: pd.DataFrame) -> dict:
+    """
+    Everything computable from the export ZIP alone — no scraped metadata.
+
+    This is what the user sees the moment they upload, while the film scrape
+    runs in the background, and it's what the loading quiz draws its questions
+    from. Deliberately avoids Director/genre/runtime/average_rating.
+    """
+    df = clean_dataset(df)
+
+    rated = df["my_rating"].dropna()
+    total = len(df)
+
+    distribution = rated.value_counts().sort_index()
+    generous = float((rated >= 3.5).mean() * 100) if len(rated) else None
+
+    # Decades come from the film's own release year, which the ZIP always has.
+    decades = {}
+    years = df["Release_Year"].dropna()
+    if len(years):
+        counts = (years // 10 * 10).astype(int).value_counts().sort_index()
+        decades = {"labels": [f"{d}s" for d in counts.index], "counts": counts.tolist()}
+
+    oldest = []
+    if len(years):
+        for _, row in df.dropna(subset=["Release_Year"]).nsmallest(4, "Release_Year").iterrows():
+            oldest.append({"title": row["title_of_movie"], "year": int(row["Release_Year"])})
+
+    dates = df["Watch_Date"].dropna() if "Watch_Date" in df.columns else pd.Series(dtype="datetime64[ns]")
+
+    return {
+        "total_movies": total,
+        "rated_movies": len(rated),
+        "unrated_movies": total - len(rated),
+        "avg_rating": round(float(rated.mean()), 2) if len(rated) else None,
+        "rating_distribution": {
+            "ratings": [float(r) for r in distribution.index],
+            "counts": [int(c) for c in distribution.values],
+        },
+        "most_common_rating": float(rated.mode()[0]) if len(rated) else None,
+        "five_star_count": int((rated == 5.0).sum()),
+        "half_star_count": int((rated <= 1.0).sum()),
+        "generous_pct": round(generous) if generous is not None else None,
+        "decades": decades,
+        "top_decade": decades["labels"][decades["counts"].index(max(decades["counts"]))] if decades else None,
+        "oldest_films": oldest,
+        "first_watch": str(dates.min().date()) if len(dates) else None,
+        "last_watch": str(dates.max().date()) if len(dates) else None,
+    }
+
 
 def wrapped_summary(df: pd.DataFrame) -> dict:
     """Pre-compute all data needed for the Wrapped storytelling cards."""
@@ -382,23 +502,57 @@ def wrapped_summary(df: pd.DataFrame) -> dict:
     total_days = round(total_hours / 24, 1)
     avg_my = round(df["my_rating"].mean(), 2) if rated_movies > 0 else None
 
-    # --- Top director (Bayesian, min 2 films) ---
-    # Require at least 2 films to call someone a "favorite director".
-    # Fall back to min=1 only if the user has no directors with 2+ films.
-    bay_dir_2 = bayesian_director_analysis(df, m=2)
-    bay_dir_1 = bayesian_director_analysis(df, m=1)
+    # --- Top director (Bayesian) ---
+    # Walk the threshold down for users with small libraries, and flag it as an
+    # estimate whenever we had to settle for fewer than MIN_DIRECTOR_FILMS.
     top_director = None
-    dirs_to_use = bay_dir_2["directors"] if bay_dir_2["directors"] else bay_dir_1["directors"]
-    if dirs_to_use:
-        d = dirs_to_use[0]
-        top_director = {
-            "name": d["director"],
-            "movie_count": d["movie_count"],
-            "bayesian_avg": d["bayesian_avg"],
-            "my_avg": d["my_avg"],
-            "people_avg": d.get("people_avg"),
-            "is_estimate": len(bay_dir_2["directors"]) == 0,  # flag if only 1-film dirs available
-        }
+    for threshold in range(MIN_DIRECTOR_FILMS, 0, -1):
+        ranked = bayesian_director_analysis(df, m=threshold)["directors"]
+        if ranked:
+            d = ranked[0]
+            top_director = {
+                "name": d["director"],
+                "movie_count": d["movie_count"],
+                "bayesian_avg": d["bayesian_avg"],
+                "my_avg": d["my_avg"],
+                "people_avg": d.get("people_avg"),
+                "is_estimate": threshold < MIN_DIRECTOR_FILMS,
+            }
+            break
+
+    # --- Most-watched director (by count, not rating) ---
+    # Deliberately separate from the above: the director you watch most is
+    # often not the one you rate highest, which is the more interesting card.
+    most_watched_director = None
+    if "Director" in df.columns:
+        counts = df["Director"].dropna().value_counts()
+        if not counts.empty:
+            name = counts.index[0]
+            rated = df[(df["Director"] == name) & df["my_rating"].notna()]["my_rating"]
+            most_watched_director = {
+                "name": name,
+                "movie_count": int(counts.iloc[0]),
+                "my_avg": round(rated.mean(), 2) if len(rated) else None,
+            }
+
+    # --- Most-watched actor (by count, across every film incl. unrated) ---
+    most_watched_actor = None
+    if "Actors" in df.columns:
+        actor_counts = Counter(
+            a for cast in df["Actors"] if isinstance(cast, list)
+            for a in cast if isinstance(a, str)
+        )
+        if actor_counts:
+            name, count = actor_counts.most_common(1)[0]
+            appeared = df[df["Actors"].apply(
+                lambda cast: isinstance(cast, list) and name in cast
+            )]
+            rated = appeared["my_rating"].dropna()
+            most_watched_actor = {
+                "name": name,
+                "movie_count": count,
+                "my_avg": round(rated.mean(), 2) if len(rated) else None,
+            }
 
     # --- Top 5 genres ---
     genre_data = genre_distribution(df)
@@ -408,19 +562,25 @@ def wrapped_summary(df: pd.DataFrame) -> dict:
     cont_df = df.dropna(subset=["my_rating", "average_rating"]).copy()
     cont_df["diff"] = cont_df["my_rating"] - cont_df["average_rating"]
 
+    # What the crowd gave the same films — the comparison that tells a user
+    # whether their taste is actually unusual or merely average.
+    crowd_avg = round(float(cont_df["average_rating"].mean()), 2) if len(cont_df) else None
+    your_avg_same_films = round(float(cont_df["my_rating"].mean()), 2) if len(cont_df) else None
+
     loved_df = cont_df[cont_df["diff"] > 0].nlargest(3, "diff")
     hated_df = cont_df[cont_df["diff"] < 0].nsmallest(3, "diff")
 
-    loved_by_you = [
-        {"title": r["title_of_movie"], "my_rating": float(r["my_rating"]),
-         "average_rating": float(r["average_rating"]), "diff": round(r["diff"], 2)}
-        for _, r in loved_df.iterrows()
-    ]
-    hated_by_you = [
-        {"title": r["title_of_movie"], "my_rating": float(r["my_rating"]),
-         "average_rating": float(r["average_rating"]), "diff": round(r["diff"], 2)}
-        for _, r in hated_df.iterrows()
-    ]
+    def as_card(row):
+        return {
+            "title": row["title_of_movie"],
+            "my_rating": float(row["my_rating"]),
+            "average_rating": float(row["average_rating"]),
+            "diff": round(row["diff"], 2),
+            "poster": row.get("poster") or "",
+        }
+
+    loved_by_you = [as_card(r) for _, r in loved_df.iterrows()]
+    hated_by_you = [as_card(r) for _, r in hated_df.iterrows()]
 
     # --- Busiest month ---
     binge = binge_habits(df)
@@ -452,8 +612,12 @@ def wrapped_summary(df: pd.DataFrame) -> dict:
         "total_hours": total_hours,
         "total_days": total_days,
         "avg_rating": avg_my,
+        "crowd_avg_rating": crowd_avg,
+        "your_avg_same_films": your_avg_same_films,
         "unique_directors": unique_directors,
         "top_director": top_director,
+        "most_watched_director": most_watched_director,
+        "most_watched_actor": most_watched_actor,
         "top_genres": top_genres,
         "loved_by_you": loved_by_you,
         "hated_by_you": hated_by_you,
@@ -473,15 +637,21 @@ def full_analysis(df: pd.DataFrame) -> dict:
         "rating_distribution": rating_distribution(df),
         "runtime_counts": runtime_interval_counts(df),
         "runtime_avg_rating": runtime_interval_avg_rating(df),
-        "correlation_matrix": correlation_matrix(df),
         "genre_distribution": genre_distribution(df),
         "director_analysis": director_analysis(df),
+        "most_watched": most_watched_people(df),
+        "decades": decade_distribution(df),
+        "crowd_comparison": {
+            "yours": round(float(df["my_rating"].mean()), 2) if df["my_rating"].notna().any() else None,
+            "crowd": round(float(df["average_rating"].mean()), 2) if df["average_rating"].notna().any() else None,
+        },
         "chi_square": chi_square_runtime_rating(df),
         "correlation_my_vs_avg": correlation_my_vs_avg(df),
         "director_correlation": director_correlation(df),
         "bayesian_directors": bayesian_director_analysis(df),
         "bayesian_actors": bayesian_actor_analysis(df),
         "controversial": controversial_movies(df),
+        "scatter": rating_scatter(df),
         "temporal_evolution": temporal_evolution(df),
         "binge_habits": binge_habits(df),
         "backlog": backlog_analysis(df),

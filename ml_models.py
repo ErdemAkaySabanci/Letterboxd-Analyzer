@@ -181,6 +181,62 @@ def train_models(df: pd.DataFrame, test_size: float = 0.2, random_state: int = 4
 
 
 # ---------------------------------------------------------------------------
+# Human-readable explanation
+# ---------------------------------------------------------------------------
+
+_FEATURE_LABELS = {
+    "director_avg_my_rating": "Yönetmene verdiğin geçmiş puanlar",
+    "director_movie_count": "O yönetmenden kaç film izlediğin",
+    "average_rating": "Letterboxd kitlesinin puanı",
+    "Runtime_minutes": "Filmin uzunluğu",
+    "log_watched": "Filmin ne kadar bilindiği",
+    "Release_Year": "Filmin yılı",
+}
+
+
+def explain_predictions(df: pd.DataFrame) -> dict:
+    """
+    Turn feature importances into something a person can read.
+
+    Genre and actor dummies are rolled up into single lines — thirty-odd
+    one-hot columns each carrying 1% is a story about genre mattering, not
+    thirty separate findings.
+    """
+    result = train_models(df)
+    if "error" in result:
+        return {"error": result["error"], "drivers": []}
+
+    grouped: dict[str, float] = {}
+    for item in result["feature_importance"]:
+        name, weight = item["feature"], item["importance"]
+        if name.startswith("genre_"):
+            label = "Filmin türü"
+        elif name.startswith("actor_"):
+            label = "Oyuncu kadrosu"
+        else:
+            label = _FEATURE_LABELS.get(name, name)
+        grouped[label] = grouped.get(label, 0.0) + weight
+
+    total = sum(grouped.values()) or 1.0
+    drivers = sorted(
+        ({"label": label, "share": round(weight / total * 100, 1)}
+         for label, weight in grouped.items()),
+        key=lambda d: d["share"], reverse=True,
+    )
+
+    top = drivers[0] if drivers else None
+    return {
+        "drivers": drivers,
+        "headline": (
+            f"Puanını en çok belirleyen şey: {top['label'].lower()}." if top else ""
+        ),
+        # Kept out of the UI, but useful when judging whether to trust the above.
+        "fit": result["best_r2"],
+        "n_samples": result["n_train"] + result["n_test"],
+    }
+
+
+# ---------------------------------------------------------------------------
 # Recommendation engine
 # ---------------------------------------------------------------------------
 

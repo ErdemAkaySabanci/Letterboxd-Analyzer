@@ -1,18 +1,28 @@
 """
-Letterboxd Profile Scraper & Data Manager
-==========================================
-Robust scraper with caching, rate-limiting, and user-agent spoofing.
-Adapted for the 2025/2026 Letterboxd HTML structure and Cloudflare protection.
+Letterboxd Film Metadata Scraper
+=================================
+Fetches per-film metadata (director, cast, genres, runtime, community rating,
+countries, languages, poster) from Letterboxd film pages.
+
+The film list itself comes from the user's export ZIP — we never scrape the
+profile pages, which are Cloudflare-protected past page 1.
+
+Everything is read from the page's schema.org LD+JSON block, which Letterboxd
+wraps in a CDATA comment that must be stripped before parsing.
+
+Usage:
+    py -3.12 data_manager.py              # backfill my_movie_dataset.csv
+    py -3.12 data_manager.py --all        # include unrated films too
 """
 
 import json
 import os
 import re
+import threading
 import time
-from typing import Optional
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
-import pandas as pd
 from bs4 import BeautifulSoup
 
 # ---------------------------------------------------------------------------
@@ -20,6 +30,8 @@ from bs4 import BeautifulSoup
 # ---------------------------------------------------------------------------
 
 DOMAIN = "https://letterboxd.com"
+CACHE_FILE = os.path.join(os.path.dirname(__file__), "film_cache.json")
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -29,396 +41,267 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
 }
-CACHE_FILE = os.path.join(os.path.dirname(__file__), "movies_cache.json")
-REQUEST_DELAY = 1.5  # seconds between HTTP requests
+
+MAX_WORKERS = 16      # measured: no throttling at 24, but gains flatten after 16
+MAX_ACTORS = 20       # LD+JSON lists ~50 in billing order; leads are enough
+RETRIES = 3
+
+_thread_local = threading.local()
+_cache_lock = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
-# Cache helpers
+# Cache
 # ---------------------------------------------------------------------------
 
-def _load_cache() -> dict:
-    """Load the local JSON cache, or return an empty dict."""
+def load_cache() -> dict:
+    """Load the film cache, keyed by the film's Letterboxd URI."""
     if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return {}
     return {}
 
 
-def _save_cache(cache: dict) -> None:
-    """Persist the cache dict to disk."""
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
+def save_cache(cache: dict) -> None:
+    """Persist the cache atomically so an interrupted run can't corrupt it."""
+    tmp = CACHE_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, CACHE_FILE)
 
 
 # ---------------------------------------------------------------------------
-# HTTP helper
+# HTTP
 # ---------------------------------------------------------------------------
 
-def _get(url: str, session: Optional[requests.Session] = None) -> tuple[BeautifulSoup, int]:
-    """
-    Fetch a page with rate-limiting. Returns (soup, status_code).
-    Does NOT raise on non-200 so callers can handle 403 gracefully.
-    """
-    s = session or requests.Session()
-    for attempt in range(3):
-        time.sleep(REQUEST_DELAY)
+def _session() -> requests.Session:
+    """One Session per worker thread, for connection pooling."""
+    s = getattr(_thread_local, "session", None)
+    if s is None:
+        s = requests.Session()
+        s.headers.update(HEADERS)
+        _thread_local.session = s
+    return s
+
+
+# ---------------------------------------------------------------------------
+# LD+JSON extraction
+# ---------------------------------------------------------------------------
+
+# Letterboxd emits: /* <![CDATA[ */ {...} /* ]]> */
+_CDATA_OPEN = re.compile(r"^\s*/\*\s*<!\[CDATA\[\s*\*/")
+_CDATA_CLOSE = re.compile(r"/\*\s*\]\]>\s*\*/\s*$")
+
+
+def _parse_ld_json(soup: BeautifulSoup) -> dict:
+    """Return the film's schema.org payload, or {} if absent/unparsable."""
+    for script in soup.find_all("script", type="application/ld+json"):
+        raw = script.string or script.get_text()
+        if not raw:
+            continue
+        raw = _CDATA_CLOSE.sub("", _CDATA_OPEN.sub("", raw.strip())).strip()
         try:
-            resp = s.get(url, headers=HEADERS, timeout=15)
-            return BeautifulSoup(resp.content, "html.parser"), resp.status_code
-        except Exception as e:
-            print(f"  [!] HTTP Error for {url} (Attempt {attempt+1}/3): {e}")
-            if attempt == 2:
-                return BeautifulSoup("", "html.parser"), 500
-            time.sleep(2)
-    return BeautifulSoup("", "html.parser"), 500
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(data, dict) and data.get("@type") in ("Movie", "TVSeries", None):
+            return data
+    return {}
+
+
+def _names(value) -> list[str]:
+    """Pull 'name' fields out of a schema.org person/place list."""
+    if isinstance(value, dict):
+        value = [value]
+    if not isinstance(value, list):
+        return []
+    return [v["name"] for v in value if isinstance(v, dict) and v.get("name")]
+
+
+def _runtime_minutes(ld: dict, soup: BeautifulSoup) -> int | None:
+    """Runtime from ISO-8601 duration, falling back to the '123 mins' text."""
+    duration = ld.get("duration")
+    if isinstance(duration, str):
+        m = re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?", duration)
+        if m and (m.group(1) or m.group(2)):
+            return int(m.group(1) or 0) * 60 + int(m.group(2) or 0)
+
+    m = re.search(r"(\d+)\s*mins", soup.get_text(" ", strip=True))
+    return int(m.group(1)) if m else None
+
+
+def _detail_tab_links(soup: BeautifulSoup, kind: str) -> list[str]:
+    """Read the film's details tab (used as a fallback for country/language)."""
+    tab = soup.find("div", id="tab-panel-details") or soup.find("div", id="tab-details")
+    if not tab:
+        return []
+    links = tab.find_all("a", href=re.compile(rf"/films/{kind}/"))
+    return sorted({a.get_text(strip=True) for a in links if a.get_text(strip=True)})
 
 
 # ---------------------------------------------------------------------------
-# Star-rating converter
+# Single-film scrape
 # ---------------------------------------------------------------------------
 
-_STAR_MAP = {
-    "½": 0.5,
-    "★": 1.0, "★½": 1.5,
-    "★★": 2.0, "★★½": 2.5,
-    "★★★": 3.0, "★★★½": 3.5,
-    "★★★★": 4.0, "★★★★½": 4.5,
-    "★★★★★": 5.0,
-}
+def scrape_film(url: str) -> dict | None:
+    """
+    Scrape one film page. Returns a metadata dict, or None if the page could
+    not be fetched (so callers can tell 'failed' from 'genuinely has no data').
+    """
+    if not url.startswith("http"):
+        url = f"{DOMAIN}{url}"
 
-
-def _convert_star_rating(text: str):
-    """Convert Letterboxd star-character string to a float, or None."""
-    text = text.strip()
-    return _STAR_MAP.get(text)
-
-
-# ---------------------------------------------------------------------------
-# Main scraper class
-# ---------------------------------------------------------------------------
-
-class LetterboxdScraper:
-    """Scrape and cache Letterboxd profile data."""
-
-    def __init__(self, username: str, use_cache: bool = True):
-        self.username = username
-        self.use_cache = use_cache
-        self.session = requests.Session()
-        self.session.headers.update(HEADERS)
-        self.cache = _load_cache() if use_cache else {}
-        self._progress_callback = None
-
-    # ------------------------------------------------------------------
-    # Progress reporting
-    # ------------------------------------------------------------------
-
-    def set_progress_callback(self, fn):
-        """Set a callable(message: str) to receive progress updates."""
-        self._progress_callback = fn
-
-    def _report(self, msg: str):
-        if self._progress_callback:
-            self._progress_callback(msg)
-        else:
-            print(msg)
-
-    # ------------------------------------------------------------------
-    # 1. Scrape basic film list (title, rating, link)
-    # ------------------------------------------------------------------
-
-    def scrape_films_list(self) -> pd.DataFrame:
-        """
-        Return a DataFrame of all rated films on the user's profile.
-
-        Letterboxd now uses Cloudflare protection on paginated URLs
-        (/films/page/N), so we attempt all pages but gracefully fall
-        back to just the first page if pagination is blocked.
-        """
-        base_url = f"{DOMAIN}/{self.username}/films/"
-        self._report(f"Fetching films list for {self.username}...")
-
-        # First page (usually unprotected)
-        soup, status = _get(base_url, self.session)
-        if status != 200:
-            raise RuntimeError(f"Cannot access {base_url} (HTTP {status})")
-
-        # Determine total pages
-        page_links = soup.find_all("li", class_="paginate-page")
-        num_pages = int(page_links[-1].find("a").get_text().strip()) if page_links else 1
-        self._report(f"Found {num_pages} page(s) of films")
-
-        all_records = []
-        # Parse first page
-        all_records.extend(self._parse_films_page(soup))
-
-        # Attempt remaining pages
-        for page_num in range(2, num_pages + 1):
-            self._report(f"Scraping films page {page_num}/{num_pages}")
-            page_soup, page_status = _get(f"{base_url}page/{page_num}/", self.session)
-            if page_status != 200:
-                self._report(f"  Page {page_num} blocked (HTTP {page_status}), skipping remaining pages")
-                break
-            all_records.extend(self._parse_films_page(page_soup))
-
-        df = pd.DataFrame(all_records)
-        # Drop unrated movies
-        df = df.dropna(subset=["my_rating"]).reset_index(drop=True)
-        self._report(f"Total rated movies scraped: {len(df)}")
-        return df
-
-    def _parse_films_page(self, soup: BeautifulSoup) -> list[dict]:
-        """Extract movie records from a single films page."""
-        records = []
-        # Current (2025+) Letterboxd uses <ul class="grid -p70">
-        grid = soup.find("ul", class_="grid")
-        if grid is None:
-            # Fallback: try legacy poster-list
-            grid = soup.find("ul", class_="poster-list")
-        if grid is None:
-            return records
-
-        for li in grid.find_all("li"):
-            div = li.find("div")
-            if not div:
-                continue
-            img = li.find("img")
-            title = img.get("alt", "Unknown") if img else "Unknown"
-
-            # Get link: prefer data-target-link, then data-item-link
-            link = div.get("data-target-link") or div.get("data-item-link", "")
-            if not link:
-                continue
-
-            # Movie ID: try data-film-id (legacy) then data-postered-identifier
-            movie_id = (div.get("data-film-id")
-                        or div.get("data-postered-identifier")
-                        or div.get("data-item-slug", ""))
-
-            # Rating
-            rating_p = li.find("p", class_="poster-viewingdata")
-            rating_text = rating_p.get_text().strip() if rating_p else ""
-            rating = _convert_star_rating(rating_text)
-
-            records.append({
-                "movie_id": movie_id,
-                "title_of_movie": title,
-                "my_rating": rating,
-                "link_of_movie": link,
-            })
-        return records
-
-    # ------------------------------------------------------------------
-    # 2. Scrape movie details (avg rating, genres, director, runtime)
-    # ------------------------------------------------------------------
-
-    def _scrape_movie_detail(self, link: str) -> dict:
-        """Scrape or return cached details for a single movie link."""
-        cache_key = link.strip("/").replace("https://", "").replace("http://", "")
-        
-        # Check cache, but force refetch if it's an old cache without 'actors'
-        if self.use_cache and cache_key in self.cache:
-            if "actors" in self.cache[cache_key]:
-                return self.cache[cache_key]
-
-        url = link if link.startswith("http") else f"{DOMAIN}{link}"
-        soup, status = _get(url, self.session)
-
-        detail = {
-            "average_rating": None,
-            "genres": [],
-            "director": None,
-            "actors": [],
-            "release_year": None,
-            "country": [],
-            "language": [],
-            "runtime_minutes": None,
-            "watched_number": None,
-        }
-
-        if status != 200:
-            self._report(f"  Detail page blocked (HTTP {status})")
-            return detail
-
-        # --- Average rating from LD+JSON or inline script ---
-        for sc in soup.find_all("script"):
-            text = sc.string or ""
-            if "ratingValue" in text:
-                m = re.search(r'"ratingValue":\s*([\d.]+)', text)
-                if not m:
-                    # Legacy format: ratingValue":3.5,
-                    m = re.search(r'ratingValue["\s:]+(\d+\.?\d*)', text)
-                if m:
-                    try:
-                        detail["average_rating"] = float(m.group(1))
-                    except ValueError:
-                        pass
-                break
-
-        # --- Genres (new: tab-panel-genres, legacy: tab-genres) ---
-        genre_div = soup.find("div", id="tab-panel-genres") or soup.find("div", id="tab-genres")
-        if genre_div:
-            # Only take links that go to /films/genre/ (real genres, not tags)
-            genre_links = genre_div.find_all("a", href=re.compile(r"/films/genre/"))
-            if genre_links:
-                detail["genres"] = [a.get_text().strip() for a in genre_links]
-            else:
-                # Fallback: take first div's links
-                inner = genre_div.find("div")
-                if inner:
-                    detail["genres"] = [a.get_text().strip() for a in inner.find_all("a")]
-
-        # --- Director (new: tab-panel-crew, legacy: tab-crew) ---
-        crew_div = soup.find("div", id="tab-panel-crew") or soup.find("div", id="tab-crew")
-        if crew_div:
-            # Director links have href matching /director/
-            director_links = crew_div.find_all("a", href=re.compile(r"/director/"))
-            if director_links:
-                detail["director"] = director_links[0].get_text().strip()
-            else:
-                inner = crew_div.find("div")
-                if inner:
-                    a = inner.find("a")
-                    if a:
-                        detail["director"] = a.get_text().strip()
-
-        # Also try LD+JSON for director if not found
-        if not detail["director"]:
-            for sc in soup.find_all("script", type="application/ld+json"):
-                if sc.string:
-                    try:
-                        ld = json.loads(sc.string)
-                        if isinstance(ld, dict):
-                            # Director
-                            if "director" in ld:
-                                dirs = ld["director"]
-                                if isinstance(dirs, list) and dirs:
-                                    detail["director"] = dirs[0].get("name")
-                                elif isinstance(dirs, dict):
-                                    detail["director"] = dirs.get("name")
-                                    
-                            # Actors
-                            if "actor" in ld:
-                                acts = ld["actor"]
-                                if isinstance(acts, list):
-                                    detail["actors"] = [a.get("name") for a in acts if isinstance(a, dict) and "name" in a]
-                                    
-                            # Release Year
-                            if "dateCreated" in ld:
-                                try:
-                                    detail["release_year"] = int(str(ld["dateCreated"])[:4])
-                                except (ValueError, TypeError):
-                                    pass
-                                    
-                            # Country
-                            if "countryOfOrigin" in ld:
-                                countries = ld["countryOfOrigin"]
-                                if isinstance(countries, list):
-                                    detail["country"] = [c.get("name") for c in countries if isinstance(c, dict) and "name" in c]
-                                    
-                            # Language
-                            if "inLanguage" in ld:
-                                langs = ld["inLanguage"]
-                                if isinstance(langs, list):
-                                    detail["language"] = [l.get("name") for l in langs if isinstance(l, dict) and "name" in l]
-                                elif isinstance(langs, str):
-                                    detail["language"] = [langs]
-                                    
-                    except (json.JSONDecodeError, KeyError):
-                        pass
-
-        # --- Runtime ---
-        # Try runTime in script (legacy)
-        runtime_match = re.search(r"runTime:\s*(\d+)", str(soup))
-        if runtime_match:
-            detail["runtime_minutes"] = int(runtime_match.group(1))
-        else:
-            # Try ISO duration in LD+JSON
-            dur_match = re.search(r'"duration":\s*"PT(\d+)M"', str(soup))
-            if dur_match:
-                detail["runtime_minutes"] = int(dur_match.group(1))
-            else:
-                # Try text like "145 mins"
-                mins_match = re.search(r'(\d+)\s*min', str(soup))
-                if mins_match:
-                    detail["runtime_minutes"] = int(mins_match.group(1))
-
-        # --- Watched number (popularity) ---
-        # Members page is often blocked by Cloudflare, try but don't fail
+    response = None
+    for attempt in range(RETRIES):
         try:
-            members_soup, m_status = _get(f"{url}members/", self.session)
-            if m_status == 200:
-                li_el = members_soup.find("li", class_="js-route-watches")
-                if li_el:
-                    a_tag = li_el.find("a")
-                    if a_tag and a_tag.get("title"):
-                        detail["watched_number"] = int("".join(filter(str.isdigit, a_tag["title"])))
-        except Exception:
-            pass
+            response = _session().get(url, timeout=20)
+            if response.status_code == 200:
+                break
+            # Backed-off retry on rate limiting / transient blocks
+            if response.status_code in (403, 429, 500, 502, 503):
+                time.sleep(2 * (attempt + 1))
+                continue
+            return None
+        except requests.RequestException:
+            time.sleep(2 * (attempt + 1))
+    if response is None or response.status_code != 200:
+        return None
 
-        # If members page blocked, try to get watched count from LD+JSON or main page
-        if detail["watched_number"] is None:
-            for sc in soup.find_all("script"):
-                text = sc.string or ""
-                m = re.search(r'"ratingCount":\s*(\d+)', text)
-                if m:
-                    # ratingCount is not exactly watched count but a reasonable proxy
-                    detail["watched_number"] = int(m.group(1))
-                    break
+    soup = BeautifulSoup(response.content, "html.parser")
+    ld = _parse_ld_json(soup)
+    rating = ld.get("aggregateRating") or {}
 
-        # Cache the result only if we didn't fail
-        if self.use_cache and status == 200:
-            self.cache[cache_key] = detail
-            _save_cache(self.cache)
+    directors = _names(ld.get("director"))
+    countries = _names(ld.get("countryOfOrigin")) or _detail_tab_links(soup, "country")
+    languages = _names(ld.get("inLanguage")) or _detail_tab_links(soup, "language")
 
-        return detail
+    genres = ld.get("genre") or []
+    if isinstance(genres, str):
+        genres = [genres]
 
-    def enrich_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Add average_rating, genre, director, runtime, watched_number columns."""
-        details = []
-        total = len(df)
-        for idx, row in df.iterrows():
-            self._report(f"[{idx + 1}/{total}] Enriching: {row['title_of_movie']}")
-            d = self._scrape_movie_detail(row["link_of_movie"])
-            details.append(d)
+    release_year = None
+    created = ld.get("dateCreated") or ""
+    if isinstance(created, str) and len(created) >= 4 and created[:4].isdigit():
+        release_year = int(created[:4])
 
-        detail_df = pd.DataFrame(details)
-        # Rename to match column conventions
-        detail_df.rename(columns={
-            "genres": "genre_of_movie",
-            "director": "Director",
-            "actors": "Actors",
-            "release_year": "Release_Year",
-            "country": "Country",
-            "language": "Language",
-            "runtime_minutes": "Runtime_minutes",
-            "watched_number": "Watched_number",
-        }, inplace=True)
+    poster = ""
+    og = soup.find("meta", property="og:image")
+    if og and og.get("content"):
+        poster = og["content"]
 
-        enriched = pd.concat([df.reset_index(drop=True), detail_df.reset_index(drop=True)], axis=1)
-        return enriched
-
-    # ------------------------------------------------------------------
-    # 3. Full pipeline convenience method
-    # ------------------------------------------------------------------
-
-    def scrape_full(self) -> pd.DataFrame:
-        """Scrape films list then enrich every movie. Returns full DataFrame."""
-        df = self.scrape_films_list()
-        df = self.enrich_dataset(df)
-        return df
+    return {
+        "slug": (ld.get("url") or response.url).replace(DOMAIN, "").strip("/"),
+        "title": ld.get("name"),
+        "director": directors[0] if directors else None,
+        "directors": directors,
+        "actors": _names(ld.get("actor"))[:MAX_ACTORS],
+        "genres": genres,
+        "countries": countries,
+        "languages": languages,
+        "runtime_minutes": _runtime_minutes(ld, soup),
+        "average_rating": rating.get("ratingValue"),
+        "rating_count": rating.get("ratingCount"),
+        "release_year": release_year,
+        "poster": poster,
+    }
 
 
 # ---------------------------------------------------------------------------
-# CLI entry point
+# Bulk scrape
+# ---------------------------------------------------------------------------
+
+def scrape_films(urls, progress_cb=None, max_workers: int = MAX_WORKERS) -> dict:
+    """
+    Scrape every URL not already cached, in parallel, and return the full
+    cache dict (keyed by URL). The cache is saved as results arrive, so an
+    interrupted run keeps its progress.
+
+    progress_cb(done, total, title) is called after each film.
+    """
+    cache = load_cache()
+    todo = [u for u in dict.fromkeys(urls) if u and u not in cache]
+
+    total = len(todo)
+    if total == 0:
+        return cache
+
+    done = 0
+    failures = []
+
+    def work(url):
+        nonlocal done
+        data = scrape_film(url)
+        with _cache_lock:
+            if data is None:
+                failures.append(url)
+            else:
+                cache[url] = data
+            done += 1
+            # Checkpoint periodically rather than on every film
+            if done % 25 == 0:
+                save_cache(cache)
+        if progress_cb:
+            progress_cb(done, total, (data or {}).get("title") or url)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        list(pool.map(work, todo))
+
+    save_cache(cache)
+
+    if failures:
+        cache["__failures__"] = failures
+    return cache
+
+
+# ---------------------------------------------------------------------------
+# CLI backfill
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import sys
-    username = sys.argv[1] if len(sys.argv) > 1 else "Erdemstein"
-    scraper = LetterboxdScraper(username)
-    dataset = scraper.scrape_full()
-    out_path = os.path.join(os.path.dirname(__file__), "my_movie_dataset.csv")
-    dataset.to_csv(out_path, index=False, encoding="utf-8")
-    print(f"\nDone! {len(dataset)} movies saved to {out_path}")
-    print(dataset.head(10).to_string())
+    import io
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", line_buffering=True)
+    import pandas as pd
+
+    include_unrated = "--all" in sys.argv
+    csv_path = os.path.join(os.path.dirname(__file__), "my_movie_dataset.csv")
+    if not os.path.exists(csv_path):
+        print(f"Dataset not found at {csv_path}")
+        raise SystemExit(1)
+
+    df = pd.read_csv(csv_path)
+    if not include_unrated:
+        df = df[df["my_rating"].notna()]
+        print(f"Rated films only: {len(df)} (pass --all to include unrated)")
+
+    urls = df["link_of_movie"].dropna().tolist()
+    cached = load_cache()
+    pending = len([u for u in set(urls) if u not in cached])
+    print(f"{len(set(urls))} unique films | {pending} to scrape | {len(set(urls)) - pending} cached")
+
+    if pending == 0:
+        print("Nothing to do.")
+        raise SystemExit(0)
+
+    started = time.time()
+
+    def report(done, total, title):
+        elapsed = time.time() - started
+        rate = done / elapsed if elapsed else 0
+        eta = (total - done) / rate if rate else 0
+        print(f"  [{done:>4}/{total}] {str(title)[:48]:50s} ETA {eta:5.0f}s", flush=True)
+
+    result = scrape_films(urls, progress_cb=report)
+    failures = result.pop("__failures__", [])
+
+    elapsed = time.time() - started
+    print(f"\nDone in {elapsed:.0f}s ({elapsed / max(pending, 1):.2f}s per film)")
+    print(f"Cached films: {len(result)}")
+    if failures:
+        print(f"Failed: {len(failures)}")
+        for url in failures[:10]:
+            print(f"  {url}")
