@@ -42,7 +42,10 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-MAX_WORKERS = 16      # measured: no throttling at 24, but gains flatten after 16
+MAX_WORKERS = int(os.getenv("SCRAPE_WORKERS", "16"))  # measured locally: no
+# throttling at 24, gains flatten after 16. On a CPU-limited host (e.g. a
+# free-tier container with a fraction of a core) that many threads mostly
+# fight each other for the GIL — set SCRAPE_WORKERS lower there.
 MAX_ACTORS = 20       # LD+JSON lists ~50 in billing order; leads are enough
 RETRIES = 3
 

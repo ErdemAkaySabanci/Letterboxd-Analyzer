@@ -13,6 +13,11 @@ RUN pip install -r requirements.txt
 
 COPY --chown=app:app . .
 
+# Seed the runtime cache from the committed snapshot so a fresh container
+# (no persistent disk on free hosting tiers) starts warm instead of having
+# to re-scrape every film from cold on every deploy.
+RUN test -f film_cache.seed.json && cp film_cache.seed.json film_cache.json || true
+
 # Written at runtime: one CSV per upload, plus the shared film cache.
 RUN mkdir -p /app/sessions && chown -R app:app /app
 USER app
