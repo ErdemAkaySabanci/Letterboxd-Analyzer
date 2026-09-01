@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Install dependencies (no requirements.txt — install manually)
-pip install pandas numpy scikit-learn scipy fastapi uvicorn beautifulsoup4 requests
+# Install dependencies (pinned — the deploy image installs the same file)
+pip install -r requirements.txt
 
 # Run the server (FastAPI + static frontend) at http://localhost:8000
 py -3.12 server.py
@@ -22,6 +22,31 @@ node --check dashboard/app.js && node --check dashboard/quiz.js
 `py -3.12` is the interpreter that has the dependencies — bare `python` on this
 machine does not. There is no test suite, linter, or frontend build step; the
 frontend is plain HTML/CSS/JS served as static files.
+
+## Branches and deployment
+
+**Push to `dev`, never to `main`.** The app is live at
+https://letterboxd-analyzer.onrender.com and Render deploys from `main`, so a
+push there goes straight to the public site. Day-to-day work — every commit,
+every experiment — belongs on `dev`.
+
+`main` moves only when a change has been checked and is meant to ship:
+
+```bash
+git checkout main && git merge dev && git push origin main
+git checkout dev
+```
+
+Deploy notes that constrain what can safely change:
+
+- **One worker only.** Scrape job state lives in a module-level dict and the
+  film cache is a single lock-guarded file. Render sets `WEB_CONCURRENCY=1`;
+  anything that assumes multiple processes will lose job state.
+- **No persistent disk on the free tier.** `sessions/` and `film_cache.json`
+  reset on every deploy, which is why `film_cache.seed.json` is committed and
+  copied into place by the Dockerfile — a fresh container starts warm instead
+  of re-scraping hundreds of films on 0.1 vCPU.
+- `ALLOWED_ORIGINS`, `PORT`, and `SCRAPE_WORKERS` come from the environment.
 
 ## Architecture
 
