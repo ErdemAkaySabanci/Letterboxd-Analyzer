@@ -49,7 +49,17 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DASHBOARD_DIR = os.path.join(BASE_DIR, "dashboard")
 
 app = FastAPI(title="Letterboxd Profile Analysis")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# In production set ALLOWED_ORIGINS to a comma-separated list of your own
+# origins; unset (local development) keeps the permissive default.
+_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=_origins, allow_methods=["*"], allow_headers=["*"])
+
+# Upload guards. A Letterboxd export is well under a megabyte, so anything
+# near these limits is either a mistake or an attack — a zip bomb expands to
+# gigabytes from a few hundred kilobytes.
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024          # 10 MB compressed
+MAX_UNCOMPRESSED_BYTES = 200 * 1024 * 1024   # 200 MB expanded
 
 
 def clean_nans(obj):
@@ -170,6 +180,10 @@ def _require(session_id: str):
 def _parse_letterboxd_zip(zip_bytes: bytes) -> pd.DataFrame:
     """Parse a Letterboxd export ZIP into a unified DataFrame."""
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        expanded = sum(info.file_size for info in zf.infolist())
+        if expanded > MAX_UNCOMPRESSED_BYTES:
+            raise ValueError("ZIP içeriği beklenenden çok büyük")
+
         names = zf.namelist()
 
         watched_path = next((n for n in names if n.endswith('watched.csv')), None)
@@ -209,6 +223,17 @@ def _parse_letterboxd_zip(zip_bytes: bytes) -> pd.DataFrame:
 # Upload & progress
 # ---------------------------------------------------------------------------
 
+async def _read_limited(file: UploadFile) -> bytes:
+    """Read an upload into memory, refusing anything over MAX_UPLOAD_BYTES."""
+    chunks, total = [], 0
+    while chunk := await file.read(1 << 20):
+        total += len(chunk)
+        if total > MAX_UPLOAD_BYTES:
+            raise ValueError(f"Dosya çok büyük (en fazla {MAX_UPLOAD_BYTES // (1024 * 1024)} MB)")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 @app.post("/api/upload-zip")
 async def upload_zip(file: UploadFile = File(...)):
     """
@@ -216,7 +241,7 @@ async def upload_zip(file: UploadFile = File(...)):
     no scraping at all. The metadata scrape starts in the background.
     """
     try:
-        df = _parse_letterboxd_zip(await file.read())
+        df = _parse_letterboxd_zip(await _read_limited(file))
         if df.empty:
             return JSONResponse(status_code=400, content={"error": "ZIP boş görünüyor"})
 
@@ -446,5 +471,8 @@ if __name__ == "__main__":
     removed = sessions.purge_expired()
     if removed:
         print(f"Purged {removed} expired session(s)")
-    print("Starting Letterboxd Analysis server at http://localhost:8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", "8000"))
+    print(f"Starting Letterboxd Analysis server at http://localhost:{port}")
+    # One worker only: scrape job state lives in memory and the film cache is a
+    # single file guarded by an in-process lock. See README before scaling out.
+    uvicorn.run(app, host="0.0.0.0", port=port)

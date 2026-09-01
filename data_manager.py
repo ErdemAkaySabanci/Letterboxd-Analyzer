@@ -49,6 +49,12 @@ RETRIES = 3
 _thread_local = threading.local()
 _cache_lock = threading.Lock()
 
+# Caps concurrent outbound requests across *all* sessions. Without it, five
+# simultaneous uploads mean 80 parallel hits on Letterboxd and an IP ban that
+# breaks the app for everyone. Per-session pools still spawn their threads;
+# they just queue here.
+_request_slots = threading.BoundedSemaphore(MAX_WORKERS)
+
 
 # ---------------------------------------------------------------------------
 # Cache
@@ -233,7 +239,8 @@ def scrape_films(urls, progress_cb=None, max_workers: int = MAX_WORKERS) -> dict
 
     def work(url):
         nonlocal done
-        data = scrape_film(url)
+        with _request_slots:
+            data = scrape_film(url)
         with _cache_lock:
             if data is None:
                 failures.append(url)

@@ -1,0 +1,12 @@
+.git/
+__pycache__/
+*.pyc
+sessions/
+film_cache.json
+film_cache.json.tmp
+movies_cache.json
+my_movie_dataset.csv
+test_export.zip
+letterboxd-*/
+.claude/
+.env
