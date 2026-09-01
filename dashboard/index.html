@@ -5,14 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Letterboxd Wrapped — Kendini ne kadar tanıyorsun?</title>
 <meta name="description" content="Letterboxd geçmişini yükle, kendi film zevkin hakkındaki soruları cevapla, yılın özetini gör." />
+<meta name="theme-color" content="#0A0A0F" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="tr_TR" />
+<meta property="og:title" content="Letterboxd Wrapped — Kendini ne kadar tanıyorsun?" />
+<meta property="og:description" content="Letterboxd geçmişini yükle, kendi film zevkin hakkındaki soruları cevapla, yılın özetini gör." />
+<meta name="twitter:card" content="summary" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Ccircle cx='7.5' cy='16' r='3.3' fill='%2300E5A0'/%3E%3Ccircle cx='16' cy='16' r='3.3' fill='%23FFB020'/%3E%3Ccircle cx='24.5' cy='16' r='3.3' fill='%23FF3B5C'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/dashboard/style.css?v=kino1" />
+<link rel="stylesheet" href="/dashboard/style.css?v=r5" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 </head>
 <body>
+
+<main>
 
 <!-- ══════════════ LANDING ══════════════ -->
 <section id="landing" class="page active">
@@ -31,7 +40,7 @@
             <p class="drop-hint">veya bilgisayarından seç</p>
             <label class="file-btn">
                 Dosya Seç
-                <input type="file" id="file" accept=".zip,application/zip" hidden />
+                <input type="file" id="file" accept=".zip,application/zip" class="sr-only" />
             </label>
             <p class="drop-hint" id="file-name" style="margin-top:.8rem"></p>
         </div>
@@ -46,11 +55,23 @@
 
 <!-- ══════════════ QUIZ ══════════════ -->
 <section id="play" class="page" data-accent="amber">
+    <!-- The stage. Three layers behind every question, all of them reading
+         --exposure, which quiz.js raises as the run advances and raises
+         further for every right answer. -->
+    <div class="stage" aria-hidden="true">
+        <div class="stage-reel" id="stage-reel"></div>
+        <div class="stage-wash"></div>
+        <div class="stage-beam"><i></i><span class="stage-motes"></span></div>
+    </div>
+
     <div class="wrap quiz-top">
-        <div class="quiz-rail" id="rail"></div>
+        <!-- Progress: one frame per answered question. Filled by quiz.js. -->
+        <div class="filmstrip" id="rail" role="progressbar"
+             aria-label="Test ilerlemesi" aria-valuemin="0"></div>
         <div class="quiz-meta">
             <span class="scrape-pill" id="scrape-pill"><span class="dot"></span><span id="scrape-text">hazırlanıyor…</span></span>
             <span class="quiz-meta-right">
+                <span class="frame-count">Kare <b id="frame-count">0/0</b></span>
                 <span class="score">Skor <b id="score">0</b></span>
                 <button class="btn-skip" id="btn-skip">Testi atla →</button>
             </span>
@@ -72,6 +93,9 @@
 
         <div class="share-card" id="share-card">
             <div class="share-head">Letterboxd Wrapped</div>
+            <!-- The strip the quiz filled in. quiz.js unhides it once there
+                 is something on it; a skipped test leaves it hidden. -->
+            <div class="share-strip" id="share-strip" hidden></div>
             <div class="share-grid">
                 <div class="share-stat"><span class="v" id="s-films">—</span><span class="l">Film</span></div>
                 <div class="share-stat"><span class="v" id="s-hours">—</span><span class="l">Saat</span></div>
@@ -86,7 +110,7 @@
         </div>
 
         <div class="result-actions">
-            <button class="btn-ghost" id="btn-png">PNG indir</button>
+            <button class="btn-solid" id="btn-png">PNG indir</button>
             <button class="btn-ghost" id="btn-again">Yeni ZIP yükle</button>
         </div>
 
@@ -108,128 +132,160 @@
         </div>
     </header>
 
+    <!-- Each chapter is a title card that owns the screen, then the evidence
+         that scrolls up over it. `card-stat` is the one number or name the
+         chapter is really about; app.js fills it. -->
+
     <!-- 01 — Künye -->
     <section class="chapter" data-accent="amber">
-        <div class="wrap-wide">
-            <div class="chapter-head">
-                <span class="chapter-num">01</span>
-                <div>
-                    <h2>Künye</h2>
-                    <p id="ch1-sub">Kütüphanenin tek bakışta özeti.</p>
-                </div>
+        <div class="card">
+            <div class="wrap-wide card-inner rise">
+                <p class="card-num">01</p>
+                <h2 class="card-title">Künye</h2>
+                <p class="card-stat" id="ch1-stat">—</p>
+                <p class="card-line" id="ch1-sub">Kütüphanenin tek bakışta özeti.</p>
             </div>
-            <div class="big-stats" id="big-stats"></div>
+        </div>
+        <div class="evidence">
+            <div class="wrap-wide">
+                <div class="ev rise"><div class="big-stats" id="big-stats"></div></div>
+            </div>
         </div>
     </section>
 
     <!-- 02 — Nasıl puanlıyorsun -->
     <section class="chapter" data-accent="violet">
-        <div class="wrap-wide">
-            <div class="chapter-head">
-                <span class="chapter-num">02</span>
-                <div>
-                    <h2>Nasıl puanlıyorsun</h2>
-                    <p id="ch2-sub"></p>
+        <div class="card">
+            <div class="wrap-wide card-inner rise">
+                <p class="card-num">02</p>
+                <h2 class="card-title">Nasıl puanlıyorsun</h2>
+                <p class="card-stat" id="ch2-stat">—</p>
+                <p class="card-line" id="ch2-sub"></p>
+            </div>
+        </div>
+        <div class="evidence">
+            <div class="wrap-wide">
+                <div class="ev-2">
+                    <section class="ev rise"><h3>Puan dağılımın</h3><canvas id="c-ratings"></canvas></section>
+                    <section class="ev rise"><h3>Sen vs kitle</h3><canvas id="c-scatter"></canvas><p class="ev-foot" id="corr-note"></p></section>
                 </div>
+                <section class="ev rise"><h3>En aykırı puanların</h3><div class="film-strip" id="r-contro"></div></section>
             </div>
-            <div class="grid-2">
-                <div class="panel tall"><h3>Puan dağılımın</h3><canvas id="c-ratings"></canvas></div>
-                <div class="panel tall"><h3>Sen vs kitle</h3><canvas id="c-scatter"></canvas><p class="panel-foot" id="corr-note"></p></div>
-            </div>
-            <div class="panel"><h3>En aykırı puanların</h3><div class="film-strip" id="r-contro"></div></div>
         </div>
     </section>
 
     <!-- 03 — Kimleri izliyorsun -->
     <section class="chapter" data-accent="sky">
-        <div class="wrap-wide">
-            <div class="chapter-head">
-                <span class="chapter-num">03</span>
-                <div>
-                    <h2>Kimleri izliyorsun</h2>
-                    <p id="ch3-sub"></p>
+        <div class="card">
+            <div class="wrap-wide card-inner rise">
+                <div class="card-with-face">
+                    <figure class="face-hero" id="ch3-face" hidden></figure>
+                    <div>
+                        <p class="card-num">03</p>
+                        <h2 class="card-title">Kimleri izliyorsun</h2>
+                        <p class="card-stat" id="ch3-stat">—</p>
+                        <p class="card-line" id="ch3-sub"></p>
+                    </div>
                 </div>
             </div>
-            <div class="grid-2">
-                <div class="panel"><h3>En sevdiğin yönetmenler <em>4+ film</em></h3><div class="rank" id="r-dirs"></div></div>
-                <div class="panel"><h3>En çok izlediğin yönetmenler</h3><div class="rank" id="r-dirs-count"></div></div>
-                <div class="panel"><h3>En sevdiğin oyuncular <em>4+ film</em></h3><div class="rank" id="r-actors"></div></div>
-                <div class="panel"><h3>En çok izlediğin oyuncular</h3><div class="rank" id="r-actors-count"></div></div>
+        </div>
+        <div class="evidence">
+            <div class="wrap-wide">
+                <section class="ev rise"><h3>Yönetmenler <em>en çok izlediklerin</em></h3><div class="shelf" id="shelf-dirs"></div></section>
+                <section class="ev rise"><h3>Oyuncular <em>en çok izlediklerin</em></h3><div class="shelf" id="shelf-actors"></div></section>
+                <div class="ev-2">
+                    <section class="ev rise"><h3>En sevdiğin yönetmenler <em>ağırlıklı ortalama · 4+ film</em></h3><div class="rank" id="r-dirs"></div></section>
+                    <section class="ev rise"><h3>En sevdiğin oyuncular <em>ağırlıklı ortalama · 4+ film</em></h3><div class="rank" id="r-actors"></div></section>
+                </div>
+                <section class="ev rise"><h3>Vazgeçemediğin ikililer</h3><div class="rank" id="r-pairs"></div></section>
             </div>
-            <div class="panel"><h3>Vazgeçemediğin ikililer</h3><div class="rank" id="r-pairs"></div></div>
         </div>
     </section>
 
     <!-- 04 — Ne izliyorsun -->
     <section class="chapter" data-accent="crimson">
-        <div class="wrap-wide">
-            <div class="chapter-head">
-                <span class="chapter-num">04</span>
-                <div>
-                    <h2>Ne izliyorsun</h2>
-                    <p id="ch4-sub"></p>
-                </div>
+        <div class="card">
+            <div class="wrap-wide card-inner rise">
+                <p class="card-num">04</p>
+                <h2 class="card-title">Ne izliyorsun</h2>
+                <p class="card-stat" id="ch4-stat">—</p>
+                <p class="card-line" id="ch4-sub"></p>
             </div>
-            <div class="panel"><h3>Tür çelişkisi <em>çok izlemek sevmek değil</em></h3><div class="genre-table" id="genre-table"></div></div>
-            <div class="grid-2">
-                <div class="panel"><h3>Film uzunluğu</h3><canvas id="c-runtime"></canvas><p class="panel-foot" id="runtime-note"></p></div>
-                <div class="panel"><h3>Hangi on yıl</h3><canvas id="c-decades"></canvas></div>
+        </div>
+        <div class="evidence">
+            <div class="wrap-wide">
+                <section class="ev rise"><h3>Tür çelişkisi <em>çok izlemek sevmek değil</em></h3><div class="genre-table" id="genre-table"></div></section>
+                <div class="ev-2">
+                    <section class="ev rise"><h3>Film uzunluğu</h3><canvas id="c-runtime"></canvas><p class="ev-foot" id="runtime-note"></p></section>
+                    <section class="ev rise"><h3>Hangi on yıl</h3><canvas id="c-decades"></canvas></section>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- 05 — Ne zaman izliyorsun -->
     <section class="chapter" data-accent="mint">
-        <div class="wrap-wide">
-            <div class="chapter-head">
-                <span class="chapter-num">05</span>
-                <div>
-                    <h2>Ne zaman izliyorsun</h2>
-                    <p id="ch5-sub"></p>
-                </div>
+        <div class="card">
+            <div class="wrap-wide card-inner rise">
+                <p class="card-num">05</p>
+                <h2 class="card-title">Ne zaman izliyorsun</h2>
+                <p class="card-stat" id="ch5-stat">—</p>
+                <p class="card-line" id="ch5-sub"></p>
             </div>
-            <div class="grid-2">
-                <div class="panel tall"><h3>Yıllara göre ortalaman</h3><canvas id="c-trend"></canvas></div>
-                <div class="panel tall"><h3>Taze mi, arşiv mi</h3><canvas id="c-backlog"></canvas><p class="panel-foot" id="backlog-note"></p></div>
+        </div>
+        <div class="evidence">
+            <div class="wrap-wide">
+                <div class="ev-2">
+                    <section class="ev rise"><h3>Yıllara göre ortalaman</h3><canvas id="c-trend"></canvas></section>
+                    <section class="ev rise"><h3>Taze mi, arşiv mi</h3><canvas id="c-backlog"></canvas><p class="ev-foot" id="backlog-note"></p></section>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- 06 — Nereden izliyorsun -->
     <section class="chapter" data-accent="amber">
-        <div class="wrap-wide">
-            <div class="chapter-head">
-                <span class="chapter-num">06</span>
-                <div>
-                    <h2>Nereden izliyorsun</h2>
-                    <p id="ch6-sub"></p>
-                </div>
+        <div class="card">
+            <div class="wrap-wide card-inner rise">
+                <p class="card-num">06</p>
+                <h2 class="card-title">Nereden izliyorsun</h2>
+                <p class="card-stat" id="ch6-stat">—</p>
+                <p class="card-line" id="ch6-sub"></p>
             </div>
-            <div class="grid-2">
-                <div class="panel"><h3>Ülkeler</h3><div class="rank" id="r-countries"></div></div>
-                <div class="panel"><h3>Diller</h3><div class="rank" id="r-langs"></div></div>
+        </div>
+        <div class="evidence">
+            <div class="wrap-wide">
+                <div class="ev-2">
+                    <section class="ev rise"><h3>Ülkeler</h3><div class="rank" id="r-countries"></div></section>
+                    <section class="ev rise"><h3>Diller</h3><div class="rank" id="r-langs"></div></section>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- 07 — Seni ne tahmin ediyor -->
     <section class="chapter" data-accent="violet">
-        <div class="wrap-wide">
-            <div class="chapter-head">
-                <span class="chapter-num">07</span>
-                <div>
-                    <h2>Seni ne tahmin ediyor</h2>
-                    <p id="ch7-sub"></p>
-                </div>
+        <div class="card">
+            <div class="wrap-wide card-inner rise">
+                <p class="card-num">07</p>
+                <h2 class="card-title">Seni ne tahmin ediyor</h2>
+                <p class="card-stat" id="ch7-stat">—</p>
+                <p class="card-line" id="ch7-sub"></p>
             </div>
-            <div class="panel"><div class="drivers" id="drivers"></div></div>
+        </div>
+        <div class="evidence">
+            <div class="wrap-wide">
+                <section class="ev rise"><div class="drivers" id="drivers"></div></section>
+            </div>
         </div>
     </section>
 </section>
 
-<div class="toast" id="toast"></div>
+</main>
 
-<script src="/dashboard/quiz.js?v=kino1"></script>
-<script src="/dashboard/app.js?v=kino1"></script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/dashboard/quiz.js?v=r5"></script>
+<script src="/dashboard/app.js?v=r5"></script>
 </body>
 </html>

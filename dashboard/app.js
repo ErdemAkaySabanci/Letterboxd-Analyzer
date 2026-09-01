@@ -15,6 +15,9 @@ let charts = {};
 function show(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === page));
     window.scrollTo({ top: 0 });
+    // Watched here as well as after the fetch, so a failed analysis load can
+    // never leave the chapters hidden.
+    if (page === 'wrapped') watchReveals();
 }
 
 function toast(message, isError = false) {
@@ -133,30 +136,55 @@ function setScrapePill(text, done) {
     $('scrape-pill').classList.toggle('done', done);
 }
 
+/**
+ * Follow the background scrape.
+ *
+ * Phase-2 questions used to wait for the *whole* scrape to report done, which
+ * on a cold library is long enough that the quiz looks broken. They are pulled
+ * at a couple of points on the way instead. No threshold has to be agreed on:
+ * `Quiz.add()` drops ids it already holds, so an early pull simply takes
+ * whatever `build_full_quiz()` can build from the metadata that has landed,
+ * and a later one fills in the rest.
+ */
 function followScrape() {
     const stream = new EventSource(`/api/progress?session=${session}`);
+    let nextPull = 0.4;                       // fraction of the scrape
+    let giveUp = 0;
+    const stop = () => { stream.close(); clearTimeout(giveUp); };
+
+    // A scrape that hangs still has to let the quiz end.
+    giveUp = setTimeout(() => {
+        stream.close();
+        setScrapePill('tarama uzun sürdü', true);
+        loadFullPhase(true);
+    }, 90000);
 
     stream.onmessage = (event) => {
         const state = JSON.parse(event.data);
         if (state.status === 'running') {
             const left = Math.max(state.total - state.done, 0);
             setScrapePill(`${left} film kaldı`, false);
-        } else {
-            stream.close();
-            setScrapePill(state.status === 'done' ? 'hazır' : 'bazı filmler eksik', true);
-            loadFullPhase();
-            refreshAfterScrape();
+            const progress = state.total ? state.done / state.total : 0;
+            if (progress >= nextPull) {
+                nextPull += 0.2;
+                loadFullPhase(false);
+            }
+            return;
         }
+        stop();
+        setScrapePill(state.status === 'done' ? 'hazır' : 'bazı filmler eksik', true);
+        loadFullPhase(true);
+        refreshAfterScrape();
     };
-    stream.onerror = () => { stream.close(); setScrapePill('bağlantı koptu', true); loadFullPhase(); };
+    stream.onerror = () => { stop(); setScrapePill('bağlantı koptu', true); loadFullPhase(true); };
 }
 
-async function loadFullPhase() {
+async function loadFullPhase(final = true) {
     try {
         const { questions } = await api(`/api/quiz?session=${session}&phase=full`);
-        Quiz.add(questions);
+        Quiz.add(questions, final);
     } catch {
-        Quiz.expect(0);                       // let the quiz end gracefully
+        if (final) Quiz.expect(0);            // let the quiz end gracefully
     }
 }
 
@@ -236,6 +264,20 @@ function renderResult() {
 const AXIS = { color: '#8E8EA3', font: { family: 'Inter', size: 11 } };
 const GRID = { color: 'rgba(255,255,255,0.06)' };
 
+/**
+ * The accent of the chapter a canvas sits in. Chart colours used to be hex
+ * literals that happened to match the section accent; reading the token means
+ * re-accenting a chapter re-colours its charts too.
+ */
+function accent(id, alpha = 1) {
+    const el = $(id);
+    const hex = (el ? getComputedStyle(el).getPropertyValue('--accent').trim() : '') || '';
+    const safe = /^#[0-9a-f]{6}$/i.test(hex) ? hex : '#FFB020';
+    if (alpha === 1) return safe;
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(safe.slice(i, i + 2), 16));
+    return `rgba(${r},${g},${b},${alpha})`;
+}
+
 function chart(id, config) {
     charts[id]?.destroy();
     const el = $(id);
@@ -260,21 +302,72 @@ function chart(id, config) {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
     c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/** Ranked list; `max` draws a proportional bar under each row. */
-function ranking(el, rows, max = null) {
+/**
+ * The one statement a chapter opens on: a number or a name, an optional
+ * unit, and the sentence underneath that explains it.
+ *
+ * `word` marks the value as a person or a genre rather than a measurement.
+ * Those get their own smaller treatment, both so a long name still fits and
+ * because a name reads as a subject, not a quantity.
+ */
+function titleCard(n, stat, unit, line, word = false) {
+    const el = $(`ch${n}-stat`);
+    if (el) {
+        el.innerHTML = esc(stat ?? '—') + (unit ? `<small>${esc(unit)}</small>` : '');
+        el.classList.toggle('is-word', word);
+    }
+    const sub = $(`ch${n}-sub`);
+    if (sub) sub.textContent = line || '';
+}
+
+/**
+ * Entry reveals. One observer for the whole page, each element dropped the
+ * moment it lands, and the animation itself left to CSS — nothing here runs
+ * per frame.
+ */
+const revealer = 'IntersectionObserver' in window
+    ? new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('in');
+            obs.unobserve(entry.target);
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' })
+    : null;
+
+function watchReveals() {
+    const targets = document.querySelectorAll('#wrapped .rise:not(.in)');
+    // No observer means no reveal: show everything rather than nothing.
+    if (!revealer) { targets.forEach(el => el.classList.add('in')); return; }
+    targets.forEach(el => revealer.observe(el));
+}
+
+/**
+ * Ranked list; `max` draws a proportional bar under each row.
+ *
+ * `zoom` stretches the bars across the observed range instead of starting
+ * them at zero. Ratings sit in a band roughly 4.0 to 4.5 wide, so a bar
+ * measured from zero makes every row in a rating ranking the same length —
+ * the same reason the genre table scales to its own range.
+ */
+function ranking(el, rows, max = null, zoom = false) {
     const node = $(el);
     if (!node) return;
     if (!rows.length) {
-        node.innerHTML = '<p style="color:var(--muted);font-size:.9rem">Yeterli veri yok</p>';
+        node.innerHTML = '<p class="empty">Yeterli veri yok</p>';
         return;
     }
-    const peak = max ?? (Math.max(...rows.map(r => Number(r.bar) || 0)) || 1);
+    const values = rows.map(r => Number(r.bar) || 0);
+    const peak = max ?? (Math.max(...values) || 1);
+    const low = Math.min(...values);
+    // Leave the last row a visible stub rather than an empty track.
+    const floor = zoom && peak > low ? low - (peak - low) * 0.35 : 0;
     node.innerHTML = rows.map((r, i) => `
         <div class="rank-row">
             <span class="n">${i + 1}</span>
             <span class="name">${esc(r.name)}${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</span>
             <span class="val">${esc(r.value)}</span>
-            ${r.bar != null ? `<span class="track"><i style="width:${(r.bar / peak) * 100}%"></i></span>` : ''}
+            ${r.bar != null ? `<span class="track"><i style="width:${((r.bar - floor) / (peak - floor)) * 100}%"></i></span>` : ''}
         </div>`).join('');
 }
 
@@ -285,13 +378,19 @@ function ranking(el, rows, max = null) {
 async function loadAnalysis() {
     if (loadAnalysis.done) return;
 
+    // The chapters are one screen further down, so the reader can arrive
+    // mid-fetch. Shimmer the evidence rather than showing empty space.
+    const page = $('wrapped');
+    page.classList.add('loading');
+
     let stats, explain;
     try {
         [stats, explain] = await Promise.all([
             api(`/api/stats?session=${session}`),
             api(`/api/explain?session=${session}`).catch(() => null),
         ]);
-    } catch (err) { toast(err.message, true); return; }
+    } catch (err) { page.classList.remove('loading'); toast(err.message, true); return; }
+    page.classList.remove('loading');
 
     paintDashBg();
     chapterOverview(stats);
@@ -301,6 +400,8 @@ async function loadAnalysis() {
     chapterWhen(stats);
     chapterWhere(stats);
     chapterDrivers(explain);
+    loadPeople();                    // faces follow, the chapter does not wait
+    watchReveals();
     loadAnalysis.done = true;
 }
 
@@ -329,20 +430,21 @@ function chapterOverview(stats) {
     $('big-stats').innerHTML = cells
         .map(([l, v]) => `<div class="big-stat"><span class="v">${esc(v)}</span><span class="l">${esc(l)}</span></div>`)
         .join('');
-    $('ch1-sub').textContent =
-        `${s.total_movies} film, ${s.rated_movies} tanesi puanlanmış. Ortalaman ${s.avg_my_rating ?? '—'}.`;
+    titleCard(1, s.total_movies, 'film',
+        `${s.rated_movies} tanesi puanlanmış. Ortalaman ${s.avg_my_rating ?? '—'}.`);
 }
 
 /* 02 — Nasıl puanlıyorsun */
 function chapterRatings(stats) {
     const dist = stats.rating_distribution;
     const peak = dist.counts.indexOf(Math.max(...dist.counts));
-    $('ch2-sub').textContent =
-        `En sık ${dist.ratings[peak]} veriyorsun — ${dist.counts[peak]} film bu puanda.`;
+    titleCard(2, dist.ratings[peak], 'en sık verdiğin',
+        `${dist.counts[peak]} film bu puanda. Ortalaman ${stats.crowd_comparison?.yours ?? '—'}, `
+        + `kitlenin ${stats.crowd_comparison?.crowd ?? '—'}.`);
 
     chart('c-ratings', {
         type: 'bar',
-        data: { labels: dist.ratings, datasets: [{ data: dist.counts, backgroundColor: '#8B5CF6', borderRadius: 6 }] },
+        data: { labels: dist.ratings, datasets: [{ data: dist.counts, backgroundColor: accent('c-ratings'), borderRadius: 6 }] },
     });
 
     const points = stats.scatter?.points || [];
@@ -351,7 +453,7 @@ function chapterRatings(stats) {
         data: {
             datasets: [{
                 data: points,
-                backgroundColor: 'rgba(139,92,246,0.45)',
+                backgroundColor: accent('c-scatter', 0.45),
                 pointRadius: 3.5, pointHoverRadius: 6,
             }],
         },
@@ -380,7 +482,9 @@ function chapterRatings(stats) {
 
     $('r-contro').innerHTML = (stats.controversial?.controversial || []).slice(0, 8).map(m => `
         <div class="film-card">
-            <img src="${esc(m.poster || '')}" alt="" loading="lazy" />
+            ${m.poster
+                ? `<img src="${esc(m.poster)}" alt="" loading="lazy" />`
+                : '<div class="poster-blank"></div>'}
             <div class="t">${esc(m.title)}</div>
             <div class="r"><b>${m.my_rating}</b> <s>/ ${m.average_rating}</s></div>
         </div>`).join('');
@@ -390,20 +494,65 @@ function chapterRatings(stats) {
 function chapterPeople(stats) {
     const fav = (stats.bayesian_directors?.directors || [])[0];
     const most = (stats.most_watched?.directors || [])[0];
-    $('ch3-sub').textContent = fav && most && fav.director !== most.name
-        ? `En çok ${most.name} izliyorsun ama en yüksek puanı ${fav.director} alıyor.`
-        : 'Yönetmen ve oyuncu tercihlerinin dökümü.';
+    titleCard(3, most?.name ?? '—', most ? `${most.count} film` : '',
+        fav && most && fav.director !== most.name
+            ? `En çok izlediğin yönetmen. Ama en yüksek ortalamayı ${fav.director} alıyor.`
+            : 'Yönetmen ve oyuncu tercihlerinin dökümü.',
+        true);
 
+    // The two "most watched" rankings are now portrait shelves, filled by
+    // loadPeople() — same numbers, with the faces attached.
     ranking('r-dirs', (stats.bayesian_directors?.directors || []).slice(0, 8)
-        .map(d => ({ name: d.director, sub: `${d.movie_count} film`, value: d.my_avg, bar: d.my_avg })));
-    ranking('r-dirs-count', (stats.most_watched?.directors || []).slice(0, 8)
-        .map(d => ({ name: d.name, sub: d.my_avg ? `ort. ${d.my_avg}` : '', value: `${d.count} film`, bar: d.count })));
+        .map(d => ({ name: d.director, sub: `${d.movie_count} film · ort. ${d.my_avg}`,
+                     value: d.bayesian_avg, bar: d.bayesian_avg })), null, true);
     ranking('r-actors', (stats.bayesian_actors?.actors || []).slice(0, 8)
-        .map(a => ({ name: a.actor, sub: `${a.movie_count} film`, value: a.my_avg, bar: a.my_avg })));
-    ranking('r-actors-count', (stats.most_watched?.actors || []).slice(0, 8)
-        .map(a => ({ name: a.name, sub: a.my_avg ? `ort. ${a.my_avg}` : '', value: `${a.count} film`, bar: a.count })));
+        .map(a => ({ name: a.actor, sub: `${a.movie_count} film · ort. ${a.my_avg}`,
+                     value: a.bayesian_avg, bar: a.bayesian_avg })), null, true);
     ranking('r-pairs', (stats.network?.top_collaborations || []).slice(0, 8)
         .map(p => ({ name: p.pair, value: `${p.count} film`, bar: p.count })));
+}
+
+/**
+ * Portraits for the people this library watches most.
+ *
+ * Deliberately not awaited by the chapter render: the scrape leaves the
+ * machine, so the names and numbers are on screen immediately and the faces
+ * arrive when they arrive. A failure here costs a portrait, never a chapter.
+ */
+async function loadPeople() {
+    if (loadPeople.done) return;
+    let people;
+    try { people = await api(`/api/people?session=${session}&n=8`); } catch { return; }
+    loadPeople.done = true;
+
+    shelf('shelf-dirs', people.directors || []);
+    shelf('shelf-actors', people.actors || []);
+
+    const lead = (people.directors || [])[0];
+    const face = $('ch3-face');
+    if (face && lead?.portrait) {
+        face.innerHTML = `<img src="${esc(lead.portrait)}" alt="${esc(lead.name)}" loading="lazy" />`;
+        face.hidden = false;
+    }
+    // The scraped biography is deliberately not shown. Letterboxd carries it
+    // in English and this interface is Turkish throughout; one untranslated
+    // sentence in a chapter's opening card reads as a defect, not as source
+    // material. It stays in the people cache, a line away if that changes.
+}
+
+/** A row of people, each in the 2:3 frame a film gets. */
+function shelf(id, rows) {
+    const node = $(id);
+    if (!node) return;
+    if (!rows.length) { node.innerHTML = '<p class="empty">Yeterli veri yok</p>'; return; }
+    node.innerHTML = rows.map(p => `
+        <div class="person">
+            ${p.portrait
+                ? `<img src="${esc(p.portrait)}" alt="${esc(p.name)}" loading="lazy" />`
+                : '<div class="no-face"></div>'}
+            <div class="n">${esc(p.name)}</div>
+            <div class="m">${esc(p.count)} film${p.my_avg ? ` · <b>${esc(p.my_avg)}</b>` : ''}</div>
+        </div>`).join('');
 }
 
 /* 04 — Ne izliyorsun */
@@ -412,11 +561,12 @@ function chapterWhat(stats) {
     const byCount = [...genres].sort((a, b) => b.count - a.count);
     const byScore = [...genres].sort((a, b) => b.avg_my_rating - a.avg_my_rating);
 
-    if (byCount[0] && byScore[0] && byCount[0].genre !== byScore[0].genre) {
-        $('ch4-sub').textContent =
-            `En çok ${byCount[0].genre} izliyorsun (${byCount[0].count} film, ${byCount[0].avg_my_rating}) `
-            + `ama en yüksek puanı ${byScore[0].genre} alıyor (${byScore[0].count} film, ${byScore[0].avg_my_rating}).`;
-    }
+    titleCard(4, byCount[0]?.genre ?? '—', byCount[0] ? `${byCount[0].count} film` : '',
+        byCount[0] && byScore[0] && byCount[0].genre !== byScore[0].genre
+            ? `En çok izlediğin tür, ortalaman ${byCount[0].avg_my_rating}. Ama en yüksek `
+              + `ortalamayı ${byScore[0].genre} alıyor (${byScore[0].count} film, ${byScore[0].avg_my_rating}).`
+            : 'Türlere göre dökümün.',
+        true);
 
     // Ratings bunch up between roughly 2.8 and 4.0, so a 0–5 bar makes every
     // genre look identical. Stretch the bar across the observed range instead,
@@ -453,9 +603,9 @@ function chapterWhat(stats) {
         data: {
             labels: rc.labels,
             datasets: [
-                { label: 'Film', data: rc.values, backgroundColor: 'rgba(255,59,92,0.35)', borderRadius: 6, yAxisID: 'y' },
-                { label: 'Ortalama', data: ra.values, type: 'line', borderColor: '#FF3B5C',
-                  pointBackgroundColor: '#FF3B5C', tension: 0.3, yAxisID: 'y1' },
+                { label: 'Film', data: rc.values, backgroundColor: accent('c-runtime', 0.35), borderRadius: 6, yAxisID: 'y' },
+                { label: 'Ortalama', data: ra.values, type: 'line', borderColor: accent('c-runtime'),
+                  pointBackgroundColor: accent('c-runtime'), tension: 0.3, yAxisID: 'y1' },
             ],
         },
         options: {
@@ -481,7 +631,7 @@ function chapterWhat(stats) {
     if (dec?.labels?.length) {
         chart('c-decades', {
             type: 'bar',
-            data: { labels: dec.labels, datasets: [{ data: dec.counts, backgroundColor: '#FF3B5C', borderRadius: 6 }] },
+            data: { labels: dec.labels, datasets: [{ data: dec.counts, backgroundColor: accent('c-decades'), borderRadius: 6 }] },
         });
     }
 }
@@ -494,8 +644,8 @@ function chapterWhen(stats) {
             type: 'line',
             data: {
                 labels: t.years,
-                datasets: [{ data: t.avg_ratings, borderColor: '#00E5A0', backgroundColor: 'rgba(0,229,160,0.12)',
-                             tension: 0.35, fill: true, pointBackgroundColor: '#00E5A0', pointRadius: 5 }],
+                datasets: [{ data: t.avg_ratings, borderColor: accent('c-trend'), backgroundColor: accent('c-trend', 0.12),
+                             tension: 0.35, fill: true, pointBackgroundColor: accent('c-trend'), pointRadius: 5 }],
             },
             options: { scales: { x: { ticks: AXIS, grid: GRID }, y: { ticks: AXIS, grid: GRID, min: 0, max: 5 } } },
         });
@@ -510,16 +660,17 @@ function chapterWhen(stats) {
             type: 'bar',
             data: {
                 labels: b.categories.map(c => LABELS[c] || c),
-                datasets: [{ data: b.counts, backgroundColor: '#00E5A0', borderRadius: 6 }],
+                datasets: [{ data: b.counts, backgroundColor: accent('c-backlog'), borderRadius: 6 }],
             },
             options: { indexAxis: 'y', scales: { x: { ticks: AXIS, grid: GRID }, y: { ticks: AXIS, grid: GRID } } },
         });
         const top = b.categories[b.counts.indexOf(Math.max(...b.counts))];
         $('backlog-note').textContent =
             `İzlediğin filmin ortalama yaşı ${b.avg_age}. En büyük dilim: ${LABELS[top] || top}.`;
-        $('ch5-sub').textContent = b.avg_age >= 8
-            ? 'Vizyon takipçisi değilsin — arşiv kazıyorsun.'
-            : 'Çoğunlukla yeni çıkanları izliyorsun.';
+        titleCard(5, b.avg_age, 'yıl',
+            b.avg_age >= 8
+                ? 'İzlediğin filmin ortalama yaşı. Vizyon takipçisi değilsin, arşiv kazıyorsun.'
+                : 'İzlediğin filmin ortalama yaşı. Çoğunlukla yeni çıkanları izliyorsun.');
     }
 }
 
@@ -532,10 +683,11 @@ function chapterWhere(stats) {
     // summary, or it would read as "10 countries" for everyone.
     const shown = countries.reduce((sum, c) => sum + c.count, 0);
     const top3 = countries.slice(0, 3).reduce((sum, c) => sum + c.count, 0);
-    $('ch6-sub').textContent = shown
-        ? `${stats.summary.unique_countries} ülke, ${stats.summary.unique_languages} dil. `
-          + `Ama filmlerinin %${Math.round(top3 / shown * 100)}'i ilk üç ülkeden.`
-        : '';
+    titleCard(6, stats.summary.unique_countries ?? '—', 'ülke',
+        shown
+            ? `${stats.summary.unique_languages} dil. Ama filmlerinin `
+              + `%${Math.round(top3 / shown * 100)}'i ilk üç ülkeden.`
+            : '');
 
     ranking('r-countries', countries.slice(0, 8).map(c => ({ name: c.name, value: `${c.count} film`, bar: c.count })));
     ranking('r-langs', langs.slice(0, 8).map(l => ({ name: l.name, value: `${l.count} film`, bar: l.count })));
@@ -544,11 +696,14 @@ function chapterWhere(stats) {
 /* 07 — Seni ne tahmin ediyor */
 function chapterDrivers(explain) {
     if (!explain?.drivers?.length) {
-        $('drivers').innerHTML = '<p style="color:var(--muted)">Model için yeterli veri yok.</p>';
+        $('drivers').innerHTML = '<p class="empty">Model için yeterli veri yok.</p>';
+        titleCard(7, '—', '', 'Puanlarını tahmin eden model için yeterli veri yok.');
         return;
     }
-    $('ch7-sub').textContent =
-        'Puanlarını tahmin eden bir model eğittik. Kararında en çok neyin ağırlığı var?';
+    const lead = explain.drivers[0];
+    titleCard(7, lead.label, `%${lead.share}`,
+        'Puanlarını tahmin eden bir model eğittik. Kararında en çok bu ağırlığa sahip.',
+        true);
     $('drivers').innerHTML =
         `<p class="driver-lead">${esc(explain.headline)}</p>`
         + explain.drivers.map(d => `
@@ -621,6 +776,9 @@ async function runHook(hook) {
 
 
 async function boot() {
+    // Gates the reveal system's hidden state: without this class the CSS
+    // leaves everything visible, which is what a broken script should do.
+    document.documentElement.classList.add('js-rise');
     wireLanding();
     wireButtons();
     paintPosterWall();
