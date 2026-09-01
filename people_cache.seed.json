@@ -1,0 +1,162 @@
+{
+ "director:martin-scorsese": {
+  "name": "Martin Scorsese",
+  "kind": "director",
+  "slug": "martin-scorsese",
+  "url": "https://letterboxd.com/director/martin-scorsese/",
+  "portrait": "https://image.tmdb.org/t/p/w500/g3DjfKsgZQWZiw30I20hZVk1oMX.jpg",
+  "tmdb_id": "1032",
+  "bio": "Martin Charles Scorsese (/skɔːrˈsɛsi/ skor-SESS-ee, Italian: [skorˈseːze, -se]; born November 17, 1942) is an American filmmaker. One of the major figures of the New Hollywood era, he has received many accolades, including an Academy Award, four BAFTA Awards, three Emmy Awards, a Grammy Award, and three Golden Globe Awards. He has been honoured with the AFI Life Achievement Award in 1997, the Film Society of Lincoln Center tribute in 1998, the Kennedy Center Honor in 2007, the Cecil B. DeMille Award in 2010, and the BAFTA Fellowship in 2012. Four of his films have been inducted into the National Film Registry by the Library of Congress as \"culturally, historically or aesthetically significant\".",
+  "found": true
+ },
+ "actor:robert-downey-jr": {
+  "name": "Robert Downey Jr.",
+  "kind": "actor",
+  "slug": "robert-downey-jr",
+  "url": "https://letterboxd.com/actor/robert-downey-jr/",
+  "portrait": "https://image.tmdb.org/t/p/w500/5qHNjhtjMD4YWH3UP0rm4tKwxCL.jpg",
+  "tmdb_id": "3223",
+  "bio": "Robert John Downey Jr. (born April 4, 1965) is an American actor. His films as a leading actor have grossed over $14.3 billion worldwide, making him one of the highest-grossing actors of all time. Downey was the highest-paid actor in the world annually from 2013 to 2015. Known for his versatility across roles, he is the recipient of various accolades, including an Academy Award, a Daytime Emmy Award, three Golden Globe Awards, and two British Academy Film Awards.",
+  "found": true
+ },
+ "director:christopher-nolan": {
+  "name": "Christopher Nolan",
+  "kind": "director",
+  "slug": "christopher-nolan",
+  "url": "https://letterboxd.com/director/christopher-nolan/",
+  "portrait": "https://image.tmdb.org/t/p/w500/xuAIuYSmsUzKlUMBFGVZaWsY3DZ.jpg",
+  "tmdb_id": "525",
+  "bio": "Christopher Nolan (born 30 July 1970) is a British and American filmmaker. Known for his Hollywood blockbusters with complex storytelling, Nolan is considered a leading filmmaker of the 21st century. His films have earned over $7.7 billion worldwide, making him the third-highest-grossing film director of all time. Nolan's accolades include two Academy Awards, a Golden Globe Award, and two British Academy Film Awards. He was also appointed a Commander of the British Empire (CBE) in 2019 and was knighted in 2024 for his contributions to film.",
+  "found": true
+ },
+ "actor:stellan-skarsgard": {
+  "name": "Stellan Skarsgård",
+  "kind": "actor",
+  "slug": "stellan-skarsgard",
+  "url": "https://letterboxd.com/actor/stellan-skarsgard/",
+  "portrait": "https://image.tmdb.org/t/p/w500/mW7xmtGV4y79kQGn0zkKVGDMAmw.jpg",
+  "tmdb_id": "1640",
+  "bio": "Stellan Skarsgård (born June 13, 1951) is a Swedish actor, known internationally for The Hunt for Red October and Good Will Hunting, as well as his supporting roles in the Pirates of the Caribbean, Mamma Mia!, and Marvel Cinematic Universe (MCU) franchises.",
+  "found": true
+ },
+ "director:bryan-singer": {
+  "name": "Bryan Singer",
+  "kind": "director",
+  "slug": "bryan-singer",
+  "url": "https://letterboxd.com/director/bryan-singer/",
+  "portrait": "https://image.tmdb.org/t/p/w500/ts06thbCv9Ug2mNpcbcrmLGRL4Q.jpg",
+  "tmdb_id": "9032",
+  "bio": "Bryan Jay Singer (born September 17, 1965) is an American director, producer and writer. He is the founder of Bad Hat Harry Productions and has produced almost all of the films he has directed, as well as multiple television series.",
+  "found": true
+ },
+ "director:guy-ritchie": {
+  "name": "Guy Ritchie",
+  "kind": "director",
+  "slug": "guy-ritchie",
+  "url": "https://letterboxd.com/director/guy-ritchie/",
+  "portrait": "https://image.tmdb.org/t/p/w500/9pLUnjMgIEWXi0mlHYzie9cKUTD.jpg",
+  "tmdb_id": "956",
+  "bio": "Guy Stuart Ritchie (born 10 September 1968) is an English film director, producer and screenwriter. His work includes British gangster films and the Sherlock Holmes films starring Robert Downey Jr.",
+  "found": true
+ },
+ "director:david-fincher": {
+  "name": "David Fincher",
+  "kind": "director",
+  "slug": "david-fincher",
+  "url": "https://letterboxd.com/director/david-fincher/",
+  "portrait": "https://image.tmdb.org/t/p/w500/tpEczFclQZeKAiCeKZZ0adRvtfz.jpg",
+  "tmdb_id": "7467",
+  "bio": "David Andrew Leo Fincher (born August 28, 1962) is an American film director. His films, mostly thrillers, have received 40 nominations at the Academy Awards, including three for him as Best Director.",
+  "found": true
+ },
+ "director:quentin-tarantino": {
+  "name": "Quentin Tarantino",
+  "kind": "director",
+  "slug": "quentin-tarantino",
+  "url": "https://letterboxd.com/director/quentin-tarantino/",
+  "portrait": "https://image.tmdb.org/t/p/w500/1gjcpAa99FAOWGnrUvHEXXsRs7o.jpg",
+  "tmdb_id": "138",
+  "bio": "Quentin Jerome Tarantino (born March 27, 1963) is an American film director, screenwriter, producer, cinematographer and actor. In the early 1990s he was an independent filmmaker whose films used nonlinear storylines and aestheticization of violence. His films have earned him a variety of Academy Award, Golden Globe, BAFTA and Palme d'Or Awards and he has been nominated for Emmy and Grammy Awards. In 2007, Total Film named him the 12th-greatest director of all time.",
+  "found": true
+ },
+ "actor:brad-pitt": {
+  "name": "Brad Pitt",
+  "kind": "actor",
+  "slug": "brad-pitt",
+  "url": "https://letterboxd.com/actor/brad-pitt/",
+  "portrait": "https://image.tmdb.org/t/p/w500/m09Y1YfPPeNYYUSHnnVqahkrC1o.jpg",
+  "tmdb_id": "287",
+  "bio": "William Bradley Pitt (born December 18, 1963) is an American actor and film producer. In a film career spanning more than thirty years, Pitt has received numerous accolades, including two Academy Awards, two British Academy Film Awards, two Golden Globe Awards, two Primetime Emmy Awards and one Volpi Cup. His films as a leading actor have grossed over $7.5 billion worldwide.",
+  "found": true
+ },
+ "director:denis-villeneuve": {
+  "name": "Denis Villeneuve",
+  "kind": "director",
+  "slug": "denis-villeneuve",
+  "url": "https://letterboxd.com/director/denis-villeneuve/",
+  "portrait": "https://image.tmdb.org/t/p/w500/zdDx9Xs93UIrJFWYApYR28J8M6b.jpg",
+  "tmdb_id": "137427",
+  "bio": "Denis Villeneuve (born October 3, 1967) is a Canadian filmmaker. He has received seven Canadian Screen Awards as well as nominations for three Academy Awards, five BAFTA Awards, and two Golden Globe Awards. Villeneuve's films have grossed more than $1.8 billion worldwide.",
+  "found": true
+ },
+ "actor:samuel-l-jackson": {
+  "name": "Samuel L. Jackson",
+  "kind": "actor",
+  "slug": "samuel-l-jackson",
+  "url": "https://letterboxd.com/actor/samuel-l-jackson/",
+  "portrait": "https://image.tmdb.org/t/p/w500/qdfRtvPCj51C9Uy5VEgjgj69JyV.jpg",
+  "tmdb_id": "2231",
+  "bio": "Samuel Leroy Jackson (born December 21, 1948) is an American actor and producer. One of the most widely recognized actors of his generation, the films in which he has appeared have collectively grossed over $27 billion worldwide, making him the second highest-grossing actor of all time. The Academy of Motion Picture Arts and Sciences gave him an Academy Honorary Award in 2022 as \"A cultural icon whose dynamic work has resonated across genres and generations and audiences worldwide\".",
+  "found": true
+ },
+ "director:steven-spielberg": {
+  "name": "Steven Spielberg",
+  "kind": "director",
+  "slug": "steven-spielberg",
+  "url": "https://letterboxd.com/director/steven-spielberg/",
+  "portrait": "https://image.tmdb.org/t/p/w500/tZxcg19YQ3e8fJ0pOs7hjlnmmr6.jpg",
+  "tmdb_id": "488",
+  "bio": "Steven Allan Spielberg KBE (born December 18, 1946) is an American filmmaker. A major figure of the New Hollywood era and pioneer of the modern blockbuster, Spielberg is widely regarded as one of the greatest and most influential filmmakers in the history of cinema and is the highest-grossing film director of all time. Among other accolades, he has received three Academy Awards, four Golden Globe Awards and three BAFTA Awards, as well as the AFI Life Achievement Award in 1995, an honorary knighthood in 2001, the Kennedy Center Honors in 2006, the Cecil B. DeMille Award in 2009, the Presidential Medal of Freedom in 2015, and the National Medal of Arts in 2023. According to Forbes, he is the wealthiest celebrity.",
+  "found": true
+ },
+ "actor:mark-ruffalo": {
+  "name": "Mark Ruffalo",
+  "kind": "actor",
+  "slug": "mark-ruffalo",
+  "url": "https://letterboxd.com/actor/mark-ruffalo/",
+  "portrait": "https://image.tmdb.org/t/p/w500/5GilHMOt5PAQh6rlUKZzGmaKEI7.jpg",
+  "tmdb_id": "103",
+  "bio": "Mark Alan Ruffalo (/ˈrʌfəloʊ/; born November 22, 1967) is an American actor and producer who began his career in the late 1980s and first gained recognition for his work in Kenneth Lonergan's play This Is Our Youth (1996) and drama film You Can Count on Me (2000). He went on to star in the romantic comedies 13 Going on 30 (2004) and Just like Heaven (2005), and the thrillers In the Cut (2003), Zodiac (2007), and Shutter Island (2010). He received a Tony Award nomination for his supporting role in the Broadway revival of Awake and Sing! in 2006. Ruffalo has gained international recognition for playing Bruce Banner/Hulk in the Marvel Cinematic Universe, beginning with The Avengers (2012).",
+  "found": true
+ },
+ "actor:michael-caine": {
+  "name": "Michael Caine",
+  "kind": "actor",
+  "slug": "michael-caine",
+  "url": "https://letterboxd.com/actor/michael-caine/",
+  "portrait": "https://image.tmdb.org/t/p/w500/bVZRMlpjTAO2pJK6v90buFgVbSW.jpg",
+  "tmdb_id": "3895",
+  "bio": "Sir Michael Caine CBE (born Maurice Joseph Micklewhite Jr.; 14 March 1933) is a retired English actor. Known for his distinctive South London accent, he has appeared in more than 160 films in a career spanning seven decades, and is considered a British film icon. As of February 2017, the films in which Caine has appeared have grossed over $7.8 billion worldwide.",
+  "found": true
+ },
+ "actor:chris-evans": {
+  "name": "Chris Evans",
+  "kind": "actor",
+  "slug": "chris-evans",
+  "url": "https://letterboxd.com/actor/chris-evans/",
+  "portrait": "https://image.tmdb.org/t/p/w500/3bOGNsHlrswhyW79uvIHH1V43JI.jpg",
+  "tmdb_id": "16828",
+  "bio": "Christopher Robert Evans (born June 13, 1981) is an American actor. He gained worldwide recognition for portraying Steve Rogers / Captain America in various Marvel Cinematic Universe films, from Captain America: The First Avenger (2011) to Avengers: Secret Wars (2027). His work in the franchise established him as one of the world's highest-paid actors. Evans's films as a leading actor, particularly in the franchise, have grossed $11.4 billion worldwide, making him one of the highest-grossing film stars of all time.",
+  "found": true
+ },
+ "actor:matt-damon": {
+  "name": "Matt Damon",
+  "kind": "actor",
+  "slug": "matt-damon",
+  "url": "https://letterboxd.com/actor/matt-damon/",
+  "portrait": "https://image.tmdb.org/t/p/w500/aCvBXTAR9B1qRjIRzMBYhhbm1fR.jpg",
+  "tmdb_id": "1892",
+  "bio": "Matthew Paige Damon (born October 8, 1970) is a multifaceted American actor, producer, and screenwriter. In 2007, he was highlighted as one of Forbes' most bankable stars, and by 2010, he emerged as one of the highest-grossing actors in cinematic history. His accolades include an Academy Award and two Golden Globe Awards, along with nominations for three BAFTA Awards and seven Primetime Emmy Awards.",
+  "found": true
+ }
+}
