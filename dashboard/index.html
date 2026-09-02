@@ -47,6 +47,8 @@
 
         <button class="btn-go" id="go" disabled>Başla</button>
 
+        <button class="btn-ghost game-entry" id="btn-game">ya da önce bir oyun oyna →</button>
+
         <p class="landing-foot">
             Letterboxd → <code>Settings</code> → <code>Import &amp; Export</code> → <code>Export Your Data</code>
         </p>
@@ -81,6 +83,30 @@
 </section>
 
 <!-- ══════════════ RESULT + ANALYSIS (one continuous scroll) ══════════════ -->
+<!-- ════════════════════════════════════════════════════════
+     GAME — "Daha Çok İzlenen"
+     ════════════════════════════════════════════════════════ -->
+<section id="game" class="page" data-accent="mint">
+    <header class="game-bar">
+        <button class="btn-ghost" id="game-exit">← Çık</button>
+        <p class="game-mode" id="game-mode"></p>
+        <p class="game-score">Seri <b id="game-streak">0</b> <span id="game-best"></span></p>
+    </header>
+
+    <div class="duel" id="duel">
+        <div class="duel-track" id="duel-track"></div>
+        <div class="duel-mid">
+            <div class="duel-ask" id="duel-ask">
+                <button class="duel-btn" id="btn-more">Daha çok izlenmiş <b>↑</b></button>
+                <button class="duel-btn" id="btn-less">Daha az izlenmiş <b>↓</b></button>
+            </div>
+            <span class="duel-verdict" id="duel-verdict" role="status" aria-live="polite"></span>
+        </div>
+    </div>
+
+    <div class="game-over" id="game-over" hidden></div>
+</section>
+
 <section id="wrapped" class="page">
     <div class="dash-bg" id="dash-bg" aria-hidden="true"></div>
 
@@ -268,6 +294,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="/dashboard/quiz.js?v=r8"></script>
+<script src="/dashboard/game.js?v=r8"></script>
 <script src="/dashboard/app.js?v=r8"></script>
 </body>
 </html>

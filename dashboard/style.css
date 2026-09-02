@@ -1063,12 +1063,188 @@ body::after {
 .toast.show { transform: translateX(-50%) translateY(0); visibility: visible; }
 .toast.err { border-color: var(--crimson); }
 
+/* ════════════════════════════════════════════════════════════
+   GAME — "Daha Çok İzlenen"
+
+   A duel between two posters. The whole deck sits in the track and the
+   round advances by moving the track one half-width, so the film you just
+   judged slides into the answered slot and keeps its number — the run
+   reads as one continuous strip rather than a series of reloads.
+   ════════════════════════════════════════════════════════════ */
+
+/* `display` belongs on .active alone. On the id it would outrank
+   `.page { display: none }` and stack this screen under every other. */
+#game.active {
+    display: grid; grid-template-rows: auto minmax(0, 1fr);
+    height: 100dvh; overflow: hidden;
+}
+
+.game-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; padding: 0.9rem clamp(1rem, 3vw, 1.8rem);
+    border-bottom: 1px solid var(--ink-line);
+}
+.game-mode {
+    font-size: 0.78rem; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: lowercase;
+}
+.game-score { font-size: 0.86rem; color: var(--muted); display: flex; align-items: baseline; gap: 0.5rem; }
+.game-score b {
+    font-family: var(--display); font-weight: 800; font-size: 1.35rem;
+    color: var(--accent); font-variant-numeric: tabular-nums;
+}
+
+/* ── The duel ─────────────────────────────────────────────── */
+
+.duel { position: relative; overflow: hidden; }
+/* The seam between the two films, under the controls. */
+.duel::after {
+    content: ''; position: absolute; z-index: 1;
+    left: 50%; top: 0; bottom: 0; width: 1px;
+    background: var(--ink-line);
+}
+
+.duel-track {
+    position: absolute; inset: 0;
+    transform: translate3d(calc(var(--i, 0) * -50%), 0, 0);
+    transition: transform 0.75s var(--ease);
+    will-change: transform;
+}
+.duel-side {
+    position: absolute; top: 0; bottom: 0;
+    left: calc(var(--k) * 50%); width: 50%;
+    overflow: hidden;
+}
+
+.duel-poster {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+    /* Posters are 2:3 and the slot is nearly square, so the crop is real.
+       Framing high keeps faces and titles rather than centring on a torso. */
+    object-position: 50% 32%;
+}
+.duel-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top,
+        rgba(10, 10, 15, 0.97) 0%,
+        rgba(10, 10, 15, 0.78) 34%,
+        rgba(10, 10, 15, 0.30) 68%,
+        rgba(10, 10, 15, 0.55) 100%);
+}
+.duel-body {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: clamp(1.2rem, 3vw, 2.6rem);
+}
+.duel-title {
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(1.15rem, 2.3vw, 2.1rem); line-height: 1.05;
+    letter-spacing: -0.03em; text-wrap: balance;
+}
+.duel-year { margin-top: 0.3rem; font-size: 0.85rem; color: var(--muted); }
+
+/* The unanswered side holds a "?" in the exact spot its number will take.
+   Without it the challenger is simply the panel missing a figure, which
+   reads as something still loading rather than as the question. */
+.duel-figure { position: relative; margin-top: clamp(0.8rem, 2vw, 1.4rem); }
+.duel-figure::before {
+    content: '?'; position: absolute; left: 0; top: 0;
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(1.8rem, 4.4vw, 3.4rem); line-height: 0.9;
+    letter-spacing: -0.045em; color: var(--muted);
+    transition: opacity 0.3s var(--ease);
+}
+.duel-figure.shown::before { opacity: 0; }
+.duel-count, .duel-unit { opacity: 0; transition: opacity 0.45s var(--ease); }
+.duel-figure.shown .duel-count, .duel-figure.shown .duel-unit { opacity: 1; }
+.duel-count {
+    display: block; font-family: var(--display); font-weight: 800;
+    font-size: clamp(1.8rem, 4.4vw, 3.4rem); line-height: 0.9;
+    letter-spacing: -0.045em; color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+.duel-unit { display: block; font-size: 0.82rem; color: var(--muted); }
+
+/* ── Controls, sitting on the seam ────────────────────────── */
+
+.duel-mid {
+    position: absolute; z-index: 2; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    display: grid; place-items: center;
+    width: min(84%, 290px);
+}
+.duel-ask {
+    grid-area: 1 / 1; display: grid; gap: 0.6rem; width: 100%;
+    transition: opacity 0.3s var(--ease);
+}
+.duel-ask.spent { opacity: 0; pointer-events: none; }
+
+.duel-btn {
+    width: 100%; padding: 0.85rem 1.1rem; border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: rgba(10, 10, 15, 0.74);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    color: var(--text); font: 600 0.94rem var(--body); cursor: pointer;
+    transition: transform 0.2s var(--ease), border-color 0.2s, background 0.2s;
+}
+.duel-btn:hover { transform: translateY(-2px); border-color: var(--accent); }
+.duel-btn b { color: var(--accent); }
+
+.duel-verdict {
+    grid-area: 1 / 1; font-size: clamp(2.6rem, 7vw, 4rem); line-height: 1;
+    opacity: 0; transform: scale(0.6);
+    transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+    pointer-events: none;
+}
+.duel-verdict.good, .duel-verdict.bad { opacity: 1; transform: none; }
+.duel-verdict.good { color: var(--mint); }
+.duel-verdict.bad  { color: var(--crimson); }
+
+.game-loading {
+    position: absolute; inset: 0;
+    display: grid; place-content: center;
+    color: var(--muted); font-size: 0.95rem;
+}
+
+/* ── The end of a run ─────────────────────────────────────── */
+
+.game-over {
+    display: grid; place-content: center; justify-items: center;
+    text-align: center; gap: 0.45rem; padding: 2rem 1.5rem;
+}
+.over-num {
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(5rem, 22vw, 13rem); line-height: 0.78;
+    letter-spacing: -0.06em; color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+.over-label { font-size: 1rem; color: var(--muted); }
+.over-note { font-size: 0.9rem; color: var(--text); min-height: 1.2em; }
+.over-acts {
+    margin-top: 1.6rem; display: flex; flex-wrap: wrap;
+    gap: 0.8rem; justify-content: center;
+}
+
+.game-entry { margin-top: 1.1rem; }
+
+/* ── Phone: the duel stacks, and the track moves on Y ─────── */
+
+@media (max-width: 760px) {
+    .duel-track { transform: translate3d(0, calc(var(--i, 0) * -50%), 0); }
+    .duel-side {
+        left: 0; width: 100%;
+        top: calc(var(--k) * 50%); bottom: auto; height: 50%;
+    }
+    .duel::after { left: 0; right: 0; top: 50%; bottom: auto; width: auto; height: 1px; }
+    .duel-body { padding: 1rem 1.2rem; }
+    .duel-figure { margin-top: 0.55rem; }
+}
+
 /* ── Press ────────────────────────────────────────────────────
    Declared last: the :hover lift on the same elements is written earlier,
    and at equal specificity the later rule is the one that wins. */
 .btn-go:active:not(:disabled), .btn-next:active, .btn-solid:active,
 .btn-ghost:active, .btn-skip:active, .file-btn:active,
-.opt:active:not(:disabled), .scroll-cue:active {
+.opt:active:not(:disabled), .scroll-cue:active, .duel-btn:active {
     transform: translateY(1px) scale(0.99);
 }
 

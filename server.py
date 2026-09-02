@@ -330,6 +330,61 @@ async def get_posters(n: int = 40, session: str = ""):
     return {"posters": urls[:max(0, min(n, 120))]}
 
 
+# ---------------------------------------------------------------------------
+# Games
+# ---------------------------------------------------------------------------
+
+@app.get("/api/game/watched")
+async def get_game_watched(n: int = 60, session: str = ""):
+    """
+    A deck for the higher-lower game: which film has more people behind it.
+
+    The axis is `rating_count` and not `average_rating` because only one of
+    them separates. Two random films in the cache differ by a median factor
+    of 3.5 in watch count, but 31% of pairs sit within 0.3 stars of each
+    other — on ratings a third of the rounds would be a coin toss dressed up
+    as a question.
+
+    With a session the deck is drawn from the visitor's own library, which
+    turns the same game from trivia into memory. It falls back to the shared
+    cache when their own scrape has not filled in enough films yet: a deck of
+    six is not a game.
+    """
+    cache = load_film_cache()
+
+    def deck_from(records):
+        out = []
+        for film in records:
+            if not isinstance(film, dict):
+                continue
+            count, poster, title = film.get("rating_count"), film.get("poster"), film.get("title")
+            if not (count and poster and title):
+                continue
+            out.append({
+                "title": title,
+                "year": film.get("release_year"),
+                "poster": poster,
+                "watched": int(count),
+            })
+        return out
+
+    films, mode = [], "shared"
+    if session:
+        df = load_dataset(session)
+        if df is not None:
+            mine = deck_from(cache.get(link) for link in df["link_of_movie"])
+            # Below this a run ends before it starts, and replaying it would
+            # deal the same handful of films every time.
+            if len(mine) >= 24:
+                films, mode = mine, "mine"
+
+    if not films:
+        films = deck_from(cache.values())
+
+    random.shuffle(films)
+    return {"mode": mode, "films": films[:max(8, min(n, 120))]}
+
+
 @app.get("/api/people")
 async def get_people(session: str = "", n: int = 8):
     """

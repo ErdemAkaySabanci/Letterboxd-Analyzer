@@ -822,6 +822,29 @@ function chapterWhere(stats) {
             null, false, 'language');
 }
 
+/* ── game ────────────────────────────────────────────────────── */
+
+/**
+ * Open the duel.
+ *
+ * Reachable before any upload — that is the point of it. The landing page
+ * asks for a ZIP and a two-minute scrape before it shows anything, which is
+ * far too much to ask of a link someone was sent; the game is playable from
+ * the shared cache in a second, and passes a session along when there is one
+ * so the same screen becomes a memory test on the visitor's own films.
+ */
+function openGame() {
+    show('game');
+    Game.start(session);
+}
+
+function wireGame() {
+    $('btn-game').addEventListener('click', openGame);
+    $('game-exit').addEventListener('click', () => show(session ? 'wrapped' : 'landing'));
+    $('btn-more').addEventListener('click', () => Game.answer(true));
+    $('btn-less').addEventListener('click', () => Game.answer(false));
+}
+
 /* ── boot ────────────────────────────────────────────────────── */
 
 function wireButtons() {
@@ -856,13 +879,15 @@ function wireButtons() {
  * analysis, with no way back to the test:
  *   #test  replay the quiz on the stored session, without re-uploading
  *   #yeni  drop the session and start over from the landing page
+ *   #oyun  go straight to the game, with or without a session
  * Returns true when the hook took over the screen.
  */
 async function runHook(hook) {
-    if (hook !== 'test' && hook !== 'yeni') return false;
+    if (hook !== 'test' && hook !== 'yeni' && hook !== 'oyun') return false;
     history.replaceState(null, '', location.pathname);
 
     if (hook === 'yeni') { $('btn-again').click(); return true; }
+    if (hook === 'oyun') { openGame(); return true; }
 
     let stored = null;
     try { stored = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {}
@@ -889,6 +914,7 @@ async function boot() {
     document.documentElement.classList.add('js-rise');
     wireLanding();
     wireButtons();
+    wireGame();
     paintPosterWall();
 
     // Hash hooks run on load *and* on hashchange: typing #test into the bar of
