@@ -24,8 +24,7 @@ Which tracks can safely run in parallel:
 
 | Together | Why |
 | --- | --- |
-| A + B + F | Different files entirely, zero overlap |
-| B + E | `ml_models.py` vs `analyzer.py`, only `server.py` is shared — coordinate if both add endpoints |
+| A + E + F | Different files entirely, zero overlap |
 | C + D | **Avoid.** Both live in `dashboard/`, they will conflict |
 
 ---
@@ -45,34 +44,6 @@ site actually reflects the repo.
    assuming the app is broken.
 
 **Done when** the live site loads a 600-film export with no scraping wait.
-
----
-
-## Track B — Make the ML defensible
-
-Highest value for ML/AI applications. The models already train and already
-compute hold-out metrics — the numbers just never reach anyone.
-
-Right now [`train_models()`](ml_models.py) computes MSE and R² at
-`ml_models.py:150-151`, but [`server.py:399`](server.py) only ever calls
-`explain_predictions()`. Nothing surfaces the metrics.
-
-1. **Add a baseline.** Predicting the user's own mean rating for every film.
-   R² on its own says nothing; "beats predicting your average by X" is the
-   claim that means something, and its absence is the first thing an
-   interviewer will notice.
-2. **Report hold-out R² and RMSE against that baseline** — in the README, with
-   real numbers from a real library, not placeholders.
-3. **Consider k-fold cross-validation** instead of the single
-   `train_test_split`. With a few hundred rated films, one split is noisy
-   enough that the number moves depending on `random_state`.
-4. **Write down where the model fails.** Ratings cluster in a narrow band
-   (~2.8–4.0), so a model can look decent and still be nearly useless at
-   picking out the extremes. Saying this plainly is a strength, not a weakness.
-
-**Files**: `ml_models.py`, `README.md`
-**Done when** the README states what the model achieves, what it is compared
-against, and where it breaks down.
 
 ---
 
@@ -119,7 +90,7 @@ committing; a syntax error there takes down the whole file silently.
 ## Track E — Handle libraries that are not yours
 
 Everything has been tested against one 603-film export. A stranger's export
-will differ in ways worth handling before the link is on a CV.
+will differ in ways worth handling before anyone else is handed the link.
 
 1. **No ratings at all.** `_parse_letterboxd_zip()` already tolerates a missing
    `ratings.csv`, but the analysis and quiz paths downstream assume ratings

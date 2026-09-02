@@ -1012,18 +1012,6 @@ body::after {
 .film-card .r b { color: var(--accent); }
 .film-card .r s { color: var(--muted); text-decoration: none; }
 
-/* ── Prediction drivers ──────────────────────────────────────── */
-.drivers { display: flex; flex-direction: column; gap: 1rem; }
-.driver { display: grid; grid-template-columns: 1fr auto; gap: 0.4rem 1rem; align-items: baseline; }
-.driver .l { font-size: 1rem; }
-.driver .p { font-family: var(--display); font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
-.driver .track { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.07); overflow: hidden; }
-.driver .track i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
-.driver-lead {
-    font-family: var(--display); font-size: clamp(1.2rem, 2.6vw, 1.7rem);
-    font-weight: 700; letter-spacing: -0.02em; margin-bottom: 1.6rem; line-height: 1.25;
-}
-
 /* ── Drill-down ───────────────────────────────────────────────
    Every claim the analysis makes opens onto the films behind it. The panel
    is inserted after whatever was clicked rather than shown in a dialog: the

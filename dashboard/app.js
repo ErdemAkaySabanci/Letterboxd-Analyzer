@@ -461,12 +461,9 @@ async function loadAnalysis() {
     const page = $('wrapped');
     page.classList.add('loading');
 
-    let stats, explain;
+    let stats;
     try {
-        [stats, explain] = await Promise.all([
-            api(`/api/stats?session=${session}`),
-            api(`/api/explain?session=${session}`).catch(() => null),
-        ]);
+        stats = await api(`/api/stats?session=${session}`);
     } catch (err) { page.classList.remove('loading'); toast(err.message, true); return; }
     page.classList.remove('loading');
 
@@ -477,7 +474,6 @@ async function loadAnalysis() {
     chapterWhat(stats);
     chapterWhen(stats);
     chapterWhere(stats);
-    chapterDrivers(explain);
     loadPeople();                    // faces follow, the chapter does not wait
     watchReveals();
     loadAnalysis.done = true;
@@ -824,27 +820,6 @@ function chapterWhere(stats) {
             null, false, 'country');
     ranking('r-langs', langs.slice(0, 8).map(l => ({ name: l.name, value: `${l.count} film`, bar: l.count })),
             null, false, 'language');
-}
-
-/* 07 — Seni ne tahmin ediyor */
-function chapterDrivers(explain) {
-    if (!explain?.drivers?.length) {
-        $('drivers').innerHTML = '<p class="empty">Model için yeterli veri yok.</p>';
-        titleCard(7, '—', '', 'Puanlarını tahmin eden model için yeterli veri yok.');
-        return;
-    }
-    const lead = explain.drivers[0];
-    titleCard(7, lead.label, `%${lead.share}`,
-        'Puanlarını tahmin eden bir model eğittik. Kararında en çok bu ağırlığa sahip.',
-        true);
-    $('drivers').innerHTML =
-        `<p class="driver-lead">${esc(explain.headline)}</p>`
-        + explain.drivers.map(d => `
-            <div class="driver">
-                <span class="l">${esc(d.label)}</span>
-                <span class="p">%${d.share}</span>
-                <span class="track"><i style="width:${d.share}%"></i></span>
-            </div>`).join('');
 }
 
 /* ── boot ────────────────────────────────────────────────────── */

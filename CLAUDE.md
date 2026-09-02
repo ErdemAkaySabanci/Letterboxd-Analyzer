@@ -77,7 +77,6 @@ The user exports their data from `letterboxd.com/settings/data/` and uploads the
 
 - **[analyzer.py](analyzer.py)** — pure `DataFrame -> dict` functions. `instant_summary()` (ZIP-only) and `full_analysis()` (needs metadata) are the aggregate entry points. `MIN_DIRECTOR_FILMS` / `MIN_ACTOR_FILMS` (both 4) act as *both* the minimum film count and the Bayesian prior weight — lower values let a two-film director outrank one you've followed for ten.
 - **[quiz.py](quiz.py)** — builds "how well do you know yourself" questions from the user's own library, with distractors drawn from their real data. `build_instant_quiz()` works the moment the ZIP lands; `build_full_quiz()` needs the scrape. Questions ship ready to render; the client never derives facts.
-- **[ml_models.py](ml_models.py)** — `explain_predictions()` trains the models and reports feature importance in plain language (genre/actor one-hots rolled up). The raw metrics and the director-based recommender are no longer surfaced.
 
 ### Frontend ([dashboard/](dashboard/))
 
@@ -85,7 +84,7 @@ No framework, no build step. Chart.js and html2canvas via CDN.
 
 - `quiz.js` — the quiz engine. Questions can be appended mid-run, which is how phase-2 questions join once the scrape finishes.
 - `app.js` — orchestration: upload → quiz → result → analysis, plus all chapter rendering.
-- The result summary and the 7 analysis chapters live on **one continuous page** (`#wrapped`); there is no separate dashboard page.
+- The result summary and the 6 analysis chapters live on **one continuous page** (`#wrapped`); there is no separate dashboard page.
 
 Design language is dark, poster-forward, with a per-section accent (`data-accent` on an ancestor sets `--accent`).
 

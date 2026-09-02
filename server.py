@@ -40,7 +40,6 @@ from analyzer import (films_matching, full_analysis, instant_summary,
                       most_watched_people, wrapped_summary)
 from data_manager import (load_cache as load_film_cache, person_record,
                           scrape_films, scrape_people)
-from ml_models import explain_predictions
 from quiz import build_full_quiz, build_instant_quiz
 
 # ---------------------------------------------------------------------------
@@ -451,19 +450,6 @@ async def get_films(session: str = "", director: str = "", actor: str = "",
             rating=rating,
             limit=max(1, min(limit, 300)),
         ))
-    except Exception as e:
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-
-@app.get("/api/explain")
-async def get_explain(session: str = ""):
-    """What actually drives this user's ratings, in plain language."""
-    df, error = _require(session)
-    if error:
-        return error
-    try:
-        return clean_nans(explain_predictions(df))
     except Exception as e:
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"error": str(e)})
