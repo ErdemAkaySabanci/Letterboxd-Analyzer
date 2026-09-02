@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/dashboard/style.css?v=r8" />
+<link rel="stylesheet" href="/dashboard/style.css?v=r9" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 </head>
@@ -61,16 +61,18 @@
          --exposure, which quiz.js raises as the run advances and raises
          further for every right answer. -->
     <div class="stage" aria-hidden="true">
-        <div class="stage-reel" id="stage-reel"></div>
+        <!-- Progress and atmosphere are the same object now: two reels running
+             down the edges, one gate per question, pulled down a frame with
+             every answer. -->
+        <div class="reel-rail rail-l"><div class="reel-track" id="rail-l"></div></div>
+        <div class="reel-rail rail-r"><div class="reel-track" id="rail-r"></div></div>
         <div class="stage-wash"></div>
         <div class="stage-beam"><i></i><span class="stage-motes"></span></div>
     </div>
 
     <div class="wrap quiz-top">
-        <!-- Progress: one frame per answered question. Filled by quiz.js. -->
-        <div class="filmstrip" id="rail" role="progressbar"
-             aria-label="Test ilerlemesi" aria-valuemin="0"></div>
-        <div class="quiz-meta">
+        <div class="quiz-meta" id="rail-aria" role="progressbar"
+             aria-label="Test ilerlemesi" aria-valuemin="0">
             <span class="scrape-pill" id="scrape-pill"><span class="dot"></span><span id="scrape-text">hazırlanıyor…</span></span>
             <span class="quiz-meta-right">
                 <span class="frame-count">Kare <b id="frame-count">0/0</b></span>
@@ -293,8 +295,8 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="/dashboard/quiz.js?v=r8"></script>
-<script src="/dashboard/game.js?v=r8"></script>
-<script src="/dashboard/app.js?v=r8"></script>
+<script src="/dashboard/quiz.js?v=r9"></script>
+<script src="/dashboard/game.js?v=r9"></script>
+<script src="/dashboard/app.js?v=r9"></script>
 </body>
 </html>

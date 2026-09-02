@@ -221,7 +221,27 @@ body::after {
    the compositor. The flicker is a nested opacity rather than an animated
    filter for the same reason: two opacities multiply for free, while a
    filter repaints a full-screen layer sixty times a second. */
-#play { --exposure: 0; }
+#play {
+    --exposure: 0;
+    --rail-w: clamp(46px, 9.5vw, 148px);
+    --gh: clamp(74px, 11dvh, 132px);
+    min-height: 100dvh;
+}
+/* The reels sit at the edges; the question column keeps clear of them at
+   every width rather than only at desktop. */
+#play .wrap { width: min(100% - 2 * (var(--rail-w) + 1rem), 940px); }
+
+/* `display` on the id alone would outrank `.page { display: none }` and
+   stack every screen — it belongs on .active, like every other page rule.
+   The meta line holds the top; the question takes the rest and sits in it,
+   so the reels are not running full height past an empty lower half. */
+#play.active { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.quiz-body {
+    align-self: center;
+    /* Optically centred rather than mathematically: a block of text reads as
+       centred when it sits slightly above the middle. */
+    padding-bottom: 7vh;
+}
 
 .stage {
     position: absolute; inset: 0; z-index: 0;
@@ -236,20 +256,77 @@ body::after {
     filter: grayscale(1) contrast(0.9);
     opacity: calc(0.10 + var(--exposure) * 0.34);
     transition: opacity 1.4s var(--ease);
-    /* Hollow out the middle so the wall frames the question instead of
-       running underneath it. The landing wall solves the same problem the
-       same way; the light therefore comes up around the copy, not through
-       it. */
     -webkit-mask-image: radial-gradient(ellipse 58% 54% at 50% 47%, transparent 30%, #000 82%);
     mask-image: radial-gradient(ellipse 58% 54% at 50% 47%, transparent 30%, #000 82%);
-    animation: drift 120s ease-in-out infinite alternate;
     will-change: transform;
 }
 .stage-reel img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 3px; }
-@keyframes drift {
-    from { transform: translate3d(-1.6%, -1.2%, 0) scale(1.05); }
-    to   { transform: translate3d(1.6%, 1.2%, 0) scale(1.05); }
+
+/* ── The reels ────────────────────────────────────────────────
+   Film runs vertically and its sprockets sit on the edges, so progress
+   belongs down the sides of the screen rather than across the top of it.
+   These two rails carry the whole run: a gate per question, every gate
+   already holding its poster but unexposed, and answering pulls the reel
+   down one frame and develops the one that lands.
+
+   That collapses two layers into one. There used to be a strip reporting
+   progress and, behind it, a separate wall of drifting posters for
+   atmosphere — the same material saying the same thing twice. */
+.reel-rail {
+    position: absolute; top: 0; bottom: 0; width: var(--rail-w);
+    overflow: hidden;
+    background-color: #14141C;
+    /* Sprocket holes, painted rather than built, so they cannot drift out
+       of step with the frames that scroll past them. */
+    background-image:
+        linear-gradient(180deg, var(--ink) 0 9px, transparent 9px),
+        linear-gradient(180deg, var(--ink) 0 9px, transparent 9px);
+    background-size: 5px 22px, 5px 22px;
+    background-position: 4px 0, calc(100% - 4px) 0;
+    background-repeat: repeat-y, repeat-y;
+    opacity: calc(0.58 + var(--exposure) * 0.42);
+    transition: opacity 1.4s var(--ease);
 }
+.rail-l { left: 0; }
+.rail-r { right: 0; }
+
+.reel-track {
+    position: absolute; left: 11px; right: 11px; bottom: 0;
+    /* Reversed so the first question sits at the bottom and the ones still
+       to come stack above it: the reel then travels *down* as it advances,
+       the direction film actually moves through a projector. */
+    display: flex; flex-direction: column-reverse;
+    transform: translate3d(0, calc((var(--i, 0) + 0.5) * var(--gh) - 58dvh + var(--off, 0px)), 0);
+    transition: transform 0.9s var(--ease);
+    will-change: transform;
+}
+/* Half a frame out of step, so the two edges do not read as one mirrored
+   object. */
+.rail-r .reel-track { --off: calc(var(--gh) * 0.5); }
+
+.gate { position: relative; flex: 0 0 var(--gh); height: var(--gh); }
+.gate img {
+    position: absolute; inset: 3px 0; width: 100%; height: calc(100% - 6px);
+    object-fit: cover; border-radius: 2px;
+    /* Unexposed: the latent image is there, the light has not hit it yet. */
+    filter: grayscale(1) brightness(0.30); opacity: 0.5;
+    transition: filter 0.6s var(--ease), opacity 0.6s var(--ease);
+}
+.gate.hit img  { filter: none; opacity: 1; }
+.gate.miss img { filter: grayscale(1) brightness(0.7); opacity: 0.85; }
+.gate.hit::after, .gate.miss::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 3px;
+    height: 3px; z-index: 2;
+}
+.gate.hit::after  { background: var(--mint); }
+.gate.miss::after { background: var(--crimson); }
+/* The question on screen right now — an open gate waiting for its frame. */
+.gate.now {
+    box-shadow: inset 0 0 0 2px var(--accent);
+    border-radius: 2px;
+    animation: gate 1.7s ease-in-out infinite;
+}
+.gate.pop { animation: expose 0.5s var(--ease); }
 
 /* The per-question accent, bleeding in from the top of the frame. */
 .stage-wash {
@@ -305,11 +382,14 @@ body::after {
 
 @media (max-width: 620px) {
     .stage-reel { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 7px; }
+    /* Narrow enough to leave the question a readable column. */
+    #play { --rail-w: clamp(38px, 12vw, 54px); }
+    .reel-track { left: 7px; right: 7px; }
 }
 
 /* The lighting is a state, not a movement: exposure stays, drift goes. */
 @media (prefers-reduced-motion: reduce) {
-    .stage-reel, .stage-beam i, .stage-motes { animation: none; }
+    .stage-reel, .stage-beam i, .stage-motes, .gate.now { animation: none; }
 }
 
 .quiz-top { position: relative; z-index: 2; padding: 1.25rem 0 0; }
@@ -409,7 +489,13 @@ body::after {
 /* Muted on purpose — the score is what the accent is for. */
 .frame-count { font-family: var(--display); font-weight: 700; color: var(--muted); }
 .frame-count b { color: var(--text); font-variant-numeric: tabular-nums; }
-@media (max-width: 480px) { .frame-count { display: none; } }
+/* The reels took over from the strip that used to show progress across the
+   top, so this count is the only place a narrow screen can read it. Drop the
+   label to make room, never the number. */
+@media (max-width: 480px) {
+    .frame-count { font-size: 0; }
+    .frame-count b { font-size: 0.8rem; }
+}
 
 .btn-skip {
     font-size: 0.82rem; color: var(--muted);
