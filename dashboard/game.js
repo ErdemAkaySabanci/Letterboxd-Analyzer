@@ -1,9 +1,14 @@
 /* ============================================================
    "Daha Çok İzlenen" — the higher-lower duel
 
-   Two films, one number showing. The deck arrives whole from
-   /api/game/watched and every round is decided on the client, so a run
-   costs exactly one request no matter how long it lasts.
+   Two films, one number showing: how many Letterboxd members have rated
+   it. That is not the watch count — Letterboxd keeps that behind a fragment
+   Cloudflare will not serve us — so the interface says "puanlamış", never
+   "izlemiş".
+
+   The deck arrives whole from /api/game/popularity and every round is
+   decided on the client, so a run costs exactly one request however long
+   it lasts.
    ============================================================ */
 
 const Game = (() => {
@@ -42,7 +47,7 @@ async function start(session = null) {
 
     let data;
     try {
-        data = await api(`/api/game/watched?n=60${session ? `&session=${session}` : ''}`);
+        data = await api(`/api/game/popularity?n=60${session ? `&session=${session}` : ''}`);
     } catch {
         track.innerHTML = '<p class="game-loading">Deste alınamadı. Sonra tekrar dene.</p>';
         return;
@@ -78,7 +83,7 @@ function panel(film, k) {
             <p class="duel-year">${film.year ? esc(film.year) : ''}</p>
             <div class="duel-figure" id="fig-${k}">
                 <b class="duel-count" id="count-${k}">0</b>
-                <span class="duel-unit">kişi izlemiş</span>
+                <span class="duel-unit">kişi Letterboxd'da puanlamış</span>
             </div>
         </div>
     </div>`;
@@ -110,7 +115,7 @@ function reveal(k, instant = false) {
     if (!fig || !out) return;
     fig.classList.add('shown');
 
-    const target = deck[k].watched;
+    const target = deck[k].rated_by;
     if (instant) { out.textContent = nf.format(target); return; }
 
     const started = performance.now();
@@ -126,16 +131,15 @@ function reveal(k, instant = false) {
 /**
  * Answer the round.
  *
- * A tie counts as correct. The two numbers are real watch counts, and
- * telling somebody they were wrong about two films that are level would be
- * the game's fault, not theirs.
+ * A tie counts as correct. Telling somebody they were wrong about two films
+ * that are genuinely level would be the game's fault, not theirs.
  */
 function answer(higher) {
     if (locked || at + 1 >= deck.length) return;
     locked = true;
 
-    const mine = deck[at].watched;
-    const theirs = deck[at + 1].watched;
+    const mine = deck[at].rated_by;
+    const theirs = deck[at + 1].rated_by;
     const right = theirs === mine || (theirs > mine) === higher;
 
     $('duel-ask').classList.add('spent');

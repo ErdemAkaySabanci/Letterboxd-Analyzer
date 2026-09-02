@@ -144,7 +144,7 @@ def enrich_with_cache(df: pd.DataFrame) -> pd.DataFrame:
         "Runtime_minutes": ("runtime_minutes", None),
         "genre_of_movie": ("genres", []),
         "average_rating": ("average_rating", None),
-        "Watched_number": ("rating_count", None),
+        "rating_count": ("rating_count", None),
         "poster": ("poster", None),
     }
 
@@ -334,16 +334,22 @@ async def get_posters(n: int = 40, session: str = ""):
 # Games
 # ---------------------------------------------------------------------------
 
-@app.get("/api/game/watched")
-async def get_game_watched(n: int = 60, session: str = ""):
+@app.get("/api/game/popularity")
+async def get_game_popularity(n: int = 60, session: str = ""):
     """
-    A deck for the higher-lower game: which film has more people behind it.
+    A deck for the higher-lower game: which film more people have rated.
 
-    The axis is `rating_count` and not `average_rating` because only one of
-    them separates. Two random films in the cache differ by a median factor
-    of 3.5 in watch count, but 31% of pairs sit within 0.3 stars of each
-    other — on ratings a third of the rounds would be a coin toss dressed up
-    as a question.
+    `rated_by` is `aggregateRating.ratingCount` — how many Letterboxd members
+    have *rated* the film, which is not how many have watched it. Letterboxd
+    reports the watch count only in its /csi/film/<slug>/stats/ fragment, and
+    that answers 403 to anything but a browser, so the number we can have is
+    the rating count and the interface has to say so.
+
+    The axis is that count and not `average_rating` because only one of them
+    separates. Two random films in the cache differ by a median factor of 3.5
+    in how many people rated them, but 31% of pairs sit within 0.3 stars of
+    each other — on scores a third of the rounds would be a coin toss dressed
+    up as a question.
 
     With a session the deck is drawn from the visitor's own library, which
     turns the same game from trivia into memory. It falls back to the shared
@@ -364,7 +370,7 @@ async def get_game_watched(n: int = 60, session: str = ""):
                 "title": title,
                 "year": film.get("release_year"),
                 "poster": poster,
-                "watched": int(count),
+                "rated_by": int(count),
             })
         return out
 

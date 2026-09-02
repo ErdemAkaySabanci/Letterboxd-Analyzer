@@ -26,7 +26,7 @@ def clean_dataset(df: pd.DataFrame) -> pd.DataFrame:
     """Ensure proper types and handle missing data."""
     df = df.copy()
     
-    numeric_cols = ["my_rating", "average_rating", "Runtime_minutes", "Watched_number", "Release_Year"]
+    numeric_cols = ["my_rating", "average_rating", "Runtime_minutes", "rating_count", "Release_Year"]
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -76,12 +76,12 @@ def bayesian_director_analysis(df: pd.DataFrame, m: int = MIN_DIRECTOR_FILMS) ->
     for _, row in sub.iterrows():
         d = row["Director"]
         if d not in directors:
-            directors[d] = {"ratings": [], "people_ratings": [], "total_watched": 0}
+            directors[d] = {"ratings": [], "people_ratings": [], "total_rated_by": 0}
         directors[d]["ratings"].append(row["my_rating"])
         if pd.notna(row["average_rating"]):
             directors[d]["people_ratings"].append(row["average_rating"])
-        if pd.notna(row["Watched_number"]):
-            directors[d]["total_watched"] += row["Watched_number"]
+        if pd.notna(row["rating_count"]):
+            directors[d]["total_rated_by"] += row["rating_count"]
             
     result = []
     for d, data in directors.items():
@@ -97,7 +97,7 @@ def bayesian_director_analysis(df: pd.DataFrame, m: int = MIN_DIRECTOR_FILMS) ->
                 "bayesian_avg": round(bayesian_avg, 2),
                 "my_avg": round(my_avg, 2),
                 "people_avg": round(people_avg, 2) if people_avg else None,
-                "popularity_millions": round(data["total_watched"] / v / 1_000_000, 3)
+                "popularity_millions": round(data["total_rated_by"] / v / 1_000_000, 3)
             })
             
     # Sort by Bayesian average
@@ -508,7 +508,7 @@ def correlation_my_vs_avg(df: pd.DataFrame) -> dict:
     return {"r": round(r, 4), "p": round(p, 6), "n": len(sub), "significant": bool(p < 0.05)}
 
 def correlation_matrix(df: pd.DataFrame) -> dict:
-    cols = ["my_rating", "average_rating", "Runtime_minutes", "Watched_number"]
+    cols = ["my_rating", "average_rating", "Runtime_minutes", "rating_count"]
     cols = [c for c in cols if c in df.columns]
     sub = df[cols].apply(pd.to_numeric, errors="coerce").dropna()
     corr = sub.corr()
