@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/dashboard/style.css?v=r5" />
+<link rel="stylesheet" href="/dashboard/style.css?v=r7" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 </head>
@@ -191,11 +191,11 @@
         </div>
         <div class="evidence">
             <div class="wrap-wide">
-                <section class="ev rise"><h3>Yönetmenler <em>en çok izlediklerin</em></h3><div class="shelf" id="shelf-dirs"></div></section>
-                <section class="ev rise"><h3>Oyuncular <em>en çok izlediklerin</em></h3><div class="shelf" id="shelf-actors"></div></section>
+                <section class="ev rise"><h3>En çok izlediğin yönetmenler <em>kaç film izledin</em></h3><div class="shelf" id="shelf-dirs"></div></section>
+                <section class="ev rise"><h3>En çok izlediğin oyuncular <em>kaç film izledin</em></h3><div class="shelf" id="shelf-actors"></div></section>
                 <div class="ev-2">
-                    <section class="ev rise"><h3>En sevdiğin yönetmenler <em>ağırlıklı ortalama · 4+ film</em></h3><div class="rank" id="r-dirs"></div></section>
-                    <section class="ev rise"><h3>En sevdiğin oyuncular <em>ağırlıklı ortalama · 4+ film</em></h3><div class="rank" id="r-actors"></div></section>
+                    <section class="ev rise"><h3>En sevdiğin yönetmenler <em>ağırlıklı puan · en az 4 puanladığın</em></h3><div class="rank" id="r-dirs"></div></section>
+                    <section class="ev rise"><h3>En sevdiğin oyuncular <em>ağırlıklı puan · en az 4 puanladığın</em></h3><div class="rank" id="r-actors"></div></section>
                 </div>
                 <section class="ev rise"><h3>Vazgeçemediğin ikililer</h3><div class="rank" id="r-pairs"></div></section>
             </div>
@@ -215,30 +215,29 @@
         <div class="evidence">
             <div class="wrap-wide">
                 <section class="ev rise"><h3>Tür çelişkisi <em>çok izlemek sevmek değil</em></h3><div class="genre-table" id="genre-table"></div></section>
-                <div class="ev-2">
-                    <section class="ev rise"><h3>Film uzunluğu</h3><canvas id="c-runtime"></canvas><p class="ev-foot" id="runtime-note"></p></section>
-                    <section class="ev rise"><h3>Hangi on yıl</h3><canvas id="c-decades"></canvas></section>
-                </div>
+                <section class="ev rise"><h3>Film uzunluğu</h3><canvas id="c-runtime"></canvas><p class="ev-foot" id="runtime-note"></p></section>
             </div>
         </div>
     </section>
 
-    <!-- 05 — Ne zaman izliyorsun -->
+    <!-- 05 — Hangi dönemi izliyorsun.
+         This chapter used to plot ratings against the watch date. Those are
+         log dates: a new account pours its whole history in over a day or
+         two, so the chart was really showing when the library was typed in.
+         It is built on the release year now, which the film itself carries. -->
     <section class="chapter" data-accent="mint">
         <div class="card">
             <div class="wrap-wide card-inner rise">
                 <p class="card-num">05</p>
-                <h2 class="card-title">Ne zaman izliyorsun</h2>
+                <h2 class="card-title">Hangi dönemi izliyorsun</h2>
                 <p class="card-stat" id="ch5-stat">—</p>
                 <p class="card-line" id="ch5-sub"></p>
             </div>
         </div>
         <div class="evidence">
             <div class="wrap-wide">
-                <div class="ev-2">
-                    <section class="ev rise"><h3>Yıllara göre ortalaman</h3><canvas id="c-trend"></canvas></section>
-                    <section class="ev rise"><h3>Taze mi, arşiv mi</h3><canvas id="c-backlog"></canvas><p class="ev-foot" id="backlog-note"></p></section>
-                </div>
+                <section class="ev rise"><h3>On yıllara göre <em>çubuk: kaç film · çizgi: ortalaman</em></h3><canvas id="c-decades"></canvas><p class="ev-foot" id="decades-note"></p></section>
+                <section class="ev rise"><h3>Taze mi, arşiv mi</h3><canvas id="c-backlog"></canvas><p class="ev-foot" id="backlog-note"></p></section>
             </div>
         </div>
     </section>
@@ -285,7 +284,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="/dashboard/quiz.js?v=r5"></script>
-<script src="/dashboard/app.js?v=r5"></script>
+<script src="/dashboard/quiz.js?v=r7"></script>
+<script src="/dashboard/app.js?v=r7"></script>
 </body>
 </html>

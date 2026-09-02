@@ -1024,6 +1024,44 @@ body::after {
     font-weight: 700; letter-spacing: -0.02em; margin-bottom: 1.6rem; line-height: 1.25;
 }
 
+/* ── Drill-down ───────────────────────────────────────────────
+   Every claim the analysis makes opens onto the films behind it. The panel
+   is inserted after whatever was clicked rather than shown in a dialog: the
+   row keeps its place on the page, and the answer arrives underneath it. */
+.can-drill { cursor: pointer; }
+.can-drill:focus-visible { outline-offset: 6px; }
+.rank-row.can-drill:hover .name,
+.genre-row.can-drill:hover .g,
+.person.can-drill:hover .n { color: var(--accent); }
+
+.drill {
+    margin: 1rem 0 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--accent);
+    animation: drillIn 0.4s var(--ease);
+}
+@keyframes drillIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: none; }
+}
+.drill-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem;
+    font-size: 0.88rem; color: var(--muted);
+}
+.drill-head b {
+    font-family: var(--display); font-size: 1.05rem;
+    letter-spacing: -0.01em; color: var(--text);
+}
+.drill-close {
+    font-size: 0.78rem; color: var(--muted);
+    border: 1px solid var(--ink-line); border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    transition: color 0.2s, border-color 0.2s;
+}
+.drill-close:hover { color: var(--text); border-color: var(--muted); }
+.drill .film-strip { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 0.85rem; }
+
 /* ── Toast ───────────────────────────────────────────────────── */
 .toast {
     position: fixed; left: 50%; bottom: 2rem; transform: translateX(-50%) translateY(140%);

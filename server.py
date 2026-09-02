@@ -427,7 +427,8 @@ async def get_stats(session: str = ""):
 @app.get("/api/films")
 async def get_films(session: str = "", director: str = "", actor: str = "",
                     genre: str = "", country: str = "", language: str = "",
-                    decade: int | None = None, limit: int = 60):
+                    decade: int | None = None, rating: float | None = None,
+                    limit: int = 60):
     """
     The films behind a chapter row — the drill-down a click opens.
 
@@ -447,6 +448,7 @@ async def get_films(session: str = "", director: str = "", actor: str = "",
             country=country or None,
             language=language or None,
             decade=decade,
+            rating=rating,
             limit=max(1, min(limit, 300)),
         ))
     except Exception as e:

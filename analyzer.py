@@ -209,26 +209,100 @@ def binge_habits(df: pd.DataFrame) -> dict:
         "counts": [int(counts.get(i, 0)) for i in range(1, 13)]
     }
 
+# A day carrying more films than this is an import, not an evening.
+BULK_IMPORT_PER_DAY = 8
+
+
+def drop_bulk_import_days(df: pd.DataFrame, max_per_day: int = BULK_IMPORT_PER_DAY):
+    """
+    Remove the days a library was poured in rather than watched.
+
+    Letterboxd's watch dates are *log* dates, and a new account almost always
+    starts by entering a lifetime of films over a day or two. Those days say
+    when somebody signed up; they say nothing about when anything was seen,
+    and they are large enough to dominate any statistic built on them. One
+    real export puts 185 of its 603 films on two consecutive days.
+
+    `diary.csv` carries genuine watch dates but is nearly always near-empty
+    (16 rows against 603 in that same export), so it cannot stand in.
+
+    Returns (kept, dropped_films, dropped_days).
+    """
+    if "Watch_Date" not in df.columns:
+        return df.iloc[0:0], 0, 0
+    sub = df.dropna(subset=["Watch_Date"]).copy()
+    if sub.empty:
+        return sub, 0, 0
+
+    day = sub["Watch_Date"].dt.date
+    per_day = day.value_counts()
+    bulk = set(per_day[per_day > max_per_day].index)
+    kept = sub[~day.isin(bulk)]
+    return kept, int(len(sub) - len(kept)), len(bulk)
+
+
+def decade_ratings(df: pd.DataFrame) -> dict:
+    """
+    Release decade against how many films it holds and how they are rated.
+
+    Unlike anything keyed on a watch date, this rests only on the release
+    year, which is scraped from the film itself and cannot be distorted by
+    how somebody happened to fill in their account.
+    """
+    empty = {"decades": [], "labels": [], "counts": [], "avg_ratings": []}
+    if "Release_Year" not in df.columns:
+        return empty
+    sub = df.dropna(subset=["Release_Year"]).copy()
+    if sub.empty:
+        return empty
+
+    sub["decade"] = (sub["Release_Year"] // 10 * 10).astype(int)
+    grouped = sub.groupby("decade").agg(
+        count=("Release_Year", "size"),
+        avg=("my_rating", "mean"),
+    ).sort_index()
+
+    return {
+        "decades": [int(d) for d in grouped.index],
+        "labels": [f"{int(d)}'ler" for d in grouped.index],
+        "counts": [int(c) for c in grouped["count"]],
+        "avg_ratings": [None if pd.isna(v) else round(float(v), 2) for v in grouped["avg"]],
+    }
+
+
 def backlog_analysis(df: pd.DataFrame) -> dict:
-    """Release Year vs Watch Year."""
+    """
+    How old a film was when it was logged: new releases, or archive digging.
+
+    Import days are dropped first. With them in, every film a new account
+    entered on signup day is measured against that one day, so a decade of
+    viewing collapses into a single year and the answer means nothing.
+    """
     if "Watch_Date" not in df.columns or "Release_Year" not in df.columns:
         return {"error": "Missing columns"}
-        
-    sub = df.dropna(subset=["Watch_Date", "Release_Year"]).copy()
+
+    sub, dropped, dropped_days = drop_bulk_import_days(df)
+    sub = sub.dropna(subset=["Watch_Date", "Release_Year"]).copy()
+    if sub.empty:
+        return {"error": "No usable watch dates"}
+
     sub["watch_year"] = sub["Watch_Date"].dt.year
     sub["age_when_watched"] = sub["watch_year"] - sub["Release_Year"]
-    
-    # Categorize
+
     bins = [-999, 0, 2, 10, 30, 999]
     labels = ["Release Year", "Recent (1-2y)", "Decade (3-10y)", "Classic (11-30y)", "Old (31y+)"]
     sub["age_category"] = pd.cut(sub["age_when_watched"], bins=bins, labels=labels)
-    
+
     counts = sub["age_category"].value_counts().reindex(labels)
     return {
         "categories": labels,
         "counts": counts.values.tolist(),
-        "avg_age": round(sub["age_when_watched"].mean(), 1)
+        "avg_age": round(sub["age_when_watched"].mean(), 1),
+        "used": int(len(sub)),
+        "excluded": dropped,
+        "excluded_days": dropped_days,
     }
+
 
 # ---------------------------------------------------------------------------
 # 3. Network & Diversity
@@ -313,7 +387,8 @@ def most_watched_people(df: pd.DataFrame, top_n: int = 10) -> dict:
 
 
 def films_matching(df: pd.DataFrame, director=None, actor=None, genre=None,
-                   country=None, language=None, decade=None, limit=60) -> dict:
+                   country=None, language=None, decade=None, rating=None,
+                   limit=60) -> dict:
     """
     The films behind one row of a chapter — what a click on "Nolan · 10 film"
     should open.
@@ -343,6 +418,8 @@ def films_matching(df: pd.DataFrame, director=None, actor=None, genre=None,
     if decade is not None and "Release_Year" in df.columns:
         start = int(decade)
         masks.append(df["Release_Year"].between(start, start + 9))
+    if rating is not None and "my_rating" in df.columns:
+        masks.append(df["my_rating"] == float(rating))
 
     hits = df
     for mask in masks:
@@ -708,6 +785,7 @@ def full_analysis(df: pd.DataFrame) -> dict:
         "director_analysis": director_analysis(df),
         "most_watched": most_watched_people(df),
         "decades": decade_distribution(df),
+        "decade_ratings": decade_ratings(df),
         "crowd_comparison": {
             "yours": round(float(df["my_rating"].mean()), 2) if df["my_rating"].notna().any() else None,
             "crowd": round(float(df["average_rating"].mean()), 2) if df["average_rating"].notna().any() else None,

@@ -343,14 +343,88 @@ function watchReveals() {
 }
 
 /**
+ * Open the films behind one claim.
+ *
+ * The panel is inserted after the element that was clicked, never in a
+ * modal: the row stays where the reader found it. Clicking the same thing
+ * again closes it, and only one panel is open at a time.
+ */
+async function drill(host, params, label) {
+    const key = JSON.stringify(params);
+    const current = document.querySelector('.drill');
+    const repeat = current && current.previousElementSibling === host
+                            && current.dataset.key === key;
+    current?.remove();
+    if (repeat) return;
+
+    const box = document.createElement('div');
+    box.className = 'drill';
+    box.dataset.key = key;
+    box.innerHTML = `<div class="drill-head"><span><b>${esc(label)}</b></span></div>`
+                  + '<div class="film-strip"><div class="poster-blank"></div>'
+                  + '<div class="poster-blank"></div><div class="poster-blank"></div></div>';
+    host.after(box);
+
+    let data;
+    try {
+        const query = new URLSearchParams({ session, limit: 24, ...params });
+        data = await api('/api/films?' + query);
+    } catch {
+        box.innerHTML = '<p class="empty">Filmler alınamadı</p>';
+        return;
+    }
+
+    const rated = data.rated_count
+        ? `${data.rated_count} tanesi puanlı, ortalaman ${data.my_avg}`
+        : 'hiçbiri puanlanmamış';
+    box.innerHTML =
+        `<div class="drill-head">
+            <span><b>${esc(label)}</b> · ${data.count} film, ${esc(rated)}</span>
+            <button class="drill-close">Kapat</button>
+        </div>
+        <div class="film-strip">${filmCards(data.films || [])}</div>`;
+    box.querySelector('.drill-close').addEventListener('click', () => box.remove());
+}
+
+/** Make one element open a drill-down, by pointer or by keyboard. */
+function openable(el, params, label) {
+    el.classList.add('can-drill');
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.addEventListener('click', () => drill(el, params, label));
+    el.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        drill(el, params, label);
+    });
+}
+
+/** Poster, title, and your rating against the crowd's. */
+function filmCards(films) {
+    if (!films.length) return '<p class="empty">Film bulunamadı</p>';
+    return films.map(f => `
+        <div class="film-card">
+            ${f.poster
+                ? `<img src="${esc(f.poster)}" alt="" loading="lazy" />`
+                : '<div class="poster-blank"></div>'}
+            <div class="t">${esc(f.title)}</div>
+            <div class="r"><b>${f.my_rating != null ? esc(f.my_rating) : '—'}</b>
+                ${f.average_rating != null ? `<s>/ ${esc(f.average_rating)}</s>` : ''}</div>
+        </div>`).join('');
+}
+
+/**
  * Ranked list; `max` draws a proportional bar under each row.
  *
  * `zoom` stretches the bars across the observed range instead of starting
  * them at zero. Ratings sit in a band roughly 4.0 to 4.5 wide, so a bar
  * measured from zero makes every row in a rating ranking the same length —
  * the same reason the genre table scales to its own range.
+ *
+ * `drillKey` names the /api/films filter a row stands for, which is what
+ * turns a ranking into a way into the library rather than a list to read.
  */
-function ranking(el, rows, max = null, zoom = false) {
+function ranking(el, rows, max = null, zoom = false, drillKey = null) {
     const node = $(el);
     if (!node) return;
     if (!rows.length) {
@@ -369,6 +443,10 @@ function ranking(el, rows, max = null, zoom = false) {
             <span class="val">${esc(r.value)}</span>
             ${r.bar != null ? `<span class="track"><i style="width:${((r.bar - floor) / (peak - floor)) * 100}%"></i></span>` : ''}
         </div>`).join('');
+
+    if (!drillKey) return;
+    node.querySelectorAll('.rank-row').forEach((row, i) =>
+        openable(row, { [drillKey]: rows[i].name }, rows[i].name));
 }
 
 /**
@@ -445,6 +523,11 @@ function chapterRatings(stats) {
     chart('c-ratings', {
         type: 'bar',
         data: { labels: dist.ratings, datasets: [{ data: dist.counts, backgroundColor: accent('c-ratings'), borderRadius: 6 }] },
+        options: {
+            onClick: (_e, hits) => hits.length && drill(
+                $('c-ratings'), { rating: dist.ratings[hits[0].index] },
+                `${dist.ratings[hits[0].index]} verdiğin filmler`),
+        },
     });
 
     const points = stats.scatter?.points || [];
@@ -504,10 +587,10 @@ function chapterPeople(stats) {
     // loadPeople() — same numbers, with the faces attached.
     ranking('r-dirs', (stats.bayesian_directors?.directors || []).slice(0, 8)
         .map(d => ({ name: d.director, sub: `${d.movie_count} film · ort. ${d.my_avg}`,
-                     value: d.bayesian_avg, bar: d.bayesian_avg })), null, true);
+                     value: d.bayesian_avg, bar: d.bayesian_avg })), null, true, 'director');
     ranking('r-actors', (stats.bayesian_actors?.actors || []).slice(0, 8)
         .map(a => ({ name: a.actor, sub: `${a.movie_count} film · ort. ${a.my_avg}`,
-                     value: a.bayesian_avg, bar: a.bayesian_avg })), null, true);
+                     value: a.bayesian_avg, bar: a.bayesian_avg })), null, true, 'actor');
     ranking('r-pairs', (stats.network?.top_collaborations || []).slice(0, 8)
         .map(p => ({ name: p.pair, value: `${p.count} film`, bar: p.count })));
 }
@@ -540,7 +623,13 @@ async function loadPeople() {
     // material. It stays in the people cache, a line away if that changes.
 }
 
-/** A row of people, each in the 2:3 frame a film gets. */
+/**
+ * A row of people, each in the 2:3 frame a film gets.
+ *
+ * Counts only, deliberately. An average belongs in the ranking beside this
+ * one, which is built from ratings: printing one here would attach a score
+ * drawn from three films to a row that says thirteen.
+ */
 function shelf(id, rows) {
     const node = $(id);
     if (!node) return;
@@ -551,8 +640,12 @@ function shelf(id, rows) {
                 ? `<img src="${esc(p.portrait)}" alt="${esc(p.name)}" loading="lazy" />`
                 : '<div class="no-face"></div>'}
             <div class="n">${esc(p.name)}</div>
-            <div class="m">${esc(p.count)} film${p.my_avg ? ` · <b>${esc(p.my_avg)}</b>` : ''}</div>
+            <div class="m">${esc(p.count)} film</div>
         </div>`).join('');
+
+    const kind = id === 'shelf-actors' ? 'actor' : 'director';
+    node.querySelectorAll('.person').forEach((card, i) =>
+        openable(card, { [kind]: rows[i].name }, rows[i].name));
 }
 
 /* 04 — Ne izliyorsun */
@@ -597,6 +690,9 @@ function chapterWhat(stats) {
              <span class="k3">Genel ortalamanın (${mean}) altında</span>
            </div>`;
 
+    $('genre-table').querySelectorAll('.genre-row').forEach((row, i) =>
+        openable(row, { genre: shown[i].genre }, shown[i].genre));
+
     const rc = stats.runtime_counts, ra = stats.runtime_avg_rating;
     chart('c-runtime', {
         type: 'bar',
@@ -627,28 +723,60 @@ function chapterWhat(stats) {
           + (chi.significant ? 'bu ilişki anlamlı.' : 'eğilim var ama kanıt zayıf.')
         : '';
 
-    const dec = stats.decades;
+}
+
+/* 05 — Hangi dönemi izliyorsun */
+function chapterWhen(stats) {
+    const dec = stats.decade_ratings;
     if (dec?.labels?.length) {
         chart('c-decades', {
             type: 'bar',
-            data: { labels: dec.labels, datasets: [{ data: dec.counts, backgroundColor: accent('c-decades'), borderRadius: 6 }] },
-        });
-    }
-}
-
-/* 05 — Ne zaman izliyorsun */
-function chapterWhen(stats) {
-    const t = stats.temporal_evolution;
-    if (t?.years?.length) {
-        chart('c-trend', {
-            type: 'line',
             data: {
-                labels: t.years,
-                datasets: [{ data: t.avg_ratings, borderColor: accent('c-trend'), backgroundColor: accent('c-trend', 0.12),
-                             tension: 0.35, fill: true, pointBackgroundColor: accent('c-trend'), pointRadius: 5 }],
+                labels: dec.labels,
+                datasets: [
+                    { label: 'Film', data: dec.counts, backgroundColor: accent('c-decades', 0.35),
+                      borderRadius: 6, yAxisID: 'y' },
+                    // An average over two films is not a trend. The bars still
+                    // show those decades honestly; the line simply stops,
+                    // rather than being drawn across them and implying one.
+                    { label: 'Ortalaman',
+                      data: dec.avg_ratings.map((v, i) => (dec.counts[i] >= 5 ? v : null)),
+                      type: 'line',
+                      borderColor: accent('c-decades'), pointBackgroundColor: accent('c-decades'),
+                      tension: 0.3, spanGaps: false, yAxisID: 'y1' },
+                ],
             },
-            options: { scales: { x: { ticks: AXIS, grid: GRID }, y: { ticks: AXIS, grid: GRID, min: 0, max: 5 } } },
+            options: {
+                onClick: (_e, hits) => hits.length && drill(
+                    $('c-decades'), { decade: dec.decades[hits[0].index] }, dec.labels[hits[0].index]),
+                plugins: {
+                    legend: { display: true, labels: { color: '#8E8EA3', boxWidth: 12, font: { family: 'Inter', size: 11 } } },
+                },
+                scales: {
+                    x: { ticks: AXIS, grid: GRID },
+                    y: { ticks: AXIS, grid: GRID, position: 'left' },
+                    y1: { ticks: AXIS, grid: { display: false }, position: 'right', min: 0, max: 5 },
+                },
+            },
         });
+
+        // The story is the slope, so say it rather than leaving it to be read
+        // off the line. Only decades with enough films to mean anything.
+        const solid = dec.decades
+            .map((d, i) => ({ d, label: dec.labels[i], n: dec.counts[i], avg: dec.avg_ratings[i] }))
+            .filter(x => x.n >= 10 && x.avg != null);
+        if (solid.length >= 2) {
+            const best = solid.reduce((a, b) => (b.avg > a.avg ? b : a));
+            const worst = solid.reduce((a, b) => (b.avg < a.avg ? b : a));
+            const biggest = solid.reduce((a, b) => (b.n > a.n ? b : a));
+            titleCard(5, best.label, `ortalama ${best.avg}`,
+                `En yüksek ortalamayı bu on yıla veriyorsun. En düşüğü ${worst.label} `
+                + `(${worst.avg}) — ve kütüphanenin en kalabalık dönemi ${biggest.label}, `
+                + `${biggest.n} film.`, true);
+            $('decades-note').textContent =
+                'Eski filmleri daha yüksek puanlamak yaygındır: bir on yıldan bugüne ancak '
+                + 'ayakta kalanlar geliyor, yani seçim zaten senin adına yapılmış.';
+        }
     }
 
     const b = stats.backlog;
@@ -665,12 +793,15 @@ function chapterWhen(stats) {
             options: { indexAxis: 'y', scales: { x: { ticks: AXIS, grid: GRID }, y: { ticks: AXIS, grid: GRID } } },
         });
         const top = b.categories[b.counts.indexOf(Math.max(...b.counts))];
+        // Say plainly what was left out. Letterboxd's watch dates are log
+        // dates, and a bulk import on signup day would otherwise dominate.
+        const skipped = b.excluded
+            ? ` ${b.excluded} film hesaba katılmadı: ${b.excluded_days} günde toplu eklenmişler, `
+              + 'o tarihler ne zaman izlediğini değil ne zaman kaydettiğini gösteriyor.'
+            : '';
         $('backlog-note').textContent =
-            `İzlediğin filmin ortalama yaşı ${b.avg_age}. En büyük dilim: ${LABELS[top] || top}.`;
-        titleCard(5, b.avg_age, 'yıl',
-            b.avg_age >= 8
-                ? 'İzlediğin filmin ortalama yaşı. Vizyon takipçisi değilsin, arşiv kazıyorsun.'
-                : 'İzlediğin filmin ortalama yaşı. Çoğunlukla yeni çıkanları izliyorsun.');
+            `Kaydettiğinde filmin ortalama yaşı ${b.avg_age} yıldı. En büyük dilim: `
+            + `${LABELS[top] || top}. ${b.used} film üzerinden.${skipped}`;
     }
 }
 
@@ -689,8 +820,10 @@ function chapterWhere(stats) {
               + `%${Math.round(top3 / shown * 100)}'i ilk üç ülkeden.`
             : '');
 
-    ranking('r-countries', countries.slice(0, 8).map(c => ({ name: c.name, value: `${c.count} film`, bar: c.count })));
-    ranking('r-langs', langs.slice(0, 8).map(l => ({ name: l.name, value: `${l.count} film`, bar: l.count })));
+    ranking('r-countries', countries.slice(0, 8).map(c => ({ name: c.name, value: `${c.count} film`, bar: c.count })),
+            null, false, 'country');
+    ranking('r-langs', langs.slice(0, 8).map(l => ({ name: l.name, value: `${l.count} film`, bar: l.count })),
+            null, false, 'language');
 }
 
 /* 07 — Seni ne tahmin ediyor */
