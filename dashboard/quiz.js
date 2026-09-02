@@ -12,11 +12,16 @@
 const Quiz = (() => {
     const stage = document.getElementById('play');
     const body = document.getElementById('quiz-body');
-    const rail = document.getElementById('rail');
+    const railL = document.getElementById('rail-l');
+    const railR = document.getElementById('rail-r');
+    const railAria = document.getElementById('rail-aria');
     const scoreEl = document.getElementById('score');
     const countEl = document.getElementById('frame-count');
     const shareStrip = document.getElementById('share-strip');
-    const reel = document.getElementById('stage-reel');
+
+    // Gates of padding under the first question and over the last, so the
+    // reel reaches both edges of the screen instead of running out mid-air.
+    const LEAD = 4, TAIL = 6;
 
     let questions = [];
     let index = 0;
@@ -40,7 +45,7 @@ const Quiz = (() => {
         frames = []; poolAt = 0;
         clearTimeout(waitTimer); waitTimer = 0;
         stage.style.setProperty('--exposure', '0');
-        rail.innerHTML = '';
+        railL.innerHTML = ''; railR.innerHTML = '';
         drawShareStrip();
         // Start out expecting at least one question, so the empty question
         // list reads as "still loading" rather than "quiz already over".
@@ -84,28 +89,10 @@ const Quiz = (() => {
             const res = await fetch('/api/posters?n=64' + query);
             const data = await res.json();
             pool = (data.posters || []).filter(Boolean);
-        } catch { return; }              // the strip falls back to numbered frames
-        paintReel();
+        } catch { return; }              // the reels fall back to empty gates
         // Frames exposed before the posters landed are still blank; refill them.
-        const blanks = frames.filter(shot => !shot.url);
-        if (!blanks.length) return;
-        blanks.forEach(shot => { shot.url = nextPoster(); });
-        rail.innerHTML = '';
+        frames.filter(shot => shot && !shot.url).forEach(shot => { shot.url = nextPoster(); });
         drawStrip();
-    }
-
-    /**
-     * Fill the stage wall with the reader's own posters. Getting back fewer
-     * than the grid has slots is normal while a scrape is still running, so
-     * the list repeats rather than leaving holes in the wall.
-     */
-    function paintReel() {
-        if (!reel || !pool.length) return;
-        let html = '';
-        for (let i = 0; i < 60; i++) {
-            html += '<img src="' + esc(pool[i % pool.length]) + '" alt="" loading="lazy" />';
-        }
-        reel.innerHTML = html;
     }
 
     /**
@@ -127,41 +114,61 @@ const Quiz = (() => {
         return pool.length ? pool[poolAt++ % pool.length] : null;
     }
 
+    /**
+     * Draw both reels.
+     *
+     * Every gate carries a poster from the moment it exists, unexposed; the
+     * screen is therefore full before a single question is answered, and
+     * answering develops one frame rather than adding one. Position is a
+     * custom property the CSS reads — one write per answer, no per-frame JS.
+     */
     function drawStrip() {
         const total = Math.max(questions.length + expecting, frames.length, 1);
+        const slots = LEAD + total + TAIL;
 
-        while (rail.children.length < total) {
-            const slot = document.createElement('div');
-            slot.className = 'frame';
-            rail.appendChild(slot);
-        }
-        while (rail.children.length > total) rail.lastChild.remove();
-
-        Array.from(rail.children).forEach((slot, i) => {
-            const shot = frames[i];
-            // Toggling beats reassigning className: a frame still running its
-            // exposure animation keeps the `pop` class.
-            slot.classList.toggle('hit', !!shot && shot.correct);
-            slot.classList.toggle('miss', !!shot && !shot.correct);
-            slot.classList.toggle('now', !shot && i === index);
-            if (shot && !slot.dataset.filled) {
-                slot.dataset.filled = '1';
-                slot.innerHTML = frameInner(shot, i);
-                slot.classList.add('pop');
+        [railL, railR].forEach((track, side) => {
+            while (track.children.length < slots) {
+                const gate = document.createElement('div');
+                gate.className = 'gate';
+                gate.innerHTML = '<img alt="" loading="lazy" />';
+                track.appendChild(gate);
             }
+            while (track.children.length > slots) track.lastChild.remove();
+
+            Array.from(track.children).forEach((gate, s) => {
+                const i = s - LEAD;                  // question index, or padding
+                const shot = i >= 0 && i < total ? frames[i] : null;
+                const img = gate.firstElementChild;
+
+                // An answered gate shows that answer's poster on both reels —
+                // the same frame passing two sprockets. Padding and unanswered
+                // gates take from the pool, offset per side so the two edges
+                // are not a mirror.
+                const url = (shot && shot.url)
+                    || (pool.length ? pool[(s * 2 + side * 7) % pool.length] : '');
+                if (url && img.getAttribute('src') !== url) img.src = url;
+
+                // Toggling beats reassigning className: a gate still running
+                // its exposure animation keeps the `pop` class.
+                gate.classList.toggle('hit', !!shot && shot.correct);
+                gate.classList.toggle('miss', !!shot && !shot.correct);
+                gate.classList.toggle('now', !shot && i === index);
+                if (shot && !gate.dataset.filled) {
+                    gate.dataset.filled = '1';
+                    gate.classList.add('pop');
+                }
+            });
+
+            // The gate under the beam. Advancing it pulls the reel down.
+            track.style.setProperty('--i', String(index + LEAD));
         });
 
         setExposure();
-        rail.setAttribute('aria-valuenow', String(frames.length));
-        rail.setAttribute('aria-valuemax', String(total));
-        if (countEl) countEl.textContent = frames.length + '/' + total;
-
-        // Only nudge the strip when it actually overflows; block: 'nearest'
-        // keeps the page itself from jumping.
-        if (rail.scrollWidth > rail.clientWidth) {
-            rail.children[Math.min(index, rail.children.length - 1)]
-                ?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        if (railAria) {
+            railAria.setAttribute('aria-valuenow', String(frames.length));
+            railAria.setAttribute('aria-valuemax', String(total));
         }
+        if (countEl) countEl.textContent = frames.length + '/' + total;
     }
 
     /**
