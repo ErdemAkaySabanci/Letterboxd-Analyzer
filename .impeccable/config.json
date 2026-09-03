@@ -1,0 +1,32 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-09-03T14:13:57.484Z",
+        "reason": "Pre-existing product-wide typeface (Inter body + Bricolage Grotesque display), unrelated to the six-chapter-analysis fixes done this session; reviewed and not flagged as a specificity problem in the 2026-09-03 dual-agent critique."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "dashboard/style.css"
+        ],
+        "createdAt": "2026-09-03T14:13:57.588Z",
+        "reason": "style.css:662 .reveal is the quiz reveal-panel accent border, outside the six-chapter analysis this session's edits targeted; confirmed a false positive in the 2026-09-03 critique (Assessment B read the source)."
+      },
+      {
+        "rule": "codex-grid-background",
+        "value": "*",
+        "files": [
+          "dashboard/style.css"
+        ],
+        "createdAt": "2026-09-03T14:13:57.698Z",
+        "reason": "style.css:275 .reel-rail is the quiz page's literal film-reel sprocket-hole rail, not a decorative AI-tell grid; confirmed out-of-scope/false-positive in the 2026-09-03 critique (Assessment B read the source)."
+      }
+    ]
+  }
+}

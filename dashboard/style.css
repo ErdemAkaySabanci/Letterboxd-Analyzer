@@ -950,6 +950,33 @@ body::after {
     max-width: 68ch; text-wrap: pretty;
 }
 
+/* ── Chart duo ────────────────────────────────────────────────
+   Two Chart.js instances, not one dual-axis plot: film count and average
+   rating are different units, and a shared y-scale would invent an
+   alignment the data doesn't have. Stacked tight with one shared x-axis
+   (labelled only on the bottom chart), they read as one instrument. */
+.chart-duo { display: flex; flex-direction: column; gap: 2px; }
+.chart-duo canvas:first-child { max-height: 190px; }
+.chart-duo canvas:last-child { max-height: 92px; }
+
+/* ── Chart tooltip ────────────────────────────────────────────
+   Chart.js's own tooltip is a flat box with no relationship to this page's
+   surfaces; rendering it as a real element lets it carry the same card
+   material, radius, and border as everything else here. */
+.chart-tip {
+    position: absolute; z-index: 4; pointer-events: none;
+    transform: translate(-50%, calc(-100% - 10px));
+    background: var(--ink-raised); border: 1px solid var(--ink-line);
+    border-radius: 9px; padding: 0.5rem 0.75rem;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.5);
+    font-size: 0.82rem; line-height: 1.35; white-space: nowrap;
+    opacity: 0; transition: opacity 0.12s;
+    display: flex; flex-direction: column; gap: 0.15rem;
+}
+.chart-tip.show { opacity: 1; }
+.chart-tip i { font-style: normal; color: var(--muted); font-size: 0.76rem; }
+.chart-tip b { font-weight: 700; color: var(--text); }
+
 .ev-2 {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 3.6rem 3rem;
@@ -964,6 +991,26 @@ body::after {
     background-color: var(--ink-raised);
     pointer-events: none;
 }
+
+/* ── Finale ───────────────────────────────────────────────────
+   Chapter 06 used to be the last thing on the page, ending cold on
+   whatever stat it happened to land on. One closing beat, then the two
+   ways back into the moment that's meant to travel outside the app. */
+.finale {
+    position: relative; z-index: 1;
+    background: var(--ink);
+    border-top: 1px solid var(--ink-line);
+    padding: 6rem 0 7rem;
+    text-align: center;
+}
+.finale-line {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(1.5rem, 3.6vw, 2.4rem);
+    letter-spacing: -0.02em; line-height: 1.22;
+    text-wrap: balance;
+    max-width: 24ch; margin: 0 auto 2.1rem;
+}
+.finale-actions { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
 
 /* ── Entry reveals ────────────────────────────────────────────
    The hidden state is gated on a class app.js sets, so a script that fails
@@ -982,8 +1029,19 @@ body::after {
     box-shadow: inset 0 0 0 1px var(--ink-line);
 }
 
-/* ── Big stats ───────────────────────────────────────────────── */
-.big-stats {
+/* ── Big stats ─────────────────────────────────────────────────
+   Two groups — how much, how varied — instead of one flat row. Eight
+   same-weight numbers read as a scan, not the one glance the chapter
+   promises; a labelled group at least tells the reader what they're
+   scanning. */
+.big-stats { display: flex; flex-direction: column; gap: 2.8rem; }
+.big-stats-label {
+    display: block; margin-bottom: 1.1rem;
+    font-family: var(--display); font-weight: 700;
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.13em;
+    color: var(--muted);
+}
+.big-stats-row {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 2rem 2.5rem;
 }
@@ -1057,6 +1115,12 @@ body::after {
 .rank-row .track { grid-column: 2 / -1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.07); overflow: hidden; }
 .rank-row .track i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
 
+/* A pair carries two names; ellipsis on a single line quietly erases the
+   second one. Every other ranking is one name and keeps the clipped
+   single line — this is the one row shape where that costs the whole point. */
+#r-pairs .name { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; }
+#r-pairs .rank-row { align-items: baseline; }
+
 /* ── Genre contradiction table ───────────────────────────────── */
 .genre-table { display: flex; flex-direction: column; gap: 0.55rem; }
 .genre-row {
@@ -1102,8 +1166,16 @@ body::after {
    Every claim the analysis makes opens onto the films behind it. The panel
    is inserted after whatever was clicked rather than shown in a dialog: the
    row keeps its place on the page, and the answer arrives underneath it. */
-.can-drill { cursor: pointer; }
+.can-drill {
+    cursor: pointer; border-radius: 8px;
+    transition: background-color 0.15s var(--ease);
+}
 .can-drill:focus-visible { outline-offset: 6px; }
+.rank-row.can-drill, .genre-row.can-drill { padding: 0.3rem 0.5rem; margin: -0.3rem -0.5rem; }
+.rank-row.can-drill:hover, .rank-row.can-drill:focus-visible,
+.genre-row.can-drill:hover, .genre-row.can-drill:focus-visible {
+    background: rgba(255, 255, 255, 0.045);
+}
 .rank-row.can-drill:hover .name,
 .genre-row.can-drill:hover .g,
 .person.can-drill:hover .n { color: var(--accent); }

@@ -278,20 +278,57 @@ function accent(id, alpha = 1) {
     return `rgba(${r},${g},${b},${alpha})`;
 }
 
+/**
+ * Chart.js's own tooltip is a flat, undecorated box — the fastest visual
+ * tell that a chart came straight from a library default. Rendering it as
+ * a real DOM element instead means it can look like the rest of the page
+ * (the card surface, the hairline border, the type) rather than like
+ * Chart.js. `enabled:false` in `chart()`'s defaults hands positioning and
+ * content data to Chart.js while this owns the pixels.
+ */
+function externalTooltip(context) {
+    const { chart: c, tooltip: t } = context;
+    const host = c.canvas.closest('.ev') || c.canvas.parentNode;
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    let el = host.querySelector(':scope > .chart-tip');
+    if (!el) { el = document.createElement('div'); el.className = 'chart-tip'; host.appendChild(el); }
+
+    if (!t.opacity) { el.classList.remove('show'); return; }
+
+    const title = t.title?.[0];
+    el.innerHTML = (title ? `<i>${esc(title)}</i>` : '')
+        + (t.body || []).map(b => `<b>${esc(b.lines.join(' '))}</b>`).join('');
+    el.classList.add('show');
+
+    // Keep the tip inside the chart's own box rather than drifting past its
+    // right edge, which a plain caretX offset would do near the last bar.
+    const w = el.offsetWidth, chartW = c.width;
+    const x = Math.min(Math.max(t.caretX, w / 2 + 4), chartW - w / 2 - 4);
+    el.style.left = `${c.canvas.offsetLeft + x}px`;
+    el.style.top = `${c.canvas.offsetTop + t.caretY}px`;
+}
+
 function chart(id, config) {
     charts[id]?.destroy();
     const el = $(id);
     if (!el) return;
-    // Spread the caller's options first: the merged `plugins` and `scales`
-    // below must win, or a config that sets either one would drop the
-    // defaults (and re-enable the legend with an "undefined" label).
+    const callerPlugins = config.options?.plugins || {};
+    // `tooltip` is merged one level deeper than the rest: a caller that sets
+    // its own `plugins.tooltip.callbacks` (for a custom label string) must
+    // not blow away the external renderer, and a caller that sets nothing
+    // must still get it.
     charts[id] = new Chart(el, {
         ...config,
         options: {
             ...config.options,
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false }, ...(config.options?.plugins || {}) },
+            animation: { duration: 700, easing: 'easeOutQuint', ...(config.options?.animation || {}) },
+            plugins: {
+                legend: { display: false },
+                ...callerPlugins,
+                tooltip: { enabled: false, external: externalTooltip, ...(callerPlugins.tooltip || {}) },
+            },
             scales: config.options?.scales ?? {
                 x: { ticks: AXIS, grid: GRID }, y: { ticks: AXIS, grid: GRID },
             },
@@ -301,6 +338,87 @@ function chart(id, config) {
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
     c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/**
+ * Letterboxd's genre, country, and language fields come back in English —
+ * they're scraped, not translated. Everywhere else on this page is Turkish,
+ * so an untranslated "Drama" or "USA" reads as a seam. These maps cover
+ * Letterboxd's genre taxonomy in full and the countries/languages real
+ * libraries hit most; anything missing falls back to the English original
+ * rather than showing nothing.
+ */
+const GENRE_TR = {
+    'Action': 'Aksiyon', 'Adventure': 'Macera', 'Animation': 'Animasyon',
+    'Comedy': 'Komedi', 'Crime': 'Suç', 'Documentary': 'Belgesel',
+    'Drama': 'Dram', 'Family': 'Aile', 'Fantasy': 'Fantastik',
+    'History': 'Tarih', 'Horror': 'Korku', 'Music': 'Müzik',
+    'Mystery': 'Gizem', 'Romance': 'Romantik', 'Science Fiction': 'Bilim Kurgu',
+    'TV Movie': 'TV Filmi', 'Thriller': 'Gerilim', 'War': 'Savaş', 'Western': 'Vahşi Batı',
+};
+const COUNTRY_TR = {
+    'USA': 'ABD', 'United States': 'ABD', 'United States of America': 'ABD',
+    'UK': 'İngiltere', 'United Kingdom': 'İngiltere', 'Turkey': 'Türkiye',
+    'France': 'Fransa', 'Germany': 'Almanya', 'Italy': 'İtalya', 'Spain': 'İspanya',
+    'Canada': 'Kanada', 'Australia': 'Avustralya', 'Japan': 'Japonya',
+    'South Korea': 'Güney Kore', 'North Korea': 'Kuzey Kore', 'China': 'Çin',
+    'Hong Kong': 'Hong Kong', 'Taiwan': 'Tayvan', 'India': 'Hindistan',
+    'Russia': 'Rusya', 'Netherlands': 'Hollanda', 'Belgium': 'Belçika',
+    'Sweden': 'İsveç', 'Norway': 'Norveç', 'Denmark': 'Danimarka',
+    'Finland': 'Finlandiya', 'Iceland': 'İzlanda', 'Poland': 'Polonya',
+    'Austria': 'Avusturya', 'Switzerland': 'İsviçre', 'Ireland': 'İrlanda',
+    'Portugal': 'Portekiz', 'Greece': 'Yunanistan', 'Hungary': 'Macaristan',
+    'Czech Republic': 'Çekya', 'Romania': 'Romanya', 'Bulgaria': 'Bulgaristan',
+    'Ukraine': 'Ukrayna', 'Croatia': 'Hırvatistan', 'Serbia': 'Sırbistan',
+    'Mexico': 'Meksika', 'Brazil': 'Brezilya', 'Argentina': 'Arjantin',
+    'Chile': 'Şili', 'Colombia': 'Kolombiya', 'Peru': 'Peru',
+    'New Zealand': 'Yeni Zelanda', 'South Africa': 'Güney Afrika',
+    'Israel': 'İsrail', 'Iran': 'İran', 'Egypt': 'Mısır', 'Morocco': 'Fas',
+    'Thailand': 'Tayland', 'Indonesia': 'Endonezya', 'Malaysia': 'Malezya',
+    'Philippines': 'Filipinler', 'Vietnam': 'Vietnam', 'Singapore': 'Singapur',
+    'Lebanon': 'Lübnan', 'Saudi Arabia': 'Suudi Arabistan',
+    'Malawi': 'Malavi', 'Nigeria': 'Nijerya', 'Kenya': 'Kenya',
+};
+const LANG_TR = {
+    'English': 'İngilizce', 'Turkish': 'Türkçe', 'French': 'Fransızca',
+    'German': 'Almanca', 'Italian': 'İtalyanca', 'Spanish': 'İspanyolca',
+    'Portuguese': 'Portekizce', 'Russian': 'Rusça', 'Chinese': 'Çince',
+    'Cantonese': 'Kantonca', 'Mandarin': 'Mandarin Çincesi', 'Japanese': 'Japonca',
+    'Korean': 'Korece', 'Hindi': 'Hintçe', 'Arabic': 'Arapça', 'Hebrew (modern)': 'İbranice',
+    'Persian (Farsi)': 'Farsça', 'Dutch': 'Felemenkçe', 'Swedish': 'İsveççe',
+    'Norwegian': 'Norveççe', 'Danish': 'Danca', 'Finnish': 'Fince',
+    'Icelandic': 'İzlandaca', 'Polish': 'Lehçe', 'Czech': 'Çekçe',
+    'Slovak': 'Slovakça', 'Hungarian': 'Macarca', 'Romanian': 'Rumence',
+    'Bulgarian': 'Bulgarca', 'Greek (modern)': 'Yunanca', 'Ukrainian': 'Ukraynaca',
+    'Croatian': 'Hırvatça', 'Serbo-Croatian': 'Sırp-Hırvatça', 'Latin': 'Latince',
+    'Thai': 'Tayca', 'Vietnamese': 'Vietnamca', 'Indonesian': 'Endonezce',
+    'Malay': 'Malayca', 'Tagalog': 'Tagalogca', 'Swahili': 'Svahilice',
+    'Urdu': 'Urduca', 'Estonian': 'Estonca', 'Yiddish': 'Yidiş',
+};
+const trGenre = (g) => g == null ? g : (GENRE_TR[g] || g);
+const trCountry = (c) => c == null ? c : (COUNTRY_TR[c] || c);
+const trLang = (l) => l == null ? l : (LANG_TR[l] || l);
+
+/**
+ * A screen-reader-only data table, kept in sync beside a canvas the chart
+ * library draws into. `Chart.js` renders to a bitmap with no text content,
+ * so a canvas alone gives a screen reader nothing; this restates the same
+ * numbers as a real table instead of just labelling the shape.
+ */
+function srTable(id, caption, headers, rows) {
+    document.getElementById(id)?.remove();
+    return `<table id="${id}" class="sr-only"><caption>${esc(caption)}</caption>
+        <thead><tr>${headers.map(h => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+}
+
+/** Give a chart canvas an accessible name; canvases carry none on their own. */
+function describeChart(id, label) {
+    const el = $(id);
+    if (!el) return;
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', label);
+}
 
 /**
  * The one statement a chapter opens on: a number or a name, an optional
@@ -446,7 +564,10 @@ function ranking(el, rows, max = null, zoom = false, drillKey = null) {
 
     if (!drillKey) return;
     node.querySelectorAll('.rank-row').forEach((row, i) =>
-        openable(row, { [drillKey]: rows[i].name }, rows[i].name));
+        // `filterName` is the raw value the API filters on (e.g. English
+        // country names); `name` may be a translated display label and the
+        // two have to stay independent.
+        openable(row, { [drillKey]: rows[i].filterName ?? rows[i].name }, rows[i].name));
 }
 
 /**
@@ -474,6 +595,7 @@ async function loadAnalysis() {
     chapterWhat(stats);
     chapterWhen(stats);
     chapterWhere(stats);
+    chapterFinale(stats);
     loadPeople();                    // faces follow, the chapter does not wait
     watchReveals();
     loadAnalysis.done = true;
@@ -491,19 +613,31 @@ async function paintDashBg() {
 function chapterOverview(stats) {
     const s = stats.summary;
     const hours = wrapped ? Math.round(wrapped.total_hours || 0) : null;
-    const cells = [
+
+    // Two groups instead of one flat row of eight: "how much" and "how
+    // varied" are different questions, and reading eight same-weight
+    // numbers as one glance is not actually a glance.
+    const volume = [
         ['Film', s.total_movies],
         ['Puanladığın', s.rated_movies],
         ...(hours ? [['Saat', hours.toLocaleString('tr')], ['Tam gün', Math.round(hours / 24)]] : []),
+    ].filter(([, value]) => value != null);
+    const breadth = [
         ['Yönetmen', s.unique_directors],
         ['Tür', s.unique_genres],
         ['Ülke', s.unique_countries],
         ['Dil', s.unique_languages],
     ].filter(([, value]) => value != null);
 
-    $('big-stats').innerHTML = cells
-        .map(([l, v]) => `<div class="big-stat"><span class="v">${esc(v)}</span><span class="l">${esc(l)}</span></div>`)
-        .join('');
+    const group = (label, cells) => `
+        <div class="big-stats-group">
+            <span class="big-stats-label">${esc(label)}</span>
+            <div class="big-stats-row">
+                ${cells.map(([l, v]) => `<div class="big-stat"><span class="v">${esc(v)}</span><span class="l">${esc(l)}</span></div>`).join('')}
+            </div>
+        </div>`;
+
+    $('big-stats').innerHTML = group('Ne kadar izledin', volume) + group('Ne kadar çeşitli', breadth);
     titleCard(1, s.total_movies, 'film',
         `${s.rated_movies} tanesi puanlanmış. Ortalaman ${s.avg_my_rating ?? '—'}.`);
 }
@@ -518,13 +652,25 @@ function chapterRatings(stats) {
 
     chart('c-ratings', {
         type: 'bar',
-        data: { labels: dist.ratings, datasets: [{ data: dist.counts, backgroundColor: accent('c-ratings'), borderRadius: 6 }] },
+        data: { labels: dist.ratings, datasets: [{ data: dist.counts, backgroundColor: accent('c-ratings'),
+            hoverBackgroundColor: accent('c-ratings'), hoverBorderColor: 'rgba(255,255,255,0.5)', hoverBorderWidth: 2,
+            borderRadius: 6, maxBarThickness: 46, categoryPercentage: 0.7 }] },
         options: {
+            // `intersect:false` makes the whole category column the hit
+            // target, not just the painted bar pixels — a short bar next to
+            // a tall one otherwise leaves most of its column dead to hover.
+            interaction: { mode: 'index', intersect: false },
             onClick: (_e, hits) => hits.length && drill(
                 $('c-ratings'), { rating: dist.ratings[hits[0].index] },
                 `${dist.ratings[hits[0].index]} verdiğin filmler`),
+            onHover: (e, hits) => { e.native.target.style.cursor = hits.length ? 'pointer' : 'default'; },
+            plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} film` } } },
         },
     });
+    describeChart('c-ratings', `Puan dağılımı: en sık verdiğin puan ${dist.ratings[peak]}, ${dist.counts[peak]} film.`);
+    $('c-ratings').insertAdjacentHTML('afterend', srTable('c-ratings-table',
+        'Puan dağılımı', ['Puan', 'Film sayısı'],
+        dist.ratings.map((r, i) => [r, dist.counts[i]])));
 
     const points = stats.scatter?.points || [];
     chart('c-scatter', {
@@ -534,6 +680,9 @@ function chapterRatings(stats) {
                 data: points,
                 backgroundColor: accent('c-scatter', 0.45),
                 pointRadius: 3.5, pointHoverRadius: 6,
+                // The painted dot is 7px across — nobody can land a pointer
+                // dead-center on that. The hit area is invisible and wider.
+                pointHitRadius: 14,
             }],
         },
         options: {
@@ -558,6 +707,9 @@ function chapterRatings(stats) {
     $('corr-note').textContent = c?.r != null
         ? `Kitleyle uyumun r = ${c.r} (${c.n} film). Senin ortalaman ${cmp.yours}, kitlenin ${cmp.crowd}.`
         : '';
+    describeChart('c-scatter', c?.r != null
+        ? `Senin puanların kitle ortalamasına karşı, ${c.n} film. Uyum r = ${c.r}.`
+        : 'Senin puanların kitle ortalamasına karşı dağılım grafiği.');
 
     $('r-contro').innerHTML = (stats.controversial?.controversial || []).slice(0, 8).map(m => `
         <div class="film-card">
@@ -650,10 +802,10 @@ function chapterWhat(stats) {
     const byCount = [...genres].sort((a, b) => b.count - a.count);
     const byScore = [...genres].sort((a, b) => b.avg_my_rating - a.avg_my_rating);
 
-    titleCard(4, byCount[0]?.genre ?? '—', byCount[0] ? `${byCount[0].count} film` : '',
+    titleCard(4, trGenre(byCount[0]?.genre) ?? '—', byCount[0] ? `${byCount[0].count} film` : '',
         byCount[0] && byScore[0] && byCount[0].genre !== byScore[0].genre
             ? `En çok izlediğin tür, ortalaman ${byCount[0].avg_my_rating}. Ama en yüksek `
-              + `ortalamayı ${byScore[0].genre} alıyor (${byScore[0].count} film, ${byScore[0].avg_my_rating}).`
+              + `ortalamayı ${trGenre(byScore[0].genre)} alıyor (${byScore[0].count} film, ${byScore[0].avg_my_rating}).`
             : 'Türlere göre dökümün.',
         true);
 
@@ -672,7 +824,7 @@ function chapterWhat(stats) {
         const beats = g.avg_my_rating >= mean;
         return `
         <div class="genre-row${beats ? '' : ' below'}">
-            <span class="g">${esc(g.genre)}<small>${g.count} film</small></span>
+            <span class="g">${esc(trGenre(g.genre))}<small>${g.count} film</small></span>
             <span class="bars">
                 <i class="bar count" style="width:${(g.count / maxCount) * 100}%"></i>
                 <i class="bar score" style="width:${width}%"></i>
@@ -686,28 +838,43 @@ function chapterWhat(stats) {
              <span class="k3">Genel ortalamanın (${mean}) altında</span>
            </div>`;
 
+    // The filter stays keyed on the raw English genre the API knows about;
+    // only the visible label and drill-panel heading are translated.
     $('genre-table').querySelectorAll('.genre-row').forEach((row, i) =>
-        openable(row, { genre: shown[i].genre }, shown[i].genre));
+        openable(row, { genre: shown[i].genre }, trGenre(shown[i].genre)));
 
     const rc = stats.runtime_counts, ra = stats.runtime_avg_rating;
-    chart('c-runtime', {
+    // Two charts sharing one x-axis, not one dual-axis plot: film count and
+    // average rating are different units on different scales, and lining
+    // them up on two y-axes invents an alignment the data doesn't have.
+    chart('c-runtime-count', {
         type: 'bar',
-        data: {
-            labels: rc.labels,
-            datasets: [
-                { label: 'Film', data: rc.values, backgroundColor: accent('c-runtime', 0.35), borderRadius: 6, yAxisID: 'y' },
-                { label: 'Ortalama', data: ra.values, type: 'line', borderColor: accent('c-runtime'),
-                  pointBackgroundColor: accent('c-runtime'), tension: 0.3, yAxisID: 'y1' },
-            ],
-        },
+        data: { labels: rc.labels, datasets: [{ data: rc.values, backgroundColor: accent('c-runtime-count', 0.4),
+            hoverBackgroundColor: accent('c-runtime-count', 0.7),
+            borderRadius: 6, maxBarThickness: 34, categoryPercentage: 0.62 }] },
         options: {
-            plugins: {
-                legend: { display: true, labels: { color: '#8E8EA3', boxWidth: 12, font: { family: 'Inter', size: 11 } } },
-            },
+            interaction: { mode: 'index', intersect: false },
+            plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} film` } } },
             scales: {
-                x: { ticks: AXIS, grid: GRID },
-                y: { ticks: AXIS, grid: GRID, position: 'left' },
-                y1: { ticks: AXIS, grid: { display: false }, position: 'right', min: 0, max: 5 },
+                x: { ticks: { display: false }, grid: { display: false } },
+                y: { ticks: AXIS, grid: GRID },
+            },
+        },
+    });
+    chart('c-runtime-avg', {
+        type: 'line',
+        data: { labels: ra.labels, datasets: [{ data: ra.values,
+            borderColor: accent('c-runtime-avg'), backgroundColor: accent('c-runtime-avg', 0.12),
+            pointBackgroundColor: accent('c-runtime-avg'), pointRadius: 3, pointHoverRadius: 5,
+            pointHitRadius: 14, tension: 0.3, fill: true, spanGaps: true }] },
+        options: {
+            interaction: { mode: 'index', intersect: false },
+            plugins: { tooltip: { callbacks: {
+                label: (ctx) => ctx.parsed.y != null ? `ortalama ${ctx.parsed.y}` : 'veri yok',
+            } } },
+            scales: {
+                x: { ticks: AXIS, grid: { display: false } },
+                y: { ticks: AXIS, grid: GRID, min: 0, max: 5 },
             },
         },
     });
@@ -718,43 +885,61 @@ function chapterWhat(stats) {
         ? `En yüksek puanı ${best} filmlere veriyorsun. İstatistiksel testte p = ${chi.p_value.toFixed(3)} — `
           + (chi.significant ? 'bu ilişki anlamlı.' : 'eğilim var ama kanıt zayıf.')
         : '';
-
+    describeChart('c-runtime-count', 'Film uzunluğuna göre film sayısı.');
+    describeChart('c-runtime-avg', `Film uzunluğuna göre ortalama puan. En yüksek ortalama ${best} filmlerde.`);
 }
 
 /* 05 — Hangi dönemi izliyorsun */
 function chapterWhen(stats) {
     const dec = stats.decade_ratings;
     if (dec?.labels?.length) {
-        chart('c-decades', {
+        // Same fix as chapter 04's runtime chart: two charts on one shared
+        // x-axis instead of two y-scales invented alignment.
+        chart('c-decades-count', {
             type: 'bar',
-            data: {
-                labels: dec.labels,
-                datasets: [
-                    { label: 'Film', data: dec.counts, backgroundColor: accent('c-decades', 0.35),
-                      borderRadius: 6, yAxisID: 'y' },
-                    // An average over two films is not a trend. The bars still
-                    // show those decades honestly; the line simply stops,
-                    // rather than being drawn across them and implying one.
-                    { label: 'Ortalaman',
-                      data: dec.avg_ratings.map((v, i) => (dec.counts[i] >= 5 ? v : null)),
-                      type: 'line',
-                      borderColor: accent('c-decades'), pointBackgroundColor: accent('c-decades'),
-                      tension: 0.3, spanGaps: false, yAxisID: 'y1' },
-                ],
-            },
+            data: { labels: dec.labels, datasets: [{ data: dec.counts, backgroundColor: accent('c-decades-count', 0.4),
+                hoverBackgroundColor: accent('c-decades-count', 0.7),
+                borderRadius: 6, maxBarThickness: 34, categoryPercentage: 0.62 }] },
             options: {
+                interaction: { mode: 'index', intersect: false },
                 onClick: (_e, hits) => hits.length && drill(
-                    $('c-decades'), { decade: dec.decades[hits[0].index] }, dec.labels[hits[0].index]),
-                plugins: {
-                    legend: { display: true, labels: { color: '#8E8EA3', boxWidth: 12, font: { family: 'Inter', size: 11 } } },
-                },
+                    $('c-decades-count'), { decade: dec.decades[hits[0].index] }, dec.labels[hits[0].index]),
+                onHover: (e, hits) => { e.native.target.style.cursor = hits.length ? 'pointer' : 'default'; },
+                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} film` } } },
                 scales: {
-                    x: { ticks: AXIS, grid: GRID },
-                    y: { ticks: AXIS, grid: GRID, position: 'left' },
-                    y1: { ticks: AXIS, grid: { display: false }, position: 'right', min: 0, max: 5 },
+                    x: { ticks: { display: false }, grid: { display: false } },
+                    y: { ticks: AXIS, grid: GRID },
                 },
             },
         });
+        chart('c-decades-avg', {
+            type: 'line',
+            data: {
+                labels: dec.labels,
+                // An average over two films is not a trend. The bars still
+                // show those decades honestly; the line simply stops, rather
+                // than being drawn across them and implying one.
+                datasets: [{ data: dec.avg_ratings.map((v, i) => (dec.counts[i] >= 5 ? v : null)),
+                    borderColor: accent('c-decades-avg'), backgroundColor: accent('c-decades-avg', 0.12),
+                    pointBackgroundColor: accent('c-decades-avg'), pointRadius: 3, pointHoverRadius: 5,
+                    pointHitRadius: 14, tension: 0.3, fill: true, spanGaps: false }],
+            },
+            options: {
+                interaction: { mode: 'index', intersect: false },
+                plugins: { tooltip: { callbacks: {
+                    label: (ctx) => ctx.parsed.y != null ? `ortalama ${ctx.parsed.y}` : 'yeterli film yok',
+                } } },
+                scales: {
+                    x: { ticks: AXIS, grid: { display: false } },
+                    y: { ticks: AXIS, grid: GRID, min: 0, max: 5 },
+                },
+            },
+        });
+        describeChart('c-decades-count', 'On yıllara göre film sayısı.');
+        describeChart('c-decades-avg', 'On yıllara göre ortalama puan.');
+        $('c-decades-avg').insertAdjacentHTML('afterend', srTable('c-decades-table',
+            'On yıllara göre film sayısı ve ortalama puan', ['On yıl', 'Film sayısı', 'Ortalama puan'],
+            dec.labels.map((label, i) => [label, dec.counts[i], dec.avg_ratings[i] ?? '—'])));
 
         // The story is the slope, so say it rather than leaving it to be read
         // off the line. Only decades with enough films to mean anything.
@@ -784,9 +969,16 @@ function chapterWhen(stats) {
             type: 'bar',
             data: {
                 labels: b.categories.map(c => LABELS[c] || c),
-                datasets: [{ data: b.counts, backgroundColor: accent('c-backlog'), borderRadius: 6 }],
+                datasets: [{ data: b.counts, backgroundColor: accent('c-backlog'),
+                    hoverBorderColor: 'rgba(255,255,255,0.5)', hoverBorderWidth: 2,
+                    borderRadius: 6, maxBarThickness: 30, categoryPercentage: 0.62 }],
             },
-            options: { indexAxis: 'y', scales: { x: { ticks: AXIS, grid: GRID }, y: { ticks: AXIS, grid: GRID } } },
+            options: {
+                indexAxis: 'y',
+                interaction: { mode: 'index', intersect: false },
+                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.x} film` } } },
+                scales: { x: { ticks: AXIS, grid: GRID }, y: { ticks: AXIS, grid: { display: false } } },
+            },
         });
         const top = b.categories[b.counts.indexOf(Math.max(...b.counts))];
         // Say plainly what was left out. Letterboxd's watch dates are log
@@ -798,6 +990,7 @@ function chapterWhen(stats) {
         $('backlog-note').textContent =
             `Kaydettiğinde filmin ortalama yaşı ${b.avg_age} yıldı. En büyük dilim: `
             + `${LABELS[top] || top}. ${b.used} film üzerinden.${skipped}`;
+        describeChart('c-backlog', `Filmi ne zaman izlediğine göre dağılım. En büyük dilim: ${LABELS[top] || top}.`);
     }
 }
 
@@ -816,20 +1009,49 @@ function chapterWhere(stats) {
               + `%${Math.round(top3 / shown * 100)}'i ilk üç ülkeden.`
             : '');
 
-    ranking('r-countries', countries.slice(0, 8).map(c => ({ name: c.name, value: `${c.count} film`, bar: c.count })),
-            null, false, 'country');
-    ranking('r-langs', langs.slice(0, 8).map(l => ({ name: l.name, value: `${l.count} film`, bar: l.count })),
-            null, false, 'language');
+    ranking('r-countries', countries.slice(0, 8)
+        .map(c => ({ name: trCountry(c.name), filterName: c.name, value: `${c.count} film`, bar: c.count })),
+        null, false, 'country');
+    ranking('r-langs', langs.slice(0, 8)
+        .map(l => ({ name: trLang(l.name), filterName: l.name, value: `${l.count} film`, bar: l.count })),
+        null, false, 'language');
+}
+
+/**
+ * The reveal doesn't get to just stop after chapter 06 — this is the
+ * closing beat: acknowledge it's over, and put the share action back in
+ * front of the reader at the moment their engagement is highest, instead
+ * of leaving it a full scroll above where they've since scrolled from.
+ */
+function chapterFinale(stats) {
+    const n = stats.summary.total_movies;
+    const line = $('finale-line');
+    if (line) line.textContent = n
+        ? `${n.toLocaleString('tr')} filmlik zevkinin özeti bu. Şimdi paylaşma vakti.`
+        : 'Zevkinin özeti bu. Şimdi paylaşma vakti.';
 }
 
 /* ── boot ────────────────────────────────────────────────────── */
+
+async function downloadSharePng() {
+    try {
+        const canvas = await html2canvas($('share-card'), { backgroundColor: '#0A0A0F', scale: 2 });
+        const link = document.createElement('a');
+        link.download = 'letterboxd-wrapped.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch { toast('Görsel oluşturulamadı', true); }
+}
 
 function wireButtons() {
     $('btn-skip').addEventListener('click', () => Quiz.skip());
     $('btn-dash').addEventListener('click', () =>
         $('dash-bar').scrollIntoView({ behavior: 'smooth' }));
-    $('btn-back').addEventListener('click', () =>
-        window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    // Two ways back to the top: the sticky bar once scrolled past the
+    // summary, and the closing beat at the very end of the six chapters.
+    [$('btn-back'), $('btn-back-2')].forEach(btn => btn?.addEventListener('click', () =>
+        window.scrollTo({ top: 0, behavior: 'smooth' })));
 
     $('btn-again').addEventListener('click', () => {
         clear(); session = null; wrapped = null; quizResult = null;
@@ -840,15 +1062,9 @@ function wireButtons() {
     });
     $('btn-reset').addEventListener('click', () => $('btn-again').click());
 
-    $('btn-png').addEventListener('click', async () => {
-        try {
-            const canvas = await html2canvas($('share-card'), { backgroundColor: '#0A0A0F', scale: 2 });
-            const link = document.createElement('a');
-            link.download = 'letterboxd-wrapped.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        } catch { toast('Görsel oluşturulamadı', true); }
-    });
+    // Two ways to the share PNG: the summary card at the top, and the
+    // closing beat, so sharing is available right where engagement peaks.
+    [$('btn-png'), $('btn-png-2')].forEach(btn => btn?.addEventListener('click', downloadSharePng));
 }
 
 /**

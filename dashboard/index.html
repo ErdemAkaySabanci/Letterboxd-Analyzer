@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/dashboard/style.css?v=r9" />
+<link rel="stylesheet" href="/dashboard/style.css?v=r10" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 </head>
@@ -217,7 +217,14 @@
         <div class="evidence">
             <div class="wrap-wide">
                 <section class="ev rise"><h3>Tür çelişkisi <em>çok izlemek sevmek değil</em></h3><div class="genre-table" id="genre-table"></div></section>
-                <section class="ev rise"><h3>Film uzunluğu</h3><canvas id="c-runtime"></canvas><p class="ev-foot" id="runtime-note"></p></section>
+                <section class="ev rise">
+                    <h3>Film uzunluğu <em>üstte: kaç film · altta: ortalaman</em></h3>
+                    <div class="chart-duo">
+                        <canvas id="c-runtime-count"></canvas>
+                        <canvas id="c-runtime-avg"></canvas>
+                    </div>
+                    <p class="ev-foot" id="runtime-note"></p>
+                </section>
             </div>
         </div>
     </section>
@@ -238,7 +245,14 @@
         </div>
         <div class="evidence">
             <div class="wrap-wide">
-                <section class="ev rise"><h3>On yıllara göre <em>çubuk: kaç film · çizgi: ortalaman</em></h3><canvas id="c-decades"></canvas><p class="ev-foot" id="decades-note"></p></section>
+                <section class="ev rise">
+                    <h3>On yıllara göre <em>üstte: kaç film · altta: ortalaman</em></h3>
+                    <div class="chart-duo">
+                        <canvas id="c-decades-count"></canvas>
+                        <canvas id="c-decades-avg"></canvas>
+                    </div>
+                    <p class="ev-foot" id="decades-note"></p>
+                </section>
                 <section class="ev rise"><h3>Taze mi, arşiv mi</h3><canvas id="c-backlog"></canvas><p class="ev-foot" id="backlog-note"></p></section>
             </div>
         </div>
@@ -263,13 +277,26 @@
             </div>
         </div>
     </section>
+
+    <!-- Closing beat. Six chapters shouldn't just stop — one line that
+         acknowledges the reveal is over, then the two ways back: share the
+         result, or scroll back up to it. app.js fills the line in. -->
+    <section class="finale rise">
+        <div class="wrap-wide finale-inner">
+            <p class="finale-line" id="finale-line">—</p>
+            <div class="finale-actions">
+                <button class="btn-solid" id="btn-png-2">PNG indir</button>
+                <button class="btn-ghost" id="btn-back-2">↑ Özete dön</button>
+            </div>
+        </div>
+    </section>
 </section>
 
 </main>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="/dashboard/quiz.js?v=r9"></script>
-<script src="/dashboard/app.js?v=r9"></script>
+<script src="/dashboard/quiz.js?v=r10"></script>
+<script src="/dashboard/app.js?v=r10"></script>
 </body>
 </html>
