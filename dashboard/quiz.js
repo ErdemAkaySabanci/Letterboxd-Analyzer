@@ -176,14 +176,23 @@ const Quiz = (() => {
      *
      * The number is not decoration. html2canvas will only draw an image it is
      * allowed to read, and the Letterboxd CDN sends no Access-Control-Allow-Origin
-     * header, so the posters are silently dropped when the share card is turned
-     * into a PNG. Layering the poster over a numbered card means the download
-     * still shows a strip of frames instead of a row of holes. Serving posters
-     * from our own origin would make them survive the export.
+     * header, so a poster loaded straight from it taints the canvas and is
+     * silently dropped from the export. The number underneath means a frame
+     * still reads as a frame if that happens.
+     *
+     * `share` routes the poster through this origin instead, which is what
+     * lets the downloaded PNG keep its posters. Only the share strip pays for
+     * it — the live reels stay on the CDN, where they are merely decorative
+     * and there are far more of them.
      */
-    function frameInner(shot, i) {
+    function frameInner(shot, i, share) {
+        if (!shot.url) return '<span class="frame-num">' + (i + 1) + '</span>';
+        const src = share
+            ? '/api/poster-img?u=' + encodeURIComponent(shot.url)
+            : shot.url;
         return '<span class="frame-num">' + (i + 1) + '</span>'
-            + (shot.url ? '<img src="' + esc(shot.url) + '" alt="" loading="lazy" />' : '');
+            + '<img src="' + esc(src) + '" alt=""'
+            + (share ? ' crossorigin="anonymous"' : ' loading="lazy"') + ' />';
     }
 
     /** The accumulated strip, rebuilt inside the shareable card. */
@@ -199,14 +208,14 @@ const Quiz = (() => {
         for (let start = 0; start < frames.length; start += per) {
             const row = frames.slice(start, start + per).map((shot, j) =>
                 '<div class="frame ' + (shot.correct ? 'hit' : 'miss') + '">'
-                + frameInner(shot, start + j) + '</div>').join('');
+                + frameInner(shot, start + j, true) + '</div>').join('');
             html += '<div class="filmstrip is-static" style="--per:' + per + '">' + row + '</div>';
         }
 
         const hits = frames.filter(shot => shot.correct).length;
         html += '<p class="strip-legend">'
-              + '<span><i class="ok"></i>' + hits + ' doğru</span>'
-              + '<span><i class="no"></i>' + (frames.length - hits) + ' yanlış</span>'
+              + '<span><i class="ok"></i>' + hits + ' right</span>'
+              + '<span><i class="no"></i>' + (frames.length - hits) + ' wrong</span>'
               + '</p>';
 
         shareStrip.innerHTML = html;
@@ -246,7 +255,7 @@ const Quiz = (() => {
                         <div class="skel"></div><div class="skel"></div>
                         <div class="skel"></div><div class="skel"></div>
                     </div>
-                    <p>Film bilgilerin geliyor… birazdan devam ediyoruz.</p>
+                    <p>Pulling in your film details… back in a second.</p>
                 </div>`;
                 armWaitCap();
             } else {
@@ -327,7 +336,7 @@ const Quiz = (() => {
         document.getElementById('after').innerHTML = `
             <div class="reveal"><p>${esc(q.reveal)}</p></div>
             <div class="quiz-actions">
-                <button class="btn-next" id="next">${last ? 'Sonucu gör' : 'Devam'} →</button>
+                <button class="btn-next" id="next">${last ? 'See my result' : 'Next'} →</button>
             </div>`;
         document.getElementById('next').addEventListener('click', next);
     }

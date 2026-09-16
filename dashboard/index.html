@@ -1,21 +1,30 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Letterboxd Wrapped — Kendini ne kadar tanıyorsun?</title>
-<meta name="description" content="Letterboxd geçmişini yükle, kendi film zevkin hakkındaki soruları cevapla, yılın özetini gör." />
+<title>Close-Up — How well do you know your own taste?</title>
+<meta name="description" content="Upload your Letterboxd export and take a test built entirely from films you actually watched. Then read the six-chapter breakdown of your taste." />
 <meta name="theme-color" content="#0A0A0F" />
 <meta property="og:type" content="website" />
-<meta property="og:locale" content="tr_TR" />
-<meta property="og:title" content="Letterboxd Wrapped — Kendini ne kadar tanıyorsun?" />
-<meta property="og:description" content="Letterboxd geçmişini yükle, kendi film zevkin hakkındaki soruları cevapla, yılın özetini gör." />
-<meta name="twitter:card" content="summary" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:site_name" content="Close-Up" />
+<meta property="og:url" content="https://letterboxd-analyzer.onrender.com/" />
+<meta property="og:title" content="Close-Up — How well do you know your own taste?" />
+<meta property="og:description" content="Upload your Letterboxd export and take a test built entirely from films you actually watched. Then read the six-chapter breakdown of your taste." />
+<meta property="og:image" content="https://letterboxd-analyzer.onrender.com/dashboard/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Close-Up — a test built from your own Letterboxd history." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Close-Up — How well do you know your own taste?" />
+<meta name="twitter:description" content="A test built entirely from films you actually watched." />
+<meta name="twitter:image" content="https://letterboxd-analyzer.onrender.com/dashboard/og.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0F'/%3E%3Ccircle cx='7.5' cy='16' r='3.3' fill='%2300E5A0'/%3E%3Ccircle cx='16' cy='16' r='3.3' fill='%23FFB020'/%3E%3Ccircle cx='24.5' cy='16' r='3.3' fill='%23FF3B5C'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/dashboard/style.css?v=r10" />
+<link rel="stylesheet" href="/dashboard/style.css?v=r12" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 </head>
@@ -27,28 +36,47 @@
 <section id="landing" class="page active">
     <div class="poster-wall" id="poster-wall" aria-hidden="true"></div>
     <div class="wrap landing-inner">
-        <div class="brandmark">Letterboxd Wrapped</div>
+        <div class="brandmark">Close-Up <span class="brandmark-sub">for Letterboxd</span></div>
 
-        <h1 class="hero">Kendini<br />ne kadar<br /><em>tanıyorsun?</em></h1>
+        <h1 class="hero">How well<br />do you know<br /><em>your own taste?</em></h1>
         <p class="hero-sub">
-            Letterboxd geçmişini yükle. Kendi film zevkin hakkında sorular soralım —
-            cevaplarını bilmediğin sorular.
+            Upload your Letterboxd history and take the test. Every question is built
+            from films you actually watched — and the answers are harder than you think.
         </p>
 
+        <!-- The export is the one step a stranger cannot guess. Spell it out,
+             link it, and say what the file looks like when it arrives. -->
+        <ol class="steps">
+            <li>
+                <span class="step-n">1</span>
+                <span>Open <a href="https://letterboxd.com/settings/data/" target="_blank" rel="noopener noreferrer">letterboxd.com/settings/data</a></span>
+            </li>
+            <li>
+                <span class="step-n">2</span>
+                <span>Press <b>Export Your Data</b>. Letterboxd builds a <code>.zip</code> and your browser downloads it — it takes a moment.</span>
+            </li>
+            <li>
+                <span class="step-n">3</span>
+                <span>Drop that ZIP below. No sign-up, no password, nothing to install.</span>
+            </li>
+        </ol>
+
         <div class="drop" id="drop">
-            <p class="drop-title">Export ZIP dosyanı buraya bırak</p>
-            <p class="drop-hint">veya bilgisayarından seç</p>
+            <p class="drop-title">Drop your export ZIP here</p>
+            <p class="drop-hint">or pick it from your computer</p>
             <label class="file-btn">
-                Dosya Seç
+                Choose file
                 <input type="file" id="file" accept=".zip,application/zip" class="sr-only" />
             </label>
             <p class="drop-hint" id="file-name" style="margin-top:.8rem"></p>
         </div>
 
-        <button class="btn-go" id="go" disabled>Başla</button>
+        <button class="btn-go" id="go" disabled>Start</button>
 
         <p class="landing-foot">
-            Letterboxd → <code>Settings</code> → <code>Import &amp; Export</code> → <code>Export Your Data</code>
+            Your ZIP is read in memory and discarded. Only the title, year, your rating
+            and the date are kept — nothing that identifies you — and all of it is
+            deleted after 30 days.
         </p>
     </div>
 </section>
@@ -70,12 +98,12 @@
 
     <div class="wrap quiz-top">
         <div class="quiz-meta" id="rail-aria" role="progressbar"
-             aria-label="Test ilerlemesi" aria-valuemin="0">
-            <span class="scrape-pill" id="scrape-pill"><span class="dot"></span><span id="scrape-text">hazırlanıyor…</span></span>
+             aria-label="Test progress" aria-valuemin="0">
+            <span class="scrape-pill" id="scrape-pill"><span class="dot"></span><span id="scrape-text">getting ready…</span></span>
             <span class="quiz-meta-right">
-                <span class="frame-count">Kare <b id="frame-count">0/0</b></span>
-                <span class="score">Skor <b id="score">0</b></span>
-                <button class="btn-skip" id="btn-skip">Testi atla →</button>
+                <span class="frame-count">Frame <b id="frame-count">0/0</b></span>
+                <span class="score">Score <b id="score">0</b></span>
+                <button class="btn-skip" id="btn-skip">Skip the test →</button>
             </span>
         </div>
     </div>
@@ -94,30 +122,30 @@
         </div>
 
         <div class="share-card" id="share-card">
-            <div class="share-head">Letterboxd Wrapped</div>
+            <div class="share-head">Close-Up</div>
             <!-- The strip the quiz filled in. quiz.js unhides it once there
                  is something on it; a skipped test leaves it hidden. -->
             <div class="share-strip" id="share-strip" hidden></div>
             <div class="share-grid">
-                <div class="share-stat"><span class="v" id="s-films">—</span><span class="l">Film</span></div>
-                <div class="share-stat"><span class="v" id="s-hours">—</span><span class="l">Saat</span></div>
-                <div class="share-stat"><span class="v" id="s-dirs">—</span><span class="l">Yönetmen</span></div>
-                <div class="share-stat"><span class="v" id="s-avg">—</span><span class="l">Ort. Puan</span></div>
+                <div class="share-stat"><span class="v" id="s-films">—</span><span class="l">Films</span></div>
+                <div class="share-stat"><span class="v" id="s-hours">—</span><span class="l">Hours</span></div>
+                <div class="share-stat"><span class="v" id="s-dirs">—</span><span class="l">Directors</span></div>
+                <div class="share-stat"><span class="v" id="s-avg">—</span><span class="l">Avg rating</span></div>
             </div>
-            <div class="share-row"><span class="k">En sevdiğin yönetmen</span><span class="v" id="s-fav">—</span></div>
-            <div class="share-row"><span class="k">En çok izlediğin</span><span class="v" id="s-most">—</span></div>
-            <div class="share-row"><span class="k">En çok izlediğin oyuncu</span><span class="v" id="s-actor">—</span></div>
-            <div class="share-row" id="quiz-row"><span class="k">Kendini tanıma skoru</span><span class="v" id="s-quiz">—</span></div>
-            <div class="share-mark">letterboxd wrapped</div>
+            <div class="share-row"><span class="k">Favorite director</span><span class="v" id="s-fav">—</span></div>
+            <div class="share-row"><span class="k">Most watched</span><span class="v" id="s-most">—</span></div>
+            <div class="share-row"><span class="k">Most watched actor</span><span class="v" id="s-actor">—</span></div>
+            <div class="share-row" id="quiz-row"><span class="k">Self-knowledge score</span><span class="v" id="s-quiz">—</span></div>
+            <div class="share-mark">Close-Up · for Letterboxd</div>
         </div>
 
         <div class="result-actions">
-            <button class="btn-solid" id="btn-png">PNG indir</button>
-            <button class="btn-ghost" id="btn-again">Yeni ZIP yükle</button>
+            <button class="btn-solid" id="btn-png">Download PNG</button>
+            <button class="btn-ghost" id="btn-again">Upload another export</button>
         </div>
 
         <button class="scroll-cue" id="btn-dash">
-            <span>Detaylı analiz</span>
+            <span>See the full analysis</span>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
         </button>
@@ -126,26 +154,27 @@
     <!-- Sticks to the top only once the reader scrolls past the summary. -->
     <header class="dash-bar" id="dash-bar">
         <div class="wrap-wide dash-bar-inner">
-            <span class="brandmark">Detaylı Analiz</span>
+            <span class="brandmark">The Analysis</span>
             <div class="dash-bar-actions">
-                <button class="btn-ghost" id="btn-back">↑ Özete dön</button>
-                <button class="btn-ghost" id="btn-reset">Sıfırla</button>
+                <button class="btn-ghost" id="btn-back">↑ Back to summary</button>
+                <button class="btn-ghost" id="btn-reset">Start over</button>
             </div>
         </div>
     </header>
 
     <!-- Each chapter is a title card that owns the screen, then the evidence
          that scrolls up over it. `card-stat` is the one number or name the
-         chapter is really about; app.js fills it. -->
+         chapter is really about; app.js fills it. The six titles run
+         The Record / How / Who / What / When / Where. -->
 
-    <!-- 01 — Künye -->
+    <!-- 01 — The Record -->
     <section class="chapter" data-accent="amber">
         <div class="card">
             <div class="wrap-wide card-inner rise">
                 <p class="card-num">01</p>
-                <h2 class="card-title">Künye</h2>
+                <h2 class="card-title">The Record</h2>
                 <p class="card-stat" id="ch1-stat">—</p>
-                <p class="card-line" id="ch1-sub">Kütüphanenin tek bakışta özeti.</p>
+                <p class="card-line" id="ch1-sub">Your library at a glance.</p>
             </div>
         </div>
         <div class="evidence">
@@ -155,12 +184,12 @@
         </div>
     </section>
 
-    <!-- 02 — Nasıl puanlıyorsun -->
+    <!-- 02 — How You Rate -->
     <section class="chapter" data-accent="violet">
         <div class="card">
             <div class="wrap-wide card-inner rise">
                 <p class="card-num">02</p>
-                <h2 class="card-title">Nasıl puanlıyorsun</h2>
+                <h2 class="card-title">How You Rate</h2>
                 <p class="card-stat" id="ch2-stat">—</p>
                 <p class="card-line" id="ch2-sub"></p>
             </div>
@@ -168,15 +197,15 @@
         <div class="evidence">
             <div class="wrap-wide">
                 <div class="ev-2">
-                    <section class="ev rise"><h3>Puan dağılımın</h3><canvas id="c-ratings"></canvas></section>
-                    <section class="ev rise"><h3>Sen vs kitle</h3><canvas id="c-scatter"></canvas><p class="ev-foot" id="corr-note"></p></section>
+                    <section class="ev rise"><h3>Where your ratings fall</h3><canvas id="c-ratings"></canvas></section>
+                    <section class="ev rise"><h3>You vs the crowd</h3><canvas id="c-scatter"></canvas><p class="ev-foot" id="corr-note"></p></section>
                 </div>
-                <section class="ev rise"><h3>En aykırı puanların</h3><div class="film-strip" id="r-contro"></div></section>
+                <section class="ev rise"><h3>Your biggest disagreements</h3><div class="film-strip" id="r-contro"></div></section>
             </div>
         </div>
     </section>
 
-    <!-- 03 — Kimleri izliyorsun -->
+    <!-- 03 — Who You Watch -->
     <section class="chapter" data-accent="sky">
         <div class="card">
             <div class="wrap-wide card-inner rise">
@@ -184,7 +213,7 @@
                     <figure class="face-hero" id="ch3-face" hidden></figure>
                     <div>
                         <p class="card-num">03</p>
-                        <h2 class="card-title">Kimleri izliyorsun</h2>
+                        <h2 class="card-title">Who You Watch</h2>
                         <p class="card-stat" id="ch3-stat">—</p>
                         <p class="card-line" id="ch3-sub"></p>
                     </div>
@@ -193,32 +222,32 @@
         </div>
         <div class="evidence">
             <div class="wrap-wide">
-                <section class="ev rise"><h3>En çok izlediğin yönetmenler <em>kaç film izledin</em></h3><div class="shelf" id="shelf-dirs"></div></section>
-                <section class="ev rise"><h3>En çok izlediğin oyuncular <em>kaç film izledin</em></h3><div class="shelf" id="shelf-actors"></div></section>
+                <section class="ev rise"><h3>Directors you watch most <em>films watched</em></h3><div class="shelf" id="shelf-dirs"></div></section>
+                <section class="ev rise"><h3>Actors you watch most <em>films watched</em></h3><div class="shelf" id="shelf-actors"></div></section>
                 <div class="ev-2">
-                    <section class="ev rise"><h3>En sevdiğin yönetmenler <em>ağırlıklı puan · en az 4 puanladığın</em></h3><div class="rank" id="r-dirs"></div></section>
-                    <section class="ev rise"><h3>En sevdiğin oyuncular <em>ağırlıklı puan · en az 4 puanladığın</em></h3><div class="rank" id="r-actors"></div></section>
+                    <section class="ev rise"><h3>Directors you rate highest <em>weighted score · 4+ films rated</em></h3><div class="rank" id="r-dirs"></div></section>
+                    <section class="ev rise"><h3>Actors you rate highest <em>weighted score · 4+ films rated</em></h3><div class="rank" id="r-actors"></div></section>
                 </div>
-                <section class="ev rise"><h3>Vazgeçemediğin ikililer</h3><div class="rank" id="r-pairs"></div></section>
+                <section class="ev rise"><h3>Pairs you keep coming back to</h3><div class="rank" id="r-pairs"></div></section>
             </div>
         </div>
     </section>
 
-    <!-- 04 — Ne izliyorsun -->
+    <!-- 04 — What You Watch -->
     <section class="chapter" data-accent="crimson">
         <div class="card">
             <div class="wrap-wide card-inner rise">
                 <p class="card-num">04</p>
-                <h2 class="card-title">Ne izliyorsun</h2>
+                <h2 class="card-title">What You Watch</h2>
                 <p class="card-stat" id="ch4-stat">—</p>
                 <p class="card-line" id="ch4-sub"></p>
             </div>
         </div>
         <div class="evidence">
             <div class="wrap-wide">
-                <section class="ev rise"><h3>Tür çelişkisi <em>çok izlemek sevmek değil</em></h3><div class="genre-table" id="genre-table"></div></section>
+                <section class="ev rise"><h3>The genre contradiction <em>watching a lot is not loving it</em></h3><div class="genre-table" id="genre-table"></div></section>
                 <section class="ev rise">
-                    <h3>Film uzunluğu <em>üstte: kaç film · altta: ortalaman</em></h3>
+                    <h3>Runtime <em>above: how many · below: your average</em></h3>
                     <div class="chart-duo">
                         <canvas id="c-runtime-count"></canvas>
                         <canvas id="c-runtime-avg"></canvas>
@@ -229,7 +258,7 @@
         </div>
     </section>
 
-    <!-- 05 — Hangi dönemi izliyorsun.
+    <!-- 05 — When You Watch.
          This chapter used to plot ratings against the watch date. Those are
          log dates: a new account pours its whole history in over a day or
          two, so the chart was really showing when the library was typed in.
@@ -238,7 +267,7 @@
         <div class="card">
             <div class="wrap-wide card-inner rise">
                 <p class="card-num">05</p>
-                <h2 class="card-title">Hangi dönemi izliyorsun</h2>
+                <h2 class="card-title">When You Watch</h2>
                 <p class="card-stat" id="ch5-stat">—</p>
                 <p class="card-line" id="ch5-sub"></p>
             </div>
@@ -246,24 +275,24 @@
         <div class="evidence">
             <div class="wrap-wide">
                 <section class="ev rise">
-                    <h3>On yıllara göre <em>üstte: kaç film · altta: ortalaman</em></h3>
+                    <h3>By decade <em>above: how many · below: your average</em></h3>
                     <div class="chart-duo">
                         <canvas id="c-decades-count"></canvas>
                         <canvas id="c-decades-avg"></canvas>
                     </div>
                     <p class="ev-foot" id="decades-note"></p>
                 </section>
-                <section class="ev rise"><h3>Taze mi, arşiv mi</h3><canvas id="c-backlog"></canvas><p class="ev-foot" id="backlog-note"></p></section>
+                <section class="ev rise"><h3>New releases or back catalogue</h3><canvas id="c-backlog"></canvas><p class="ev-foot" id="backlog-note"></p></section>
             </div>
         </div>
     </section>
 
-    <!-- 06 — Nereden izliyorsun -->
+    <!-- 06 — Where You Watch -->
     <section class="chapter" data-accent="amber">
         <div class="card">
             <div class="wrap-wide card-inner rise">
                 <p class="card-num">06</p>
-                <h2 class="card-title">Nereden izliyorsun</h2>
+                <h2 class="card-title">Where You Watch</h2>
                 <p class="card-stat" id="ch6-stat">—</p>
                 <p class="card-line" id="ch6-sub"></p>
             </div>
@@ -271,8 +300,8 @@
         <div class="evidence">
             <div class="wrap-wide">
                 <div class="ev-2">
-                    <section class="ev rise"><h3>Ülkeler</h3><div class="rank" id="r-countries"></div></section>
-                    <section class="ev rise"><h3>Diller</h3><div class="rank" id="r-langs"></div></section>
+                    <section class="ev rise"><h3>Countries</h3><div class="rank" id="r-countries"></div></section>
+                    <section class="ev rise"><h3>Languages</h3><div class="rank" id="r-langs"></div></section>
                 </div>
             </div>
         </div>
@@ -285,8 +314,8 @@
         <div class="wrap-wide finale-inner">
             <p class="finale-line" id="finale-line">—</p>
             <div class="finale-actions">
-                <button class="btn-solid" id="btn-png-2">PNG indir</button>
-                <button class="btn-ghost" id="btn-back-2">↑ Özete dön</button>
+                <button class="btn-solid" id="btn-png-2">Download PNG</button>
+                <button class="btn-ghost" id="btn-back-2">↑ Back to summary</button>
             </div>
         </div>
     </section>
@@ -296,7 +325,14 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="/dashboard/quiz.js?v=r10"></script>
-<script src="/dashboard/app.js?v=r10"></script>
+<script src="/dashboard/quiz.js?v=r12"></script>
+<script src="/dashboard/app.js?v=r12"></script>
+
+<!-- Cloudflare Web Analytics. No cookies and no localStorage, so it needs no
+     consent banner and the privacy line above stays true. It has no custom
+     event API, so the funnel is read from the routes app.js pushes: / for the
+     landing, /quiz once a test starts, /result once one finishes. -->
+<script type="module" defer src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon='{"token": "2a0d2c9d9b0f4eef9627f23861bb43ae"}'></script>
 </body>
 </html>

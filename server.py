@@ -20,15 +20,18 @@ import os
 import random
 import re
 import threading
+import time
 import traceback
+import urllib.parse
 import zipfile
 
 import numpy as np
 import pandas as pd
 import requests
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import (FileResponse, JSONResponse, Response,
+                               StreamingResponse)
 from fastapi.staticfiles import StaticFiles
 
 # Fix Windows registry MIME type issues
@@ -38,6 +41,7 @@ mimetypes.add_type('application/javascript', '.js')
 import sessions
 from analyzer import (films_matching, full_analysis, instant_summary,
                       most_watched_people, wrapped_summary)
+from data_manager import CACHE_FILE
 from data_manager import (load_cache as load_film_cache, person_record,
                           scrape_films, scrape_people)
 from quiz import build_full_quiz, build_instant_quiz
@@ -62,6 +66,23 @@ app.add_middleware(CORSMiddleware, allow_origins=_origins, allow_methods=["*"], 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024          # 10 MB compressed
 MAX_UNCOMPRESSED_BYTES = 200 * 1024 * 1024   # 200 MB expanded
 
+# Uploads are the only expensive anonymous action: each one parses a ZIP,
+# writes a session file and queues a scrape. One process (WEB_CONCURRENCY=1)
+# means an in-process table is the whole story — there is nothing to
+# coordinate across workers, so no Redis.
+UPLOADS_PER_HOUR = int(os.getenv("UPLOADS_PER_HOUR", "12"))
+
+
+def _failed(what: str, status: int = 500) -> JSONResponse:
+    """Log the real cause, hand the caller a sentence they can act on.
+
+    The traceback goes to the host's log where it is useful; `str(e)` in the
+    response body only ever showed a visitor a Python exception.
+    """
+    traceback.print_exc()
+    return JSONResponse(status_code=status,
+                        content={"error": f"Could not {what}. Try reloading the page."})
+
 
 def clean_nans(obj):
     """Replace NaN/Inf with None so the result is valid JSON."""
@@ -78,16 +99,75 @@ def clean_nans(obj):
 # Background scrape jobs, keyed by session id
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Memoised reads
+# ---------------------------------------------------------------------------
+
+# The film cache used to be re-parsed from disk on every analysis request. At
+# a few hundred films that is invisible; at tens of thousands it is a full
+# JSON parse per request, and N concurrent requests each hold their own copy
+# of the result. Keyed on (mtime, size), so a scrape checkpoint invalidates it
+# and the next reader picks the new file up.
+_cache_memo: tuple[tuple, dict] | None = None
+_cache_memo_lock = threading.Lock()
+
+# Per-session analysis, keyed on the same cache stamp so it refreshes exactly
+# when the underlying metadata does.
+_stats_memo: dict[str, tuple[tuple, dict]] = {}
+_stats_memo_lock = threading.Lock()
+_STATS_MEMO_MAX = 32
+
+
+def _cache_stamp() -> tuple:
+    try:
+        st = os.stat(CACHE_FILE)
+        return (st.st_mtime, st.st_size)
+    except OSError:
+        return (0.0, 0)
+
+
+def cached_film_cache() -> dict:
+    """The shared film cache, re-parsed only when the file changes.
+
+    The returned dict is shared between requests — read it, never mutate it.
+    Scrapers keep using `load_film_cache()` for their own private copy.
+    """
+    global _cache_memo
+    stamp = _cache_stamp()
+    with _cache_memo_lock:
+        if _cache_memo and _cache_memo[0] == stamp:
+            return _cache_memo[1]
+
+    # Parsed outside the lock: a slow read must not block every other reader,
+    # and two threads racing here costs one duplicated parse, nothing worse.
+    fresh = load_film_cache()
+    with _cache_memo_lock:
+        _cache_memo = (stamp, fresh)
+    return fresh
+
+
 _jobs: dict[str, dict] = {}
 _jobs_lock = threading.Lock()
+
+# One entry per upload used to live here for the lifetime of the process.
+# _job_state() reports "done" for anything it no longer holds, so dropping a
+# finished job is safe: a late poll simply learns the scrape is over.
+_JOBS_MAX = 200
+
+
+def _forget_job(session_id: str) -> None:
+    with _jobs_lock:
+        _jobs.pop(session_id, None)
 
 
 def _start_scrape(session_id: str, links: list[str]) -> None:
     """Kick off a background metadata scrape for one session's films."""
-    cache = load_film_cache()
+    cache = cached_film_cache()
     pending = [link for link in dict.fromkeys(links) if link and link not in cache]
 
     with _jobs_lock:
+        while len(_jobs) >= _JOBS_MAX:
+            _jobs.pop(next(iter(_jobs)))
         _jobs[session_id] = {
             "status": "done" if not pending else "running",
             "done": 0,
@@ -148,7 +228,7 @@ def enrich_with_cache(df: pd.DataFrame) -> pd.DataFrame:
         "poster": ("poster", None),
     }
 
-    cache = load_film_cache()
+    cache = cached_film_cache()
     records = [cache.get(link) or {} for link in df["link_of_movie"]] if cache else [{}] * len(df)
     for col, (key, default) in fields.items():
         df[col] = [rec.get(key, default) if rec else default for rec in records]
@@ -167,10 +247,12 @@ def load_dataset(session_id: str) -> pd.DataFrame | None:
 def _require(session_id: str):
     """Return (df, None) or (None, error response)."""
     if not session_id:
-        return None, JSONResponse(status_code=400, content={"error": "session parametresi gerekli"})
+        return None, JSONResponse(status_code=400, content={"error": "No session. Upload your export again."})
     df = load_dataset(session_id)
     if df is None:
-        return None, JSONResponse(status_code=404, content={"error": "Oturum bulunamadı. ZIP'i tekrar yükleyin."})
+        return None, JSONResponse(
+            status_code=404,
+            content={"error": "That session has expired. Upload your export again."})
     return df, None
 
 
@@ -183,7 +265,7 @@ def _parse_letterboxd_zip(zip_bytes: bytes) -> pd.DataFrame:
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         expanded = sum(info.file_size for info in zf.infolist())
         if expanded > MAX_UNCOMPRESSED_BYTES:
-            raise ValueError("ZIP içeriği beklenenden çok büyük")
+            raise ValueError("That ZIP unpacks to far more than a Letterboxd export should.")
 
         names = zf.namelist()
 
@@ -191,7 +273,9 @@ def _parse_letterboxd_zip(zip_bytes: bytes) -> pd.DataFrame:
         ratings_path = next((n for n in names if n.endswith('ratings.csv')), None)
 
         if not watched_path:
-            raise ValueError("ZIP dosyasında watched.csv bulunamadı")
+            raise ValueError(
+                "No watched.csv inside that ZIP. Upload the export exactly as "
+                "Letterboxd gave it to you, without unzipping it first.")
 
         watched = pd.read_csv(zf.open(watched_path))
 
@@ -224,27 +308,88 @@ def _parse_letterboxd_zip(zip_bytes: bytes) -> pd.DataFrame:
 # Upload & progress
 # ---------------------------------------------------------------------------
 
+_uploads: dict[str, list[float]] = {}
+_uploads_lock = threading.Lock()
+_last_purge = 0.0
+
+
+def _client_ip(request: Request) -> str:
+    """The visitor's address, as seen from behind the host's proxy."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _rate_limited(ip: str) -> bool:
+    """True once an address has had its share of uploads for the hour."""
+    now = time.time()
+    cutoff = now - 3600
+    with _uploads_lock:
+        if len(_uploads) > 5000:
+            for addr in [a for a, seen in _uploads.items() if not seen or seen[-1] < cutoff]:
+                _uploads.pop(addr, None)
+        recent = [t for t in _uploads.get(ip, ()) if t > cutoff]
+        if len(recent) >= UPLOADS_PER_HOUR:
+            _uploads[ip] = recent
+            return True
+        recent.append(now)
+        _uploads[ip] = recent
+        return False
+
+
+def _purge_occasionally() -> None:
+    """Expire old session files from inside the request path.
+
+    purge_expired() used to run only at startup, so on a long-lived process
+    nothing ever aged out. Uploads are the only thing that creates session
+    files, which makes them the natural place to clean them up.
+    """
+    global _last_purge
+    now = time.time()
+    if now - _last_purge < 3600:
+        return
+    _last_purge = now
+    try:
+        removed = sessions.purge_expired()
+        if removed:
+            print(f"Purged {removed} expired session(s)")
+    except Exception:
+        traceback.print_exc()
+
+
 async def _read_limited(file: UploadFile) -> bytes:
     """Read an upload into memory, refusing anything over MAX_UPLOAD_BYTES."""
     chunks, total = [], 0
     while chunk := await file.read(1 << 20):
         total += len(chunk)
         if total > MAX_UPLOAD_BYTES:
-            raise ValueError(f"Dosya çok büyük (en fazla {MAX_UPLOAD_BYTES // (1024 * 1024)} MB)")
+            raise ValueError(
+                f"That file is larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB. "
+                "A Letterboxd export is well under one.")
         chunks.append(chunk)
     return b"".join(chunks)
 
 
 @app.post("/api/upload-zip")
-async def upload_zip(file: UploadFile = File(...)):
+async def upload_zip(request: Request, file: UploadFile = File(...)):
     """
     Parse an export ZIP, open a session, and return the stats available with
     no scraping at all. The metadata scrape starts in the background.
     """
+    if _rate_limited(_client_ip(request)):
+        return JSONResponse(
+            status_code=429,
+            content={"error": "That is a lot of uploads from one place. Try again in an hour."})
+
+    _purge_occasionally()
+
     try:
         df = _parse_letterboxd_zip(await _read_limited(file))
         if df.empty:
-            return JSONResponse(status_code=400, content={"error": "ZIP boş görünüyor"})
+            return JSONResponse(
+                status_code=400,
+                content={"error": "That export has no films in it yet."})
 
         session_id = sessions.create(df)
         _start_scrape(session_id, df["link_of_movie"].dropna().tolist())
@@ -255,24 +400,48 @@ async def upload_zip(file: UploadFile = File(...)):
             "instant": instant_summary(df),
             "scrape": _job_state(session_id),
         })
-    except Exception as e:
-        traceback.print_exc()
+    except ValueError as e:
+        # Raised deliberately above, already carrying a written message.
         return JSONResponse(status_code=400, content={"error": str(e)})
+    except zipfile.BadZipFile:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "That file is not a ZIP. Upload the export exactly as "
+                              "Letterboxd gave it to you."})
+    except (KeyError, pd.errors.ParserError, pd.errors.EmptyDataError):
+        # The ZIP opened and held a watched.csv, but not one shaped like an
+        # export — a hand-edited or unrelated CSV lands here.
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=400,
+            content={"error": "That does not look like a Letterboxd export. Download a "
+                              "fresh one from Settings, Import & Export."})
+    except Exception:
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Something went wrong reading that file. Try again."})
 
 
 @app.get("/api/progress")
 async def progress_stream(session: str = ""):
     """Server-sent events reporting background scrape progress."""
     if not sessions.exists(session):
-        return JSONResponse(status_code=404, content={"error": "Oturum bulunamadı"})
+        return JSONResponse(status_code=404, content={"error": "No such session."})
 
     async def events():
-        while True:
-            state = _job_state(session)
-            yield f"data: {json.dumps(state)}\n\n"
-            if state["status"] in ("done", "error"):
-                break
-            await asyncio.sleep(0.5)
+        try:
+            while True:
+                state = _job_state(session)
+                yield f"data: {json.dumps(state)}\n\n"
+                if state["status"] in ("done", "error"):
+                    break
+                await asyncio.sleep(0.5)
+        finally:
+            # Only once the scrape has actually finished. A reader who closes
+            # the tab mid-scrape must still find their job on the next poll.
+            if _job_state(session)["status"] in ("done", "error"):
+                _forget_job(session)
 
     return StreamingResponse(events(), media_type="text/event-stream")
 
@@ -320,7 +489,7 @@ async def get_posters(n: int = 40, session: str = ""):
             random.shuffle(urls)
 
     if len(urls) < n:
-        cache = load_film_cache()
+        cache = cached_film_cache()
         shared = [film["poster"] for film in cache.values()
                   if isinstance(film, dict) and film.get("poster")]
         random.shuffle(shared)
@@ -370,9 +539,8 @@ async def get_people(session: str = "", n: int = 8):
             "directors": dress(directors, "director"),
             "actors": dress(actors, "actor"),
         })
-    except Exception as e:
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    except Exception:
+        return _failed("load those portraits")
 
 
 @app.get("/api/quiz")
@@ -387,13 +555,12 @@ async def get_quiz(session: str = "", phase: str = "instant", seed: int | None =
     if error:
         return error
     if phase not in ("instant", "full"):
-        return JSONResponse(status_code=400, content={"error": "phase 'instant' veya 'full' olmalı"})
+        return JSONResponse(status_code=400, content={"error": "phase must be 'instant' or 'full'."})
     try:
         build = build_instant_quiz if phase == "instant" else build_full_quiz
         return clean_nans({"phase": phase, "questions": build(df, seed=seed)})
-    except Exception as e:
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    except Exception:
+        return _failed("build your questions")
 
 
 @app.get("/api/wrapped")
@@ -405,22 +572,38 @@ async def get_wrapped(session: str = ""):
     try:
         result = await enrich_wrapped_with_posters(wrapped_summary(df))
         return clean_nans(result)
-    except Exception as e:
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    except Exception:
+        return _failed("build your summary")
 
 
 @app.get("/api/stats")
 async def get_stats(session: str = ""):
-    """Full statistical analysis of the session's dataset."""
+    """Full statistical analysis of the session's dataset.
+
+    The result is memoised against the film cache's stamp: the chapters are
+    re-fetched whenever the scrape lands, and on a large library this is
+    seconds of pandas work that would otherwise repeat on every request.
+    """
     df, error = _require(session)
     if error:
         return error
+
+    stamp = _cache_stamp()
+    with _stats_memo_lock:
+        hit = _stats_memo.get(session)
+        if hit and hit[0] == stamp:
+            return hit[1]
+
     try:
-        return clean_nans(full_analysis(df))
-    except Exception as e:
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        result = clean_nans(full_analysis(df))
+    except Exception:
+        return _failed("build your analysis")
+
+    with _stats_memo_lock:
+        while len(_stats_memo) >= _STATS_MEMO_MAX:
+            _stats_memo.pop(next(iter(_stats_memo)))
+        _stats_memo[session] = (stamp, result)
+    return result
 
 
 @app.get("/api/films")
@@ -450,9 +633,8 @@ async def get_films(session: str = "", director: str = "", actor: str = "",
             rating=rating,
             limit=max(1, min(limit, 300)),
         ))
-    except Exception as e:
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    except Exception:
+        return _failed("load those films")
 
 
 # ---------------------------------------------------------------------------
@@ -497,11 +679,57 @@ async def enrich_wrapped_with_posters(w: dict) -> dict:
     return w
 
 
+# The Letterboxd CDN sends no Access-Control-Allow-Origin header, so a canvas
+# that has drawn one of its images is tainted and html2canvas silently drops
+# the poster — the share card exported as a row of empty frames. Re-serving
+# those bytes from this origin is what lets the download keep its posters.
+#
+# Host-locked on purpose: an image proxy that fetches whatever it is handed is
+# an open relay, useful for hiding the origin of a request that is not ours.
+POSTER_HOSTS = ("a.ltrbxd.com", "s.ltrbxd.com")
+
+
+@app.get("/api/poster-img")
+async def poster_img(u: str = ""):
+    """Re-serve one Letterboxd poster from this origin, for canvas export."""
+    host = urllib.parse.urlparse(u).netloc.lower()
+    if not u.startswith("https://") or host not in POSTER_HOSTS:
+        return JSONResponse(status_code=400, content={"error": "Not a poster URL."})
+
+    try:
+        upstream = await asyncio.to_thread(
+            lambda: requests.get(u, timeout=8, headers={"User-Agent": "Mozilla/5.0"})
+        )
+    except Exception:
+        return JSONResponse(status_code=502, content={"error": "Could not fetch that poster."})
+
+    if upstream.status_code != 200:
+        return JSONResponse(status_code=502, content={"error": "Could not fetch that poster."})
+
+    media = upstream.headers.get("Content-Type", "image/jpeg")
+    if not media.startswith("image/"):
+        return JSONResponse(status_code=415, content={"error": "That is not an image."})
+
+    return Response(
+        content=upstream.content,
+        media_type=media,
+        headers={
+            "Cache-Control": "public, max-age=604800",
+            "Access-Control-Allow-Origin": "*",
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 # Dashboard static files
 # ---------------------------------------------------------------------------
 
+# app.js pushes a path per screen, so a reload or a pasted link has to find
+# the app on all of them rather than a 404. There is nothing to route on the
+# server: the client reads its own screen back out of the path.
 @app.get("/")
+@app.get("/quiz")
+@app.get("/result")
 def read_root():
     response = FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -525,7 +753,7 @@ if __name__ == "__main__":
     if removed:
         print(f"Purged {removed} expired session(s)")
     port = int(os.getenv("PORT", "8000"))
-    print(f"Starting Letterboxd Analysis server at http://localhost:{port}")
+    print(f"Starting Close-Up at http://localhost:{port}")
     # One worker only: scrape job state lives in memory and the film cache is a
     # single file guarded by an in-process lock. See README before scaling out.
     uvicorn.run(app, host="0.0.0.0", port=port)

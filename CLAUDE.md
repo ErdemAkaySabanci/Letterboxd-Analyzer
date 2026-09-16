@@ -46,11 +46,38 @@ Deploy notes that constrain what can safely change:
   reset on every deploy, which is why `film_cache.seed.json` is committed and
   copied into place by the Dockerfile — a fresh container starts warm instead
   of re-scraping hundreds of films on 0.1 vCPU.
-- `ALLOWED_ORIGINS`, `PORT`, and `SCRAPE_WORKERS` come from the environment.
+- `ALLOWED_ORIGINS`, `PORT`, `SCRAPE_WORKERS`, `SCRAPE_JOBS` and
+  `UPLOADS_PER_HOUR` come from the environment. **Set `ALLOWED_ORIGINS`** — it
+  defaults to `*`.
+- **Free tier sleeps after 15 minutes**; the measured cold start is ~33s. Paid
+  Starter ($7/mo) removes the sleep and gives 0.5 vCPU instead of 0.1.
+
+Things that bound the single worker, all in-process because there is only one:
+
+- `cached_film_cache()` in [server.py](server.py) memoises the shared cache on
+  `(mtime, size)`. Without it every analysis request re-parsed the whole JSON,
+  so N concurrent requests held N copies — the real path to exhausting 512 MB.
+  **The returned dict is shared: read it, never mutate it.** Scrapers keep
+  using `load_cache()` for a private copy.
+- `/api/stats` memoises `full_analysis()` per session against the same stamp.
+  Measured: 0.82s cold, 0.245s warm on a 603-film library.
+- `MAX_SCRAPE_JOBS` (data_manager) caps how many sessions scrape at once. Each
+  opens its own pool, so without it twenty uploads meant several hundred live
+  threads. Queued sessions lose nothing visible — phase-1 questions need no
+  scrape.
+- `_jobs` entries are dropped once the SSE stream sees a terminal state;
+  `_job_state()` reports "done" for anything it no longer holds.
+- Uploads are rate-limited per IP (`UPLOADS_PER_HOUR`, default 12) and
+  `sessions.purge_expired()` now also runs opportunistically on upload, not
+  only at boot.
 
 ## Architecture
 
 **Backend**: a FastAPI app in [server.py](server.py) serving the frontend from `dashboard/` plus a JSON API. There is no database.
+
+The product is **Close-Up** ("for Letterboxd"), English-only. It deliberately
+does not lead with Letterboxd's trademark: their terms license the logo for
+linking, not the name for a product.
 
 ### Data flow
 
@@ -84,9 +111,33 @@ No framework, no build step. Chart.js and html2canvas via CDN.
 
 - `quiz.js` — the quiz engine. Questions can be appended mid-run, which is how phase-2 questions join once the scrape finishes.
 - `app.js` — orchestration: upload → quiz → result → analysis, plus all chapter rendering.
+- **The three screens are real addresses**: `/`, `/quiz`, `/result`. `show()`
+  pushes one per transition and a `popstate` handler restores it, so the back
+  button works — on a phone it is the main way out of a screen, and without
+  this the only thing it could do from the result was leave the site.
+  [server.py](server.py) serves `index.html` on all three so a reload or a
+  pasted link is not a 404; a deep link with nothing in `localStorage` to
+  restore rewrites itself back to `/`.
+  Adding a screen means adding it to `PATHS` **and** to the server's routes.
 - The result summary and the 6 analysis chapters live on **one continuous page** (`#wrapped`); there is no separate dashboard page.
 
 Design language is dark, poster-forward, with a per-section accent (`data-accent` on an ancestor sets `--accent`).
+
+## Analytics
+
+Cloudflare Web Analytics, via the JS beacon in `index.html` — free, and it
+needs no DNS change because the site is not proxied through Cloudflare. It sets
+no cookie and touches no `localStorage`, so there is no consent banner to owe
+anyone and the landing page's privacy line stays true.
+
+**It has no custom-event API.** The funnel is read instead from the routes
+above: `/` → `/quiz` → `/result` is landing → started the test → finished one,
+and the drop-off between them is the number worth watching. Anything that
+needs a real event would need a different tool.
+
+The beacon is registered against one hostname, so it rejects beacons from
+`localhost` with a CORS error in the console. That is expected locally and not
+a bug; change the hostname in the Cloudflare dashboard if the domain moves.
 
 ## Gotchas that have already bitten
 
@@ -96,5 +147,18 @@ Design language is dark, poster-forward, with a per-section accent (`data-accent
 - In `chart()`, the merged `plugins`/`scales` must come *after* `...config.options`, or a caller that sets either one drops the defaults.
 - Ratings cluster in a narrow band (~2.8–4.0); a 0–5 bar makes every genre look identical. Scale to the observed range.
 - Watch dates are *log* dates. A bulk import on signup day skews any "busiest month/day" stat, and `diary.csv` (the only source of real watch dates) is usually near-empty.
-- The page is `lang="tr"`, so CSS `text-transform: uppercase` turns "Fiennes" into
-  "FİENNES". Never uppercase a person's name.
+- Never uppercase a person's name. (The page was `lang="tr"` once, where
+  `text-transform: uppercase` turned "Fiennes" into "FİENNES"; the interface is
+  English now, but a real name is still set the way its owner spells it.)
+- **Two CSS rules of equal specificity: source order wins.** A `@media` block
+  placed *above* the base rule it means to override does nothing. The phone
+  rules for `.btn-skip` are scoped `#play .btn-skip` for exactly this reason.
+- The landing scrim (`#landing::after`) and the poster wall's mask are ellipses
+  sized for a wide viewport, where the copy sits inside a hollowed-out middle.
+  On a phone the copy *is* the middle, so both need their own `max-width: 620px`
+  treatment or posters run straight through the words.
+- **html2canvas will not draw an image it cannot read.** The Letterboxd CDN
+  sends no `Access-Control-Allow-Origin`, so a poster loaded straight from it
+  taints the canvas and vanishes from the exported share PNG. The share strip
+  routes through `/api/poster-img` (same origin, host-locked) so the download
+  keeps its posters; the decorative reels stay on the CDN.

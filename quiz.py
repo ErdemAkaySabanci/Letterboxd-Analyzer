@@ -24,23 +24,10 @@ from analyzer import clean_dataset
 # Accent keys the front-end maps to card themes.
 ACCENTS = ["amber", "crimson", "violet", "mint", "sky"]
 
-# Turkish possessive suffix depends on how the number is *pronounced*, so it
-# comes off the last spoken part: 36 -> "otuz altısı", 40 -> "kırkı".
-_SUFFIX_ONES = {1: "i", 2: "si", 3: "ü", 4: "ü", 5: "i",
-                6: "sı", 7: "si", 8: "i", 9: "u"}
-_SUFFIX_TENS = {10: "u", 20: "si", 30: "u", 40: "ı", 50: "si",
-                60: "ı", 70: "i", 80: "i", 90: "ı", 100: "ü"}
-
 
 def pct(n) -> str:
-    """Format a percentage with the right Turkish possessive suffix."""
-    n = int(round(n))
-    ones = n % 10
-    if ones:
-        suffix = _SUFFIX_ONES[ones]
-    else:
-        suffix = _SUFFIX_TENS.get(n if n <= 100 else n % 100 or 100, "ı")
-    return f"%{n}'{suffix}"
+    """Format a number as a whole percentage."""
+    return f"{int(round(n))}%"
 
 
 def _question(qid, eyebrow, prompt, options, answer, reveal, accent, kind="plain",
@@ -96,7 +83,7 @@ def _spread(value, rng, lo=None, hi=None, step=1, as_pct=False):
             break
     while len(out) < 3:
         out.append(value + len(out) + 1)
-    return [f"%{v}" if as_pct else str(v) for v in out]
+    return [f"{v}%" if as_pct else str(v) for v in out]
 
 
 # ---------------------------------------------------------------------------
@@ -112,14 +99,14 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
     if len(rated) >= 20:
         # --- Generosity: nobody knows how kind they actually are ---
         generous = round(float((rated >= 3.5).mean() * 100))
-        options, answer = _shuffled(f"%{generous}", _spread(generous, rng, lo=5, hi=99, as_pct=True), rng)
+        options, answer = _shuffled(f"{generous}%", _spread(generous, rng, lo=5, hi=99, as_pct=True), rng)
         questions.append(_question(
-            "generosity", "Cömertlik testi",
-            "Puanladığın filmlerin yüzde kaçına 3.5 ve üstü verdin?",
+            "generosity", "The generosity test",
+            "What share of the films you rated did you give 3.5 or higher?",
             options, answer,
-            f"{len(rated)} filmden {int((rated >= 3.5).sum())} tanesi geçer not aldı. "
-            + ("Sen eleştirmen değilsin, hayransın." if generous >= 65 else
-               "Kolay beğenmiyorsun." if generous <= 45 else "Dengeli bir izleyicisin."),
+            f"{int((rated >= 3.5).sum())} of {len(rated)} rated films cleared the bar. "
+            + ("You are not a critic, you are a fan." if generous >= 65 else
+               "You are hard to please." if generous <= 45 else "You are an even-handed viewer."),
             "amber", kind="number",
         ))
 
@@ -130,10 +117,10 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         rng.shuffle(pool)
         options, answer = _shuffled(f"{mode:.1f}", pool[:3], rng)
         questions.append(_question(
-            "signature", "İmza puanın",
-            "En sık verdiğin puan hangisi?",
+            "signature", "Your signature score",
+            "Which rating do you hand out most often?",
             options, answer,
-            f"{int((rated == mode).sum())} film — tüm puanlarının {pct(share)} tek bir değerde toplanmış.",
+            f"{int((rated == mode).sum())} films — {pct(share)} of everything you rated lands on one value.",
             "violet", kind="rating",
         ))
 
@@ -141,11 +128,11 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         fives = int((rated == 5.0).sum())
         options, answer = _shuffled(str(fives), _spread(fives, rng, lo=0), rng)
         questions.append(_question(
-            "fivestars", "Beş yıldız cimriliği",
-            "Kaç filme 5 yıldız verdin?",
+            "fivestars", "Five-star scarcity",
+            "How many films did you give a full five stars?",
             options, answer,
-            f"Puanladıklarının {pct(fives / len(rated) * 100)}. "
-            f"Beş yıldızı hak eden {fives} film.",
+            f"{pct(fives / len(rated) * 100)} of everything you rated. "
+            f"{fives} films earned it.",
             "crimson", kind="number",
         ))
 
@@ -154,14 +141,14 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
     if len(years) >= 20:
         decades = (years // 10 * 10).astype(int).value_counts()
         top = int(decades.index[0])
-        others = [f"{int(d)}'ler" for d in decades.index[1:4]]
-        options, answer = _shuffled(f"{top}'ler", others, rng)
+        others = [f"{int(d)}s" for d in decades.index[1:4]]
+        options, answer = _shuffled(f"{top}s", others, rng)
         questions.append(_question(
-            "decade", "Hangi on yılın çocuğusun?",
-            "Kütüphanenin çoğunluğu hangi on yıldan?",
+            "decade", "Which decade raised you?",
+            "Most of your library comes from which decade?",
             options, answer,
-            f"{int(decades.iloc[0])} film. "
-            + " · ".join(f"{int(d)}'ler {int(c)}" for d, c in decades.head(4).items()),
+            f"{int(decades.iloc[0])} films. "
+            + " · ".join(f"{int(d)}s {int(c)}" for d, c in decades.head(4).items()),
             "sky", kind="number",
         ))
 
@@ -172,11 +159,11 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         correct = titles[0]
         options, answer = _shuffled(correct, titles[1:], rng)
         questions.append(_question(
-            "oldest", "Zaman kapsülü",
-            "İzlediğin en eski film hangisi?",
+            "oldest", "Time capsule",
+            "Which is the oldest film you have watched?",
             options, answer,
             f"{oldest.iloc[0]['title_of_movie']} — {int(oldest.iloc[0]['Release_Year'])}. "
-            "Dördü de senin izlediğin filmler.",
+            "All four are films you have actually seen.",
             "amber", kind="title",
         ))
 
@@ -185,10 +172,10 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
     if unrated >= 5:
         options, answer = _shuffled(str(unrated), _spread(unrated, rng, lo=1), rng)
         questions.append(_question(
-            "unrated", "Yarım kalanlar",
-            f"{len(df)} filmden kaçını puanlamadan bıraktın?",
+            "unrated", "The ones you never scored",
+            f"Of {len(df)} films, how many did you leave unrated?",
             options, answer,
-            f"Her {round(len(df) / unrated)} filmden biri sessiz kaldı.",
+            f"One in every {round(len(df) / unrated)} films went by without a word.",
             "mint", kind="number",
         ))
 
@@ -212,10 +199,10 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         most = counts.index[0]
         options, answer = _shuffled(most, list(counts.index[1:4]), rng)
         questions.append(_question(
-            "most_watched_dir", "Sadakat",
-            "En çok filmini izlediğin yönetmen kim?",
+            "most_watched_dir", "Loyalty",
+            "Whose films have you watched the most of?",
             options, answer,
-            f"{most} — {int(counts.iloc[0])} film. " + " · ".join(
+            f"{most} — {int(counts.iloc[0])} films. " + " · ".join(
                 f"{d} {int(c)}" for d, c in counts.head(4).items()),
             "sky", kind="person",
         ))
@@ -229,11 +216,11 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         pool = [d for d in [counts.index[0], *eligible.index[1:4]] if d != best]
         options, answer = _shuffled(best, pool[:3], rng)
         questions.append(_question(
-            "favourite_dir", "Ama gerçek favorin",
-            "Peki en yüksek ortalamayı verdiğin yönetmen?",
+            "favourite_dir", "But your actual favorite",
+            "And which director do you rate highest?",
             options, answer,
-            f"{best} — {int(eligible.iloc[0]['size'])} film, ortalama "
-            f"{eligible.iloc[0]['mean']:.2f}. En çok izlediğin {counts.index[0]} idi.",
+            f"{best} — {int(eligible.iloc[0]['size'])} films, averaging "
+            f"{eligible.iloc[0]['mean']:.2f}. The one you watch most was {counts.index[0]}.",
             "violet", kind="person",
         ))
 
@@ -246,10 +233,10 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             pool = [f"{v:.2f}" for v in (worst_avg + 0.8, worst_avg - 0.7, worst_avg + 1.4)]
             options, answer = _shuffled(f"{worst_avg:.2f}", pool, rng)
             questions.append(_question(
-                "toxic", "İlişki durumu: karmaşık",
-                f"{worst} adlı yönetmenin {worst_n} filmini izlemişsin. Ortalama kaç verdin?",
+                "toxic", "Relationship status: complicated",
+                f"You have sat through {worst_n} films by {worst}. What do you average on them?",
                 options, answer,
-                f"{worst_n} film. Ortalama {worst_avg:.2f}. Bu bir ilişki mi, bağımlılık mı?",
+                f"{worst_n} films. Averaging {worst_avg:.2f}. Is that a relationship or a habit?",
                 "crimson", kind="rating",
             ))
 
@@ -263,12 +250,12 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
                                      worst["my_rating"] + 1.5) if v <= 5.0][:3]
         options, answer = _shuffled(correct, pool, rng)
         questions.append(_question(
-            "confession", "İtiraf vakti",
-            f"Letterboxd kitlesi «{worst['title_of_movie']}» filmine "
-            f"{worst['average_rating']:.2f} verdi. Sen kaç verdin?",
+            "confession", "Confession time",
+            f"Letterboxd gave “{worst['title_of_movie']}” a "
+            f"{worst['average_rating']:.2f}. What did you give it?",
             options, answer,
-            f"Dünya bayıldı, sen {worst['my_rating']:.1f} verdin. "
-            f"Aradaki fark {abs(worst['diff']):.2f} puan.",
+            f"Everyone else loved it. You gave it {worst['my_rating']:.1f} — "
+            f"a gap of {abs(worst['diff']):.2f}.",
             "crimson", kind="poster",
             poster=worst.get("poster") or None,
         ))
@@ -281,10 +268,10 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         top3 = countries.most_common(3)
         share = round(sum(c for _, c in top3) / sum(countries.values()) * 100)
         questions.append(_question(
-            "passport", "Sinema pasaportun",
-            "İzlediğin filmler kaç farklı ülkeden?",
+            "passport", "Your cinema passport",
+            "How many different countries have you watched films from?",
             options, answer,
-            f"{total} ülke. Ama {pct(share)} sadece üçünden: "
+            f"{total} countries. But {pct(share)} of them come from just three: "
             + " · ".join(f"{n} {c}" for n, c in top3),
             "mint", kind="number",
         ))
@@ -294,16 +281,16 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         crowd = round(float(contrast["average_rating"].mean()), 2)
         mine = round(float(contrast["my_rating"].mean()), 2)
         gap = abs(mine - crowd)
-        verdict = ("Kendini özel sanıyordun. Sen tam olarak ortalamasın." if gap < 0.15
-                   else "Kitleden belirgin şekilde cömertsin." if mine > crowd
-                   else "Kitleden belirgin şekilde sertsin.")
+        verdict = ("You thought you were unusual. You are exactly average." if gap < 0.15
+                   else "You are noticeably kinder than the crowd." if mine > crowd
+                   else "You are noticeably harsher than the crowd.")
         pool = [f"{v:.2f}" for v in (crowd - 0.5, crowd + 0.45, crowd + 0.9) if v != mine][:3]
         options, answer = _shuffled(f"{mine:.2f}", pool, rng)
         questions.append(_question(
-            "mirror", "Ayna",
-            f"Letterboxd kitlesi bu filmlere ortalama {crowd:.2f} verdi. Ya sen?",
+            "mirror", "The mirror",
+            f"Letterboxd averages {crowd:.2f} across these films. And you?",
             options, answer,
-            f"Sen {mine:.2f}, kitle {crowd:.2f}. {verdict}",
+            f"You {mine:.2f}, the crowd {crowd:.2f}. {verdict}",
             "amber", kind="rating",
         ))
 
@@ -315,10 +302,10 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         distractors = others.sample(min(3, len(others)), random_state=seed or 0)["title_of_movie"].tolist()
         options, answer = _shuffled(pick["title_of_movie"], distractors, rng)
         questions.append(_question(
-            "cast", "Kadro",
-            "Bu üç isim hangi filmde bir arada?",
+            "cast", "The cast list",
+            "These three names share which film?",
             options, answer,
-            f"{pick['title_of_movie']} — {pick.get('Director') or 'bilinmeyen yönetmen'}",
+            f"{pick['title_of_movie']} — {pick.get('Director') or 'director unknown'}",
             "violet", kind="cast",
         ))
         questions[-1]["hint"] = pick["Actors"][:3]
