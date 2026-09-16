@@ -153,9 +153,11 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         ))
 
     # --- Time capsule: all four are films they actually watched ---
+    # The year deliberately doesn't appear in the options — printing it would
+    # answer the question outright rather than testing whether they remember.
     oldest = df.dropna(subset=["Release_Year"]).nsmallest(4, "Release_Year")
     if len(oldest) == 4:
-        titles = [f"{r['title_of_movie']} ({int(r['Release_Year'])})" for _, r in oldest.iterrows()]
+        titles = [r["title_of_movie"] for _, r in oldest.iterrows()]
         correct = titles[0]
         options, answer = _shuffled(correct, titles[1:], rng)
         questions.append(_question(
