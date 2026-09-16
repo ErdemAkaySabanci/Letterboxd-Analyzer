@@ -59,6 +59,16 @@ _cache_lock = threading.Lock()
 # they just queue here.
 _request_slots = threading.BoundedSemaphore(MAX_WORKERS)
 
+# ...and this caps the threads themselves. Every upload opens its own pool, so
+# without a ceiling twenty at once meant twenty pools of MAX_WORKERS threads —
+# several hundred live threads, nearly all of them parked on the semaphore
+# above. Throughput is fixed by that semaphore either way, so sessions past
+# the limit wait for a slot rather than piling more threads onto the host.
+# Waiting costs them nothing visible: phase-1 quiz questions need no scrape.
+MAX_SCRAPE_JOBS = int(os.getenv("SCRAPE_JOBS", "6"))
+POOL_WORKERS = max(1, min(8, MAX_WORKERS))
+_job_slots = threading.BoundedSemaphore(MAX_SCRAPE_JOBS)
+
 
 # ---------------------------------------------------------------------------
 # Cache
@@ -223,7 +233,7 @@ def scrape_film(url: str) -> dict | None:
 # Bulk scrape
 # ---------------------------------------------------------------------------
 
-def scrape_films(urls, progress_cb=None, max_workers: int = MAX_WORKERS) -> dict:
+def scrape_films(urls, progress_cb=None, max_workers: int = POOL_WORKERS) -> dict:
     """
     Scrape every URL not already cached, in parallel, and return the full
     cache dict (keyed by URL). The cache is saved as results arrive, so an
@@ -257,8 +267,10 @@ def scrape_films(urls, progress_cb=None, max_workers: int = MAX_WORKERS) -> dict
         if progress_cb:
             progress_cb(done, total, (data or {}).get("title") or url)
 
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        list(pool.map(work, todo))
+    # One job slot per scraping session; see MAX_SCRAPE_JOBS above.
+    with _job_slots:
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            list(pool.map(work, todo))
 
     save_cache(cache)
 
