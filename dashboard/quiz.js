@@ -241,6 +241,85 @@ const Quiz = (() => {
         return `<button class="opt" data-i="${i}">${inner}</button>`;
     }
 
+    /** How a slider's live value reads, per `q.slider.format`. */
+    function sliderLabel(value, format) {
+        return format === 'percent' ? `${value}%` : String(value);
+    }
+
+    function sliderWidget(q) {
+        const s = q.slider;
+        const start = Math.round((s.min + s.max) / 2);
+        return `
+            <div class="slider-wrap" id="slider-wrap">
+                <div class="slider-value" id="slider-value">${esc(sliderLabel(start, s.format))}</div>
+                <div class="slider-track-wrap" id="slider-track-wrap">
+                    <input type="range" class="slider-input" id="slider-input"
+                           min="${s.min}" max="${s.max}" step="${s.step}" value="${start}" />
+                </div>
+                <button class="btn-lock" id="slider-lock">Lock it in →</button>
+            </div>`;
+    }
+
+    /** Tap-to-rank: a numbered slot list fed from an unordered chip pool. */
+    function rankWidget(q) {
+        const items = q.items;
+        const slots = items.map((_, i) =>
+            `<li class="rank-slot" data-slot="${i}"><span class="rank-slot-n">${i + 1}</span></li>`).join('');
+        const chips = items.map((label, i) =>
+            `<button class="rank-chip" data-i="${i}">${esc(label)}</button>`).join('');
+        return `
+            <div class="rank-wrap" id="rank-wrap">
+                <ol class="rank-slots" id="rank-slots">${slots}</ol>
+                <div class="rank-pool" id="rank-pool">${chips}</div>
+                <button class="btn-lock" id="rank-lock" disabled>Lock it in →</button>
+            </div>`;
+    }
+
+    function wireSlider(q) {
+        const input = document.getElementById('slider-input');
+        const label = document.getElementById('slider-value');
+        const lock = document.getElementById('slider-lock');
+        input.addEventListener('input', () =>
+            { label.textContent = sliderLabel(Number(input.value), q.slider.format); });
+        lock.addEventListener('click', () => answer(Number(input.value)));
+    }
+
+    function wireRank(q) {
+        const pool = document.getElementById('rank-pool');
+        const slotsEl = document.getElementById('rank-slots');
+        const lock = document.getElementById('rank-lock');
+        const n = q.items.length;
+        const placed = [];   // item-indices, in the order the reader placed them
+
+        function refresh() {
+            Array.from(slotsEl.children).forEach((slot, i) => {
+                const itemIdx = placed[i];
+                slot.classList.toggle('filled', itemIdx !== undefined);
+                slot.innerHTML = `<span class="rank-slot-n">${i + 1}</span>`
+                    + (itemIdx !== undefined ? `<span class="rank-slot-label">${esc(q.items[itemIdx])}</span>` : '');
+            });
+            pool.querySelectorAll('.rank-chip').forEach(chip => {
+                chip.disabled = placed.includes(Number(chip.dataset.i));
+            });
+            lock.disabled = placed.length < n;
+        }
+
+        pool.querySelectorAll('.rank-chip').forEach(chip => chip.addEventListener('click', () => {
+            const i = Number(chip.dataset.i);
+            if (placed.includes(i) || placed.length >= n) return;
+            placed.push(i);
+            refresh();
+        }));
+
+        Array.from(slotsEl.children).forEach((slot, i) => slot.addEventListener('click', () => {
+            if (placed[i] === undefined) return;
+            placed.splice(i, 1);   // undo this pick; later picks shift back to fill the gap
+            refresh();
+        }));
+
+        lock.addEventListener('click', () => { if (placed.length === n) answer(placed.slice()); });
+    }
+
     function render() {
         drawStrip();
 
@@ -278,13 +357,15 @@ const Quiz = (() => {
                 ? `<ul class="q-cast">${q.hint.map(h => `<li>${esc(h)}</li>`).join('')}</ul>`
                 : `<div class="q-hint">${q.hint.map(h => `<span>${esc(h)}</span>`).join('')}</div>`;
 
+        const widget = kind === 'slider' ? sliderWidget(q)
+            : kind === 'rank' ? rankWidget(q)
+            : `<div class="options" id="opts">${q.options.map((o, i) => option(kind, o, i)).join('')}</div>`;
+
         const text = `
             <p class="q-eyebrow">${esc(q.eyebrow)}</p>
             <h2 class="q-prompt">${esc(q.prompt)}</h2>
             ${hint}
-            <div class="options" id="opts">
-                ${q.options.map((o, i) => option(kind, o, i)).join('')}
-            </div>
+            ${widget}
             <div id="after"></div>`;
 
         // On a poster question the film is the subject, so it sits beside the
@@ -293,7 +374,9 @@ const Quiz = (() => {
             ? `<div class="q-split">${poster}<div class="q-col">${text}</div></div>`
             : poster + text;
 
-        body.querySelectorAll('.opt').forEach(btn =>
+        if (kind === 'slider') wireSlider(q);
+        else if (kind === 'rank') wireRank(q);
+        else body.querySelectorAll('.opt').forEach(btn =>
             btn.addEventListener('click', () => answer(Number(btn.dataset.i))));
     }
 
@@ -317,7 +400,10 @@ const Quiz = (() => {
         locked = true;
 
         const q = questions[index];
-        const correct = choice === q.answer;
+        const correct =
+            q.kind === 'slider' ? Math.abs(choice - q.answer) <= (q.slider.tolerance ?? 0) :
+            q.kind === 'rank'   ? JSON.stringify(choice) === JSON.stringify(q.order) :
+                                   choice === q.answer;
         if (correct) { score += 1; scoreEl.textContent = String(score); }
 
         // Expose this question's frame. A poster question hands over its own
@@ -325,16 +411,48 @@ const Quiz = (() => {
         frames[index] = { url: q.poster || nextPoster(), correct };
         drawStrip();
 
-        body.querySelectorAll('.opt').forEach((btn, i) => {
-            btn.disabled = true;
-            if (i === q.answer) btn.classList.add('correct');
-            else if (i === choice) btn.classList.add('wrong');
-            else btn.classList.add('faded');
-        });
+        // `guessLine` echoes the reader's own submission back to them — that's
+        // not a new fact about their library, just their live input, so it can
+        // be composed here rather than shipped from the server. See _question()
+        // in quiz.py for why every other fact comes from the server instead.
+        let guessLine = '';
+        if (q.kind === 'slider') {
+            const input = document.getElementById('slider-input');
+            const lock = document.getElementById('slider-lock');
+            input.disabled = true;
+            lock.disabled = true;
+            const s = q.slider;
+            const pos = ((q.answer - s.min) / (s.max - s.min)) * 100;
+            document.getElementById('slider-track-wrap').insertAdjacentHTML('beforeend',
+                `<div class="slider-marker" style="left:${pos}%"></div>`);
+            document.getElementById('slider-value').textContent = sliderLabel(choice, s.format);
+            document.getElementById('slider-wrap').classList.add(correct ? 'locked-hit' : 'locked-miss');
+            guessLine = `You guessed ${esc(sliderLabel(choice, s.format))}.`;
+        } else if (q.kind === 'rank') {
+            document.getElementById('rank-wrap').classList.add('locked');
+            document.getElementById('rank-lock').disabled = true;
+            let hits = 0;
+            Array.from(document.getElementById('rank-slots').children).forEach((slot, i) => {
+                const hit = choice[i] === q.order[i];
+                if (hit) hits += 1;
+                slot.classList.add(hit ? 'match' : 'miss');
+            });
+            guessLine = `You got ${hits} of ${q.items.length} in the right spot.`;
+        } else {
+            body.querySelectorAll('.opt').forEach((btn, i) => {
+                btn.disabled = true;
+                if (i === q.answer) btn.classList.add('correct');
+                else if (i === choice) btn.classList.add('wrong');
+                else btn.classList.add('faded');
+            });
+        }
 
         const last = index === questions.length - 1 && expecting === 0;
         document.getElementById('after').innerHTML = `
-            <div class="reveal"><p>${esc(q.reveal)}</p></div>
+            <div class="reveal">
+                ${guessLine ? `<p class="reveal-guess">${guessLine}</p>` : ''}
+                <p>${esc(q.reveal)}</p>
+            </div>
             <div class="quiz-actions">
                 <button class="btn-next" id="next">${last ? 'See my result' : 'Next'} →</button>
             </div>`;

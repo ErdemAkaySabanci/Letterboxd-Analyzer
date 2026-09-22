@@ -275,6 +275,19 @@ body::after {
 .btn-go:hover:not(:disabled) { transform: translateY(-2px); }
 .btn-go:disabled { opacity: 0.28; cursor: not-allowed; }
 
+/* Deliberately quiet: it is the way past the upload, not a second CTA
+   competing with it. */
+.btn-example {
+    display: block; margin: 0.8rem auto 0;
+    font-size: 0.84rem; color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    text-decoration-color: transparent;
+    transition: color 0.2s, text-decoration-color 0.2s;
+}
+.btn-example:hover { color: var(--text); text-decoration-color: var(--ink-line); }
+
 /* The privacy line. It is the last thing read before uploading a personal
    viewing history, so it gets room to breathe rather than one grey line. */
 .landing-foot {
@@ -768,6 +781,90 @@ body::after {
     25% { transform: translateX(-6px); } 75% { transform: translateX(6px); }
 }
 
+/* slider — a magnitude guessed by dragging, not picked from four options.
+   `q.slider` (quiz.py) sets the bounds; correctness is a tolerance band
+   around the real value, marked on the track once locked in. */
+.slider-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 1.4rem; padding-top: 0.4rem; }
+.slider-value {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
+    letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+    color: var(--accent);
+}
+.slider-track-wrap { position: relative; width: 100%; max-width: 420px; padding: 0.6rem 0; }
+.slider-input {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px; border-radius: 999px;
+    background: var(--ink-line); display: block;
+}
+.slider-input::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--paper);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4); cursor: pointer;
+}
+.slider-input::-moz-range-thumb {
+    width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--paper);
+    background: var(--accent); box-shadow: 0 4px 14px rgba(0,0,0,0.4); cursor: pointer;
+}
+.slider-input:disabled { opacity: 0.55; }
+.slider-marker {
+    position: absolute; top: 50%; width: 4px; height: 22px;
+    background: var(--mint); border-radius: 2px;
+    transform: translate(-50%, -50%); pointer-events: none;
+}
+.slider-wrap.locked-hit .slider-value { color: var(--mint); }
+.slider-wrap.locked-miss .slider-value { color: var(--crimson); }
+
+/* rank — a small set put in order by tapping, not picked from four options.
+   `q.items` (quiz.py) is the shuffled pool; `q.order` is the correct order. */
+.rank-wrap { display: flex; flex-direction: column; gap: 1.1rem; }
+.rank-slots { list-style: none; margin: 0; display: grid; gap: 0.6rem; }
+.rank-slot {
+    display: flex; align-items: center; gap: 0.8rem;
+    min-height: 3.2rem; padding: 0.6rem 1rem;
+    border-radius: 12px; border: 1.5px dashed var(--ink-line);
+    color: var(--muted); cursor: pointer;
+}
+.rank-slot.filled { border-style: solid; color: var(--text); background: var(--ink-raised); cursor: pointer; }
+.rank-wrap.locked .rank-slot { cursor: default; }
+.rank-slot-n {
+    font-family: var(--display); font-weight: 700; color: var(--accent);
+    width: 1.4em; flex: none;
+}
+.rank-slot-label { font-weight: 600; }
+.rank-slot.match { border-color: var(--mint); background: color-mix(in srgb, var(--mint) 16%, var(--ink-raised)); }
+.rank-slot.miss { border-color: var(--crimson); background: color-mix(in srgb, var(--crimson) 14%, var(--ink-raised)); }
+.rank-pool { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.rank-chip {
+    padding: 0.65rem 1.1rem; border-radius: 999px;
+    background: var(--ink-raised); border: 1.5px solid var(--ink-line);
+    font-weight: 600; transition: transform 0.18s var(--ease), border-color 0.18s;
+}
+.rank-chip:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--accent); }
+.rank-chip:disabled { opacity: 0.3; cursor: default; }
+.rank-wrap.locked .rank-pool { display: none; }
+
+/* Shared "commit your guess" button for slider/rank, distinct from .btn-next
+   (which only ever appears after a question is already answered). */
+.btn-lock {
+    align-self: flex-start;
+    padding: 0.8rem 1.8rem; border-radius: 999px;
+    background: transparent; color: var(--accent);
+    border: 1.5px solid var(--accent);
+    font-family: var(--display); font-weight: 700;
+    transition: background 0.18s, color 0.18s;
+}
+.btn-lock:hover:not(:disabled) { background: var(--accent); color: var(--accent-ink); }
+.btn-lock:disabled { opacity: 0.35; cursor: default; }
+
+.reveal-guess { color: var(--muted); font-size: 0.92rem; margin-bottom: 0.5rem; }
+
+@media (max-width: 620px) {
+    .slider-value { font-size: clamp(2rem, 11vw, 2.8rem); }
+    .rank-chip { padding: 0.6rem 0.95rem; font-size: 0.95rem; }
+}
+
 /* Reveal */
 .reveal {
     margin-top: 1.5rem;
@@ -852,6 +949,32 @@ body::after {
     letter-spacing: -0.02em; margin-top: 0.6rem;
 }
 .result-note { color: var(--muted); margin-top: 0.5rem; }
+
+/* The written taste profile, between the verdict and the share card. */
+.taste-profile {
+    max-width: 540px; margin: 0 auto 1.5rem;
+    padding: 1.4rem 1.6rem 1.1rem;
+    background: var(--ink-raised);
+    border: 1px solid var(--ink-line);
+    border-left: 3px solid var(--accent);
+    border-radius: 18px;
+    animation: taste-in 0.7s var(--ease) both;
+}
+.taste-profile .q-eyebrow { margin-bottom: 0.7rem; }
+.taste-text p {
+    font-size: 1.02rem; line-height: 1.6;
+    color: var(--text);
+}
+.taste-text p + p { margin-top: 0.8rem; }
+.taste-foot {
+    margin-top: 0.9rem;
+    font-size: 0.74rem; line-height: 1.4;
+    color: var(--muted);
+}
+@keyframes taste-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+}
 
 /* Shareable card */
 .share-card {
@@ -1060,6 +1183,21 @@ body::after {
     color: var(--muted); text-align: right;
 }
 .ev canvas { max-height: 300px; }
+.ev canvas.radar { max-height: 360px; }
+.persona-why {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 0.6rem;
+    max-width: 62ch;
+}
+.persona-why li {
+    padding-left: 1.3rem; position: relative;
+    font-size: 1.02rem; line-height: 1.5;
+}
+.persona-why li::before {
+    content: ""; position: absolute; left: 0; top: 0.62em;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+}
 .ev-foot {
     margin-top: 1.1rem; font-size: 0.88rem; color: var(--muted);
     max-width: 68ch; text-wrap: pretty;
@@ -1342,7 +1480,7 @@ body::after {
    Declared last: the :hover lift on the same elements is written earlier,
    and at equal specificity the later rule is the one that wins. */
 .btn-go:active:not(:disabled), .btn-next:active, .btn-solid:active,
-.btn-ghost:active, .btn-skip:active, .file-btn:active,
+.btn-ghost:active, .btn-skip:active, .file-btn:active, .btn-example:active,
 .opt:active:not(:disabled), .scroll-cue:active {
     transform: translateY(1px) scale(0.99);
 }

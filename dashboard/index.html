@@ -73,6 +73,10 @@
 
         <button class="btn-go" id="go" disabled>Start</button>
 
+        <!-- The export is a real errand. Let someone see the result first and
+             decide whether it is worth it. -->
+        <button class="btn-example" id="btn-demo">or see an example result &rarr;</button>
+
         <p class="landing-foot">
             Your ZIP is read in memory and discarded. Only the title, year, your rating
             and the date are kept — nothing that identifies you — and all of it is
@@ -121,6 +125,16 @@
             <p class="result-note" id="r-note"></p>
         </div>
 
+        <!-- The written portrait. Filled by loadProfile() once the scrape is
+             over; stays hidden when there is no model key, so nothing here
+             ever reads as "loading". Outside the share card on purpose: the
+             PNG keeps its shape whether or not a paragraph arrived. -->
+        <div class="taste-profile" id="taste-profile" hidden>
+            <p class="q-eyebrow">In a few words</p>
+            <div class="taste-text" id="taste-text"></div>
+            <p class="taste-foot">Written by an AI model from the numbers below — nothing that identifies you is sent.</p>
+        </div>
+
         <div class="share-card" id="share-card">
             <div class="share-head">Close-Up</div>
             <!-- The strip the quiz filled in. quiz.js unhides it once there
@@ -135,6 +149,7 @@
             <div class="share-row"><span class="k">Favorite director</span><span class="v" id="s-fav">—</span></div>
             <div class="share-row"><span class="k">Most watched</span><span class="v" id="s-most">—</span></div>
             <div class="share-row"><span class="k">Most watched actor</span><span class="v" id="s-actor">—</span></div>
+            <div class="share-row" id="type-row" hidden><span class="k">Viewer type</span><span class="v" id="s-type">—</span></div>
             <div class="share-row" id="quiz-row"><span class="k">Self-knowledge score</span><span class="v" id="s-quiz">—</span></div>
             <div class="share-mark">Close-Up · for Letterboxd</div>
         </div>
@@ -164,8 +179,8 @@
 
     <!-- Each chapter is a title card that owns the screen, then the evidence
          that scrolls up over it. `card-stat` is the one number or name the
-         chapter is really about; app.js fills it. The six titles run
-         The Record / How / Who / What / When / Where. -->
+         chapter is really about; app.js fills it. The titles run
+         The Record / How / Who / What / When / Where / The Type. -->
 
     <!-- 01 — The Record -->
     <section class="chapter" data-accent="amber">
@@ -307,7 +322,34 @@
         </div>
     </section>
 
-    <!-- Closing beat. Six chapters shouldn't just stop — one line that
+    <!-- 07 — The Type. Which of five viewer personas the library sits
+         nearest to. Hidden until the scrape has given enough films metadata
+         to place it; app.js unhides it with the chapter's data. -->
+    <section class="chapter" data-accent="violet" id="ch7" hidden>
+        <div class="card">
+            <div class="wrap-wide card-inner rise">
+                <p class="card-num">07</p>
+                <h2 class="card-title">The Type</h2>
+                <p class="card-stat" id="ch7-stat">—</p>
+                <p class="card-line" id="ch7-sub"></p>
+            </div>
+        </div>
+        <div class="evidence">
+            <div class="wrap-wide">
+                <div class="ev-2">
+                    <section class="ev rise"><h3>Your shape <em>you, against the type you match</em></h3><canvas id="c-persona" class="radar"></canvas></section>
+                    <section class="ev rise"><h3>How close you sit to each type</h3><div class="rank" id="r-personas"></div></section>
+                </div>
+                <section class="ev rise">
+                    <h3>Why</h3>
+                    <ul class="persona-why" id="persona-why"></ul>
+                    <p class="ev-foot" id="persona-note"></p>
+                </section>
+            </div>
+        </div>
+    </section>
+
+    <!-- Closing beat. The chapters shouldn't just stop — one line that
          acknowledges the reveal is over, then the two ways back: share the
          result, or scroll back up to it. app.js fills the line in. -->
     <section class="finale rise">

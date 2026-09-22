@@ -11,6 +11,8 @@ import numpy as np
 from scipy.stats import pearsonr, chi2_contingency
 from collections import Counter
 
+from personas import viewer_persona
+
 # How many films before we'll call someone a favourite. This doubles as the
 # Bayesian prior weight: at exactly this many films a person sits halfway
 # between their own average and the global mean, so one 5-star outlier can't
@@ -750,7 +752,12 @@ def wrapped_summary(df: pd.DataFrame) -> dict:
     # --- Unique directors count ---
     unique_directors = df["Director"].nunique() if "Director" in df.columns else 0
 
+    # --- Viewer persona (name only; the chapter carries the evidence) ---
+    persona = viewer_persona(df)
+    persona = {"name": persona["name"], "match_pct": persona["match_pct"]} if persona else None
+
     return {
+        "persona": persona,
         "total_movies": total_movies,
         "rated_movies": rated_movies,
         "total_hours": total_hours,
@@ -770,6 +777,78 @@ def wrapped_summary(df: pd.DataFrame) -> dict:
         "binge_months": binge,
         "first_watch": first_watch,
         "last_watch": last_watch,
+    }
+
+
+def taste_facts(df: pd.DataFrame) -> dict:
+    """
+    The handful of facts the written taste profile is composed from.
+
+    This is everything the language model ever sees, so it is kept small and
+    aggregate on purpose: names, counts and averages. No watch dates, no film
+    list, nothing that identifies the person behind the library. It reads off
+    wrapped_summary() so the paragraph cannot disagree with the share card it
+    sits next to.
+
+    A field is None when the scrape has not filled it in; the prompt tells the
+    model to skip what is missing rather than guess.
+    """
+    w = wrapped_summary(df)
+    df = clean_dataset(df)
+
+    def person(p):
+        return {"name": p["name"], "films": p["movie_count"], "your_avg": p["my_avg"]} if p else None
+
+    def film(card):
+        return {"title": card["title"], "your_rating": card["my_rating"],
+                "crowd_rating": card["average_rating"]}
+
+    genres = [{"genre": g["genre"], "films": g["count"], "your_avg": g["avg_my_rating"]}
+              for g in w["top_genres"]]
+
+    dec = decade_ratings(df)
+    decades = sorted(
+        ({"decade": f"{d}s", "films": c, "your_avg": a}
+         for d, c, a in zip(dec["decades"], dec["counts"], dec["avg_ratings"])),
+        key=lambda x: -x["films"],
+    )[:3]
+
+    div = diversity_analysis(df)
+    totals = summary_stats(df)
+
+    backlog = backlog_analysis(df)
+    film_age = None
+    if backlog.get("used"):
+        film_age = {label: round(100 * n / backlog["used"])
+                    for label, n in zip(backlog["categories"], backlog["counts"])}
+
+    rated = df["my_rating"].dropna()
+    generous = round(float((rated >= 3.5).mean() * 100)) if len(rated) else None
+
+    years = [int(s[:4]) for s in (w["first_watch"], w["last_watch"]) if s]
+
+    return {
+        "viewer_type": w["persona"]["name"] if w["persona"] else None,
+        "films": w["total_movies"],
+        "rated_films": w["rated_movies"],
+        "hours_watched": round(w["total_hours"]),
+        "logging_years": {"first": years[0], "last": years[1]} if len(years) == 2 else None,
+        "your_avg_rating": w["avg_rating"],
+        "share_of_ratings_at_3_5_stars_or_more_pct": generous,
+        "on_the_same_films": {"your_avg": w["your_avg_same_films"], "crowd_avg": w["crowd_avg_rating"]},
+        "highest_rated_director": person(w["top_director"]),
+        "most_watched_director": person(w["most_watched_director"]),
+        "most_watched_actor": person(w["most_watched_actor"]),
+        "unique_directors": int(w["unique_directors"]),
+        "top_genres": genres,
+        "rated_far_above_the_crowd": [film(c) for c in w["loved_by_you"][:2]],
+        "rated_far_below_the_crowd": [film(c) for c in w["hated_by_you"][:2]],
+        "top_release_decades": decades,
+        "countries": {"count": totals["unique_countries"],
+                      "top": [c["name"] for c in div["top_countries"][:3]]},
+        "languages": {"count": totals["unique_languages"],
+                      "top": [l["name"] for l in div["top_languages"][:3]]},
+        "how_old_films_are_when_logged_pct": film_age,
     }
 
 
@@ -801,5 +880,6 @@ def full_analysis(df: pd.DataFrame) -> dict:
         "binge_habits": binge_habits(df),
         "backlog": backlog_analysis(df),
         "diversity": diversity_analysis(df),
-        "network": actor_director_network(df)
+        "network": actor_director_network(df),
+        "persona": viewer_persona(df),
     }

@@ -10,6 +10,18 @@ let wrapped = null;
 let quizResult = null;
 let charts = {};
 
+/**
+ * The example library's session id, learned from /api/demo.
+ *
+ * Demo mode is derived from the session rather than kept as its own boolean,
+ * because every way out of the demo — the reset buttons, the hash hooks, a
+ * real upload — already replaces `session`. A separate flag would have to be
+ * cleared in all of them, and the one that got missed would leave the example
+ * library's copy and chapters sitting under a stranger's own result.
+ */
+let demoId = null;
+const isDemo = () => !!session && session === demoId;
+
 /* ── helpers ─────────────────────────────────────────────────── */
 
 /**
@@ -27,6 +39,17 @@ let charts = {};
  */
 const PATHS = { landing: '/', play: '/quiz', wrapped: '/result' };
 
+/**
+ * The example result reuses the `wrapped` screen but gets its own address.
+ *
+ * It is not in PATHS for that reason: it is a second way into an existing
+ * screen, not a fourth screen. Keeping it off /result is what keeps the
+ * funnel readable — a visitor browsing the example never took the test, and
+ * counting them as someone who finished it would make the completion number
+ * meaningless. It also gives the example a link worth sharing.
+ */
+const DEMO_PATH = '/example';
+
 function show(page, push = true) {
     document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === page));
     window.scrollTo({ top: 0 });
@@ -41,6 +64,11 @@ function show(page, push = true) {
 // Going back re-shows the screen without pushing it again, which would other-
 // wise trap the reader in a history loop they cannot get out of.
 window.addEventListener('popstate', (event) => {
+    // The path is read before the history state because the example lives at
+    // an address that is not one of the three screens, and because runHook()
+    // nulls the state out from under it. Coming back to /example has to
+    // re-open the example rather than restore whatever was painted there.
+    if (location.pathname === DEMO_PATH) { openDemo(); return; }
     const page = event.state?.page;
     show(page && PATHS[page] ? page : 'landing', false);
 });
@@ -114,6 +142,7 @@ function wireLanding() {
     drop.addEventListener('drop', e => pick(e.dataTransfer.files[0]));
 
     $('go').addEventListener('click', () => chosen && upload(chosen));
+    $('btn-demo').addEventListener('click', () => openDemo());
 }
 
 /* ── upload & quiz run ───────────────────────────────────────── */
@@ -143,6 +172,49 @@ async function upload(file) {
         toast(err.message, true);
         $('go').disabled = false;
         $('go').textContent = 'Start';
+    }
+}
+
+/**
+ * Open the example library: one real result, read-only, no upload.
+ *
+ * It walks the ordinary session endpoints and skips the quiz, which is the
+ * only honest thing to do with it — the test asks how well you know your own
+ * taste, and a stranger answering it about someone else's library is just
+ * guessing. What they came for is the result and the chapters.
+ *
+ * Nothing here is saved: the example must never end up in localStorage, or
+ * the next visit would resume into somebody else's library instead of the
+ * landing page.
+ */
+async function openDemo() {
+    if (isDemo() && wrapped) { show('wrapped', false); return; }
+
+    const btn = $('btn-demo');
+    btn.disabled = true;
+    try {
+        const { session_id } = await api('/api/demo');
+        demoId = session_id;
+        session = session_id;
+        // Never sat the test, so the result reads as an unscored one.
+        quizResult = { score: 0, total: 0, skipped: true };
+        wrapped = await api(`/api/wrapped?session=${session}`);
+        resetAnalysis();
+        renderResult();
+        // Pushed by hand rather than through show(), so the run is never
+        // recorded against /result. See DEMO_PATH.
+        show('wrapped', false);
+        if (location.pathname !== DEMO_PATH) {
+            try { history.pushState({ page: 'wrapped' }, '', DEMO_PATH); } catch { /* not fatal */ }
+        }
+        loadAnalysis();
+        loadProfile();
+    } catch (err) {
+        session = null;
+        demoId = null;
+        toast(err.message, true);
+    } finally {
+        btn.disabled = false;
     }
 }
 
@@ -245,6 +317,7 @@ async function finishQuiz(score, total, skipped = false) {
     renderResult();
     show('wrapped');
     loadAnalysis();          // ready by the time they scroll down to it
+    loadProfile();
 }
 
 /** Replace the spent question card with the reason and a way to retry. */
@@ -270,10 +343,42 @@ async function refreshAfterScrape() {
     try {
         wrapped = await api(`/api/wrapped?session=${session}`);
         renderResult();
-        loadAnalysis.done = false;
+        resetAnalysis();
+        loadProfile();
         await loadAnalysis();
         toast('Film details finished loading — the analysis is up to date.');
     } catch { /* keep what's on screen */ }
+}
+
+/**
+ * The written taste profile. Asked for after every render of the result and
+ * again when the scrape lands; the server answers `pending` until it has the
+ * whole library, `disabled` when no model is configured, and keeps the text
+ * once written, so asking twice costs nothing. Anything but `ready` leaves
+ * the block hidden — a spinner here would promise a paragraph that may
+ * never come.
+ */
+async function loadProfile() {
+    if (!session) return;
+    const asked = session;
+    let res;
+    try { res = await api(`/api/profile?session=${asked}`); } catch { return; }
+    // The reader may have started over while the model was writing.
+    if (asked !== session || res.status !== 'ready' || !res.text) return;
+
+    const box = $('taste-text');
+    box.innerHTML = '';
+    res.text.split(/\n\s*\n/).forEach(para => {
+        const p = document.createElement('p');
+        p.textContent = para.trim();
+        box.appendChild(p);
+    });
+    $('taste-profile').hidden = false;
+}
+
+function clearProfile() {
+    $('taste-profile').hidden = true;
+    $('taste-text').innerHTML = '';
 }
 
 function renderResult() {
@@ -286,7 +391,18 @@ function renderResult() {
     $('r-score').hidden = noScore;
     $('quiz-row').hidden = noScore;
 
-    if (noScore) {
+    // Set on every render rather than toggled on the way in and out of the
+    // example, so there is no restore step that can be missed.
+    $('btn-again').textContent = isDemo() ? 'Upload your own export' : 'Upload another export';
+
+    if (noScore && isDemo()) {
+        $('r-verdict').textContent = "This is Erdem's library.";
+        // Read off the data rather than written down, so the number cannot
+        // drift away from the library it describes.
+        $('r-note').textContent =
+            `${wrapped.total_movies ?? 'Every'} films, every rating and every watch date. `
+            + 'Yours will look like this.';
+    } else if (noScore) {
         $('r-verdict').textContent = 'Here is your library.';
         $('r-note').textContent = 'You skipped the test — the full analysis is below.';
     } else {
@@ -313,6 +429,12 @@ function renderResult() {
     $('s-most').textContent = most ? `${most.name} · ${most.movie_count} films` : '—';
     $('s-actor').textContent = actor ? `${actor.name} · ${actor.movie_count} films` : '—';
     $('s-quiz').textContent = `${score}/${total}`;
+
+    // Only once the scrape has placed the library; a "—" here would look
+    // like a type that could not be found.
+    const type = wrapped.persona;
+    $('type-row').hidden = !type;
+    $('s-type').textContent = type ? `${type.name.replace(/^The /, '')} · ${type.match_pct}%` : '';
 }
 
 /* ── dashboard ───────────────────────────────────────────────── */
@@ -570,6 +692,22 @@ function ranking(el, rows, max = null, zoom = false, drillKey = null) {
  * Fill the analysis chapters. They live on the same page as the summary, so
  * this only loads data — the reader reaches them by scrolling.
  */
+/**
+ * Drop everything the analysis renders only once.
+ *
+ * Three separate one-shot guards exist — loadAnalysis.done, loadPeople.done,
+ * and the poster wall's own childElementCount check — and clearing only the
+ * first leaves the previous library's directors, faces and posters on screen
+ * under the next one's numbers. Anything that means to re-render the analysis
+ * for a different library has to go through here.
+ */
+function resetAnalysis() {
+    loadAnalysis.done = false;
+    loadPeople.done = false;
+    $('dash-bg').innerHTML = '';
+    clearProfile();
+}
+
 async function loadAnalysis() {
     if (loadAnalysis.done) return;
 
@@ -591,6 +729,7 @@ async function loadAnalysis() {
     chapterWhat(stats);
     chapterWhen(stats);
     chapterWhere(stats);
+    chapterType(stats);
     chapterFinale(stats);
     loadPeople();                    // faces follow, the chapter does not wait
     watchReveals();
@@ -1010,6 +1149,69 @@ function chapterWhere(stats) {
         null, false, 'language');
 }
 
+/* 07 — The Type */
+
+/**
+ * Which viewer persona the library sits nearest to. The server does the
+ * placing (personas.py); this only draws it: the radar is the library's
+ * eleven feature shares laid over the winning persona's centroid, the
+ * ranking is closeness to all five. Hidden when the scrape has not given
+ * enough films metadata to place the library at all.
+ */
+function chapterType(stats) {
+    const p = stats.persona;
+    const section = $('ch7');
+    if (!section) return;
+    section.hidden = !p;
+    if (!p) return;
+
+    titleCard(7, p.name, '',
+        `${p.tagline} A ${p.match_pct}% match, with ${p.runner_up.name} second at ${p.runner_up.pct}%.`,
+        true);
+
+    const narrow = window.innerWidth < 480;
+    chart('c-persona', {
+        type: 'radar',
+        data: {
+            labels: p.axes,
+            datasets: [
+                { label: 'You', data: p.features,
+                  borderColor: accent('c-persona'), backgroundColor: accent('c-persona', 0.22),
+                  pointBackgroundColor: accent('c-persona'), pointRadius: 3, pointHoverRadius: 5,
+                  pointHitRadius: 12, borderWidth: 2 },
+                { label: p.name, data: p.centroid,
+                  borderColor: 'rgba(242,239,230,0.55)', backgroundColor: 'transparent',
+                  borderDash: [5, 4], pointRadius: 0, pointHitRadius: 12, borderWidth: 1.5 },
+            ],
+        },
+        options: {
+            interaction: { mode: 'nearest', intersect: false },
+            // Eleven labels round a phone-width circle clip at the edges;
+            // a smaller face and a little padding keep them whole.
+            layout: { padding: narrow ? 4 : 10 },
+            plugins: { tooltip: { callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${Math.round(ctx.parsed.r * 100)}%`,
+            } } },
+            scales: { r: {
+                min: 0, max: 1,
+                ticks: { display: false, stepSize: 0.25 },
+                grid: GRID, angleLines: GRID,
+                pointLabels: { color: AXIS.color, font: { ...AXIS.font, size: narrow ? 9 : 11 } },
+            } },
+        },
+    });
+    describeChart('c-persona',
+        `Your library on eleven axes, against the ${p.name} profile. `
+        + p.axes.map((a, i) => `${a}: you ${Math.round(p.features[i] * 100)}%, type ${Math.round(p.centroid[i] * 100)}%`).join('; ') + '.');
+
+    ranking('r-personas', p.ranking.map(r => ({ name: r.name, value: `${r.pct}%`, bar: r.pct })), 100);
+
+    $('persona-why').innerHTML = p.evidence.map(line => `<li>${esc(line)}</li>`).join('');
+    $('persona-note').textContent =
+        `Placed from the ${p.films_used.toLocaleString('en')} films with full details, by nearest of five `
+        + 'hand-drawn profiles — closeness, not a verdict.';
+}
+
 /**
  * The reveal doesn't get to just stop after chapter 06 — this is the
  * closing beat: acknowledge it's over, and put the share action back in
@@ -1048,7 +1250,7 @@ function wireButtons() {
 
     $('btn-again').addEventListener('click', () => {
         clear(); session = null; wrapped = null; quizResult = null;
-        loadAnalysis.done = false;
+        resetAnalysis();
         $('go').disabled = true; $('go').textContent = 'Start';
         $('file-name').textContent = ''; $('drop').classList.remove('filled');
         show('landing');
@@ -1105,6 +1307,12 @@ async function boot() {
     window.addEventListener('hashchange', () => runHook(location.hash.slice(1)));
     if (await runHook(location.hash.slice(1))) return;
 
+    // Before the stored session is read, not after: a returning visitor who
+    // opens a shared /example link came for the example, and restoring their
+    // own result here would both show them the wrong thing and push a
+    // /result they never earned.
+    if (location.pathname === DEMO_PATH) { openDemo(); return; }
+
     // /quiz or /result with nothing to restore is the landing page under the
     // wrong address. Put the bar back in step so the next push is honest.
     const landHere = () => {
@@ -1125,6 +1333,7 @@ async function boot() {
         renderResult();
         show('wrapped');
         loadAnalysis();
+        loadProfile();
     } catch {
         clear();
         landHere();

@@ -17,11 +17,18 @@ py -3.12 data_manager.py --all
 
 # Syntax-check the frontend before loading it in a browser
 node --check dashboard/app.js && node --check dashboard/quiz.js
+
+# Regenerate dashboard/og.png (the social preview card) — dev-only,
+# needs playwright + pillow, which are deliberately absent from requirements.txt
+py -3.12 make_og.py
 ```
 
 `py -3.12` is the interpreter that has the dependencies — bare `python` on this
 machine does not. There is no test suite, linter, or frontend build step; the
 frontend is plain HTML/CSS/JS served as static files.
+
+[PRODUCT.md](PRODUCT.md) has the product spec (positioning, principles, what's
+undecided) if a change touches product shape rather than just code.
 
 ## Branches and deployment
 
@@ -46,9 +53,11 @@ Deploy notes that constrain what can safely change:
   reset on every deploy, which is why `film_cache.seed.json` is committed and
   copied into place by the Dockerfile — a fresh container starts warm instead
   of re-scraping hundreds of films on 0.1 vCPU.
-- `ALLOWED_ORIGINS`, `PORT`, `SCRAPE_WORKERS`, `SCRAPE_JOBS` and
-  `UPLOADS_PER_HOUR` come from the environment. **Set `ALLOWED_ORIGINS`** — it
-  defaults to `*`.
+- `ALLOWED_ORIGINS`, `PORT`, `SCRAPE_WORKERS`, `SCRAPE_JOBS`,
+  `UPLOADS_PER_HOUR`, `GEMINI_API_KEY`, `GEMINI_MODEL` and `PROFILES_PER_HOUR`
+  come from the environment. **Set `ALLOWED_ORIGINS`** — it defaults to `*`.
+  Without `GEMINI_API_KEY` the taste profile does not exist (see below); the
+  rest of the app is unaffected.
 - **Free tier sleeps after 15 minutes**; the measured cold start is ~33s. Paid
   Starter ($7/mo) removes the sleep and gives 0.5 vCPU instead of 0.1.
 
@@ -103,6 +112,35 @@ The user exports their data from `letterboxd.com/settings/data/` and uploads the
 ### Analysis
 
 - **[analyzer.py](analyzer.py)** — pure `DataFrame -> dict` functions. `instant_summary()` (ZIP-only) and `full_analysis()` (needs metadata) are the aggregate entry points. `MIN_DIRECTOR_FILMS` / `MIN_ACTOR_FILMS` (both 4) act as *both* the minimum film count and the Bayesian prior weight — lower values let a two-film director outrank one you've followed for ten.
+- **[personas.py](personas.py)** — the viewer persona behind chapter 07 and
+  the share card's "Viewer type" row. It is segmentation *without a
+  population*: there is no user pool to fit k-means on (no database, sessions
+  expire), so five persona centroids are written by hand over eleven [0, 1]
+  feature shares (four genre groups, non-English, pre-1990, obscure, generous,
+  contrarian, new-release, long) and only the assignment step runs — nearest
+  centroid, with `exp(-d / TEMPERATURE)` turned into a closeness percentage
+  for all five. `_selfcheck()` (run `py -3.12 personas.py`) asserts every
+  centroid wins its own persona; run it after touching a centroid. Needs
+  `MIN_FILMS` (20) films with metadata, otherwise `None` and the chapter
+  stays hidden. Do not call it "clustering" in copy — the page says
+  "closeness, not a verdict".
+- **[taste.py](taste.py)** — the written "taste profile" under the result
+  score, the one analysis step that runs on somebody else's model. It is a
+  single `requests.post` to the Gemini REST API (no SDK: `requests` is already
+  pinned and a one-call feature does not earn a dependency on a 512 MB box)
+  from `taste_facts()` in analyzer.py — ~600 tokens of names, counts and
+  averages, no watch dates, no film list, nothing identifying. Off unless
+  `GEMINI_API_KEY` is set; `GEMINI_MODEL` defaults to `gemini-2.5-flash`
+  (the free tier: ~1,500 requests/day, no card). `/api/profile` answers with
+  a status (`disabled | pending | ready | unavailable`), never a 5xx, and the
+  page hides the block for anything but `ready` — there is no spinner because
+  the paragraph may legitimately never come. Every profile is written once
+  and kept with the session as `sessions/{id}.profile.json`; the demo's is
+  `demo_session.profile.json`, committed so the example spends no quota.
+  `PROFILES_PER_HOUR` (default 60) caps generations per process, and a
+  session that failed twice stops asking. The 2.5 models spend "thinking"
+  tokens out of `maxOutputTokens` — `taste.py` turns thinking off for them or
+  a capped reply can come back empty.
 - **[quiz.py](quiz.py)** — builds "how well do you know yourself" questions from the user's own library, with distractors drawn from their real data. `build_instant_quiz()` works the moment the ZIP lands; `build_full_quiz()` needs the scrape. Questions ship ready to render; the client never derives facts.
 
 ### Frontend ([dashboard/](dashboard/))
@@ -119,7 +157,19 @@ No framework, no build step. Chart.js and html2canvas via CDN.
   pasted link is not a 404; a deep link with nothing in `localStorage` to
   restore rewrites itself back to `/`.
   Adding a screen means adding it to `PATHS` **and** to the server's routes.
-- The result summary and the 6 analysis chapters live on **one continuous page** (`#wrapped`); there is no separate dashboard page.
+- **`/example` is the landing page's "see an example result"**: the `wrapped`
+  screen showing the committed `demo_session.csv` (id `DEMO_SESSION_ID` in
+  [sessions.py](sessions.py), served by `/api/demo`). It is a server route but
+  deliberately *not* in `PATHS` — it is a second way into an existing screen —
+  and it never touches `localStorage`. Demo mode is `isDemo()`, derived from
+  `session`, never a separate flag. No scrape is ever started for it, so every
+  film in that CSV must already be in `film_cache.seed.json` or the demo
+  silently renders half-empty (`enrich_with_cache` substitutes defaults, it
+  does not throw). Anything that re-renders the analysis for a different
+  library must go through `resetAnalysis()`, which clears all three one-shot
+  guards; clearing only `loadAnalysis.done` leaves the previous library's
+  faces and posters under the new numbers.
+- The result summary and the 7 analysis chapters live on **one continuous page** (`#wrapped`); there is no separate dashboard page. Chapter 07 (`#ch7`) starts `hidden` and `chapterType()` unhides it only when `/api/stats` carries a persona.
 
 Design language is dark, poster-forward, with a per-section accent (`data-accent` on an ancestor sets `--accent`).
 
@@ -132,8 +182,10 @@ anyone and the landing page's privacy line stays true.
 
 **It has no custom-event API.** The funnel is read instead from the routes
 above: `/` → `/quiz` → `/result` is landing → started the test → finished one,
-and the drop-off between them is the number worth watching. Anything that
-needs a real event would need a different tool.
+and the drop-off between them is the number worth watching. The example
+result lives at `/example` for exactly this reason: had it pushed `/result`,
+every visitor who browsed the demo would count as a finished test. Anything
+that needs a real event would need a different tool.
 
 The beacon is registered against one hostname, so it rejects beacons from
 `localhost` with a CORS error in the console. That is expected locally and not

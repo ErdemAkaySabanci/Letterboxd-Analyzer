@@ -39,8 +39,9 @@ mimetypes.add_type('text/css', '.css')
 mimetypes.add_type('application/javascript', '.js')
 
 import sessions
+import taste
 from analyzer import (films_matching, full_analysis, instant_summary,
-                      most_watched_people, wrapped_summary)
+                      most_watched_people, taste_facts, wrapped_summary)
 from data_manager import CACHE_FILE
 from data_manager import (load_cache as load_film_cache, person_record,
                           scrape_films, scrape_people)
@@ -71,6 +72,12 @@ MAX_UNCOMPRESSED_BYTES = 200 * 1024 * 1024   # 200 MB expanded
 # means an in-process table is the whole story — there is nothing to
 # coordinate across workers, so no Redis.
 UPLOADS_PER_HOUR = int(os.getenv("UPLOADS_PER_HOUR", "12"))
+
+# Taste profiles are the one request that leaves for a paid-for-by-quota
+# service, so they get a global ceiling as well: the free tier allows ~1,500
+# a day, and one viral afternoon must degrade to "no paragraph", not to a
+# blocked key. Counted per process, like the upload limit.
+PROFILES_PER_HOUR = int(os.getenv("PROFILES_PER_HOUR", "60"))
 
 
 def _failed(what: str, status: int = 500) -> JSONResponse:
@@ -338,6 +345,30 @@ def _rate_limited(ip: str) -> bool:
         return False
 
 
+_profiles: list[float] = []
+_profile_inflight: set[str] = set()
+_profile_attempts: dict[str, int] = {}
+_profiles_lock = threading.Lock()
+
+# A session that failed twice stops asking. The first miss is usually the
+# per-minute quota and the retry on the next refresh lands; a second miss
+# means the key or the model is wrong, and hammering will not fix that.
+_PROFILE_MAX_ATTEMPTS = 2
+
+
+def _profile_slot() -> bool:
+    """Claim one of this hour's profile generations, or False if none is left.
+
+    Called with _profiles_lock held.
+    """
+    now = time.time()
+    _profiles[:] = [t for t in _profiles if t > now - 3600]
+    if len(_profiles) >= PROFILES_PER_HOUR:
+        return False
+    _profiles.append(now)
+    return True
+
+
 def _purge_occasionally() -> None:
     """Expire old session files from inside the request path.
 
@@ -421,6 +452,22 @@ async def upload_zip(request: Request, file: UploadFile = File(...)):
         return JSONResponse(
             status_code=500,
             content={"error": "Something went wrong reading that file. Try again."})
+
+
+@app.get("/api/demo")
+async def get_demo():
+    """
+    The session id behind the landing page's "example result".
+
+    Only the id: the client then walks the ordinary session endpoints, so the
+    demo exercises the same code every upload does. Handing it out here rather
+    than hardcoding it in app.js keeps one source of truth, and means a build
+    shipped without the CSV fails as a 404 the button can report instead of a
+    blank result page.
+    """
+    if not os.path.exists(sessions.DEMO_FILE):
+        return JSONResponse(status_code=404, content={"error": "No example is available."})
+    return {"session_id": sessions.DEMO_SESSION_ID}
 
 
 @app.get("/api/progress")
@@ -606,6 +653,65 @@ async def get_stats(session: str = ""):
     return result
 
 
+@app.get("/api/profile")
+async def get_profile(session: str = ""):
+    """
+    The written taste profile, generated once per session and then kept.
+
+    Always answers with a status the page can act on without a spinner:
+    `disabled` (no key configured), `pending` (the scrape is still running or
+    another request is already writing it), `ready` with the text, or
+    `unavailable` (quota, network, or a reply not worth showing). None of
+    these is an error: the block is simply hidden until there is a paragraph.
+    """
+    df, error = _require(session)
+    if error:
+        return error
+    if not taste.ENABLED:
+        return {"status": "disabled"}
+
+    saved = sessions.load_profile(session)
+    if saved and saved.get("text"):
+        return {"status": "ready", "text": saved["text"]}
+
+    # Written from the whole library or not at all: a half-scraped one would
+    # name the wrong most-watched director, and the answer is kept for good.
+    if _job_state(session)["status"] == "running":
+        return {"status": "pending"}
+
+    with _profiles_lock:
+        if session in _profile_inflight:
+            return {"status": "pending"}
+        if _profile_attempts.get(session, 0) >= _PROFILE_MAX_ATTEMPTS:
+            return {"status": "unavailable"}
+        # A full hour is not this session's fault: leave its attempts alone
+        # so the next visit, once the window has moved on, still gets a try.
+        if not _profile_slot():
+            return {"status": "unavailable"}
+        if len(_profile_attempts) > 1000:
+            _profile_attempts.clear()
+        _profile_attempts[session] = _profile_attempts.get(session, 0) + 1
+        _profile_inflight.add(session)
+
+    try:
+        facts = clean_nans(taste_facts(df))
+        text = await asyncio.to_thread(taste.write_profile, facts)
+    except taste.ProfileUnavailable:
+        return {"status": "unavailable"}
+    except Exception:
+        traceback.print_exc()
+        return {"status": "unavailable"}
+    finally:
+        with _profiles_lock:
+            _profile_inflight.discard(session)
+
+    try:
+        sessions.save_profile(session, {"text": text, "model": taste.MODEL, "written": time.time()})
+    except OSError:
+        traceback.print_exc()          # still worth showing this once
+    return {"status": "ready", "text": text}
+
+
 @app.get("/api/films")
 async def get_films(session: str = "", director: str = "", actor: str = "",
                     genre: str = "", country: str = "", language: str = "",
@@ -730,6 +836,7 @@ async def poster_img(u: str = ""):
 @app.get("/")
 @app.get("/quiz")
 @app.get("/result")
+@app.get("/example")
 def read_root():
     response = FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"

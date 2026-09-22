@@ -31,7 +31,7 @@ def pct(n) -> str:
 
 
 def _question(qid, eyebrow, prompt, options, answer, reveal, accent, kind="plain",
-              poster=None):
+              poster=None, slider=None, items=None, order=None):
     """
     `kind` picks the card layout on the client. It describes what the *answer*
     is, so a run of questions varies in shape instead of repeating one template:
@@ -42,6 +42,11 @@ def _question(qid, eyebrow, prompt, options, answer, reveal, accent, kind="plain
         title   a film title
         poster  the film's poster is the subject, shown large
         cast    a list of actors is the prompt material
+        slider  a magnitude guessed by dragging; `answer` is the real value
+                itself (not an option index) and `slider` describes the widget
+        rank    a small set ordered by dragging/tapping; `items` is the
+                shuffled display order and `order` holds the indices into
+                `items` that put it back in the correct order, best first
     """
     return {
         "id": qid,
@@ -53,6 +58,9 @@ def _question(qid, eyebrow, prompt, options, answer, reveal, accent, kind="plain
         "reveal": reveal,
         "accent": accent,
         "poster": poster,
+        "slider": slider,
+        "items": items,
+        "order": order,
     }
 
 
@@ -99,15 +107,15 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
     if len(rated) >= 20:
         # --- Generosity: nobody knows how kind they actually are ---
         generous = round(float((rated >= 3.5).mean() * 100))
-        options, answer = _shuffled(f"{generous}%", _spread(generous, rng, lo=5, hi=99, as_pct=True), rng)
         questions.append(_question(
             "generosity", "The generosity test",
-            "What share of the films you rated did you give 3.5 or higher?",
-            options, answer,
+            "What share of your ratings did you let off easy with 3.5 stars or more? Drag to guess.",
+            [], generous,
             f"{int((rated >= 3.5).sum())} of {len(rated)} rated films cleared the bar. "
-            + ("You are not a critic, you are a fan." if generous >= 65 else
-               "You are hard to please." if generous <= 45 else "You are an even-handed viewer."),
-            "amber", kind="number",
+            + ("You're not a critic. You're a hype man." if generous >= 65 else
+               "You'd make a film cry." if generous <= 45 else "You grade on a real curve. Suspicious."),
+            "amber", kind="slider",
+            slider={"min": 0, "max": 100, "step": 1, "format": "percent", "tolerance": 10},
         ))
 
         # --- Signature rating: the score you hand out on autopilot ---
@@ -118,9 +126,10 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         options, answer = _shuffled(f"{mode:.1f}", pool[:3], rng)
         questions.append(_question(
             "signature", "Your signature score",
-            "Which rating do you hand out most often?",
+            "If your ratings had a favorite number, what would it be?",
             options, answer,
-            f"{int((rated == mode).sum())} films — {pct(share)} of everything you rated lands on one value.",
+            f"{int((rated == mode).sum())} films, {pct(share)} of your whole library, parked on one number. "
+            "Efficient. Lazy. Possibly both.",
             "violet", kind="rating",
         ))
 
@@ -129,28 +138,32 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         options, answer = _shuffled(str(fives), _spread(fives, rng, lo=0), rng)
         questions.append(_question(
             "fivestars", "Five-star scarcity",
-            "How many films did you give a full five stars?",
+            "How many films have you crowned with a full five stars?",
             options, answer,
-            f"{pct(fives / len(rated) * 100)} of everything you rated. "
-            f"{fives} films earned it.",
+            f"{fives} films made the cut — {pct(fives / len(rated) * 100)} of your rated library. "
+            "A very exclusive club.",
             "crimson", kind="number",
         ))
 
-    # --- Decade: which era raised you ---
+    # --- Decade: which era raised you, in order ---
     years = df["Release_Year"].dropna()
     if len(years) >= 20:
         decades = (years // 10 * 10).astype(int).value_counts()
-        top = int(decades.index[0])
-        others = [f"{int(d)}s" for d in decades.index[1:4]]
-        options, answer = _shuffled(f"{top}s", others, rng)
-        questions.append(_question(
-            "decade", "Which decade raised you?",
-            "Most of your library comes from which decade?",
-            options, answer,
-            f"{int(decades.iloc[0])} films. "
-            + " · ".join(f"{int(d)}s {int(c)}" for d, c in decades.head(4).items()),
-            "sky", kind="number",
-        ))
+        if len(decades) >= 4:
+            top4 = decades.head(4)
+            labels = [f"{int(d)}s" for d in top4.index]  # correct order, most -> least
+            shuffle_map = list(range(4))
+            rng.shuffle(shuffle_map)                      # shuffle_map[pos] = true rank shown at pos
+            items = [labels[r] for r in shuffle_map]
+            order = sorted(range(4), key=lambda pos: shuffle_map[pos])
+            questions.append(_question(
+                "decade", "Which decade raised you?",
+                "Rank these four decades by how much of your library they make up — most to least.",
+                [], None,
+                f"{int(top4.iloc[0])} films. Your taste has a birth year. "
+                + " · ".join(f"{l} {int(c)}" for l, c in zip(labels, top4)),
+                "sky", kind="rank", items=items, order=order,
+            ))
 
     # --- Time capsule: all four are films they actually watched ---
     # The year deliberately doesn't appear in the options — printing it would
@@ -162,10 +175,10 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         options, answer = _shuffled(correct, titles[1:], rng)
         questions.append(_question(
             "oldest", "Time capsule",
-            "Which is the oldest film you have watched?",
+            "Of these four films you've actually seen, which one is the oldest?",
             options, answer,
             f"{oldest.iloc[0]['title_of_movie']} — {int(oldest.iloc[0]['Release_Year'])}. "
-            "All four are films you have actually seen.",
+            "Yes, you really watched all four of these.",
             "amber", kind="title",
         ))
 
@@ -175,9 +188,9 @@ def build_instant_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         options, answer = _shuffled(str(unrated), _spread(unrated, rng, lo=1), rng)
         questions.append(_question(
             "unrated", "The ones you never scored",
-            f"Of {len(df)} films, how many did you leave unrated?",
+            f"Of the {len(df)} films you logged, how many couldn't be bothered to get a rating?",
             options, answer,
-            f"One in every {round(len(df) / unrated)} films went by without a word.",
+            f"One in every {round(len(df) / unrated)} films got total silence from you. Cold.",
             "mint", kind="number",
         ))
 
@@ -202,7 +215,7 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         options, answer = _shuffled(most, list(counts.index[1:4]), rng)
         questions.append(_question(
             "most_watched_dir", "Loyalty",
-            "Whose films have you watched the most of?",
+            "Which director have you basically adopted?",
             options, answer,
             f"{most} — {int(counts.iloc[0])} films. " + " · ".join(
                 f"{d} {int(c)}" for d, c in counts.head(4).items()),
@@ -219,10 +232,11 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         options, answer = _shuffled(best, pool[:3], rng)
         questions.append(_question(
             "favourite_dir", "But your actual favorite",
-            "And which director do you rate highest?",
+            "Plot twist: which director do you actually rate the highest?",
             options, answer,
             f"{best} — {int(eligible.iloc[0]['size'])} films, averaging "
-            f"{eligible.iloc[0]['mean']:.2f}. The one you watch most was {counts.index[0]}.",
+            f"{eligible.iloc[0]['mean']:.2f}. The one you watch most was {counts.index[0]}. "
+            "Turns out loyalty and taste aren't the same thing.",
             "violet", kind="person",
         ))
 
@@ -236,9 +250,9 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
             options, answer = _shuffled(f"{worst_avg:.2f}", pool, rng)
             questions.append(_question(
                 "toxic", "Relationship status: complicated",
-                f"You have sat through {worst_n} films by {worst}. What do you average on them?",
+                f"You've sat through {worst_n} films by {worst} anyway. What do you even give them?",
                 options, answer,
-                f"{worst_n} films. Averaging {worst_avg:.2f}. Is that a relationship or a habit?",
+                f"{worst_n} films. Averaging {worst_avg:.2f}. That's not a habit. That's a situationship.",
                 "crimson", kind="rating",
             ))
 
@@ -253,11 +267,11 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         options, answer = _shuffled(correct, pool, rng)
         questions.append(_question(
             "confession", "Confession time",
-            f"Letterboxd gave “{worst['title_of_movie']}” a "
-            f"{worst['average_rating']:.2f}. What did you give it?",
+            f"The internet gave “{worst['title_of_movie']}” a "
+            f"{worst['average_rating']:.2f}, crying tears of joy. What did you give it?",
             options, answer,
-            f"Everyone else loved it. You gave it {worst['my_rating']:.1f} — "
-            f"a gap of {abs(worst['diff']):.2f}.",
+            f"Everyone else was sobbing with happiness. You gave it {worst['my_rating']:.1f} — "
+            f"a {abs(worst['diff']):.2f}-star gap of pure contrarianism.",
             "crimson", kind="poster",
             poster=worst.get("poster") or None,
         ))
@@ -271,10 +285,10 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         share = round(sum(c for _, c in top3) / sum(countries.values()) * 100)
         questions.append(_question(
             "passport", "Your cinema passport",
-            "How many different countries have you watched films from?",
+            "How many countries has your watchlist actually visited?",
             options, answer,
-            f"{total} countries. But {pct(share)} of them come from just three: "
-            + " · ".join(f"{n} {c}" for n, c in top3),
+            f"{total} countries on the passport. {pct(share)} of the actual trips were to "
+            "just three, though: " + " · ".join(f"{n} {c}" for n, c in top3),
             "mint", kind="number",
         ))
 
@@ -283,14 +297,14 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         crowd = round(float(contrast["average_rating"].mean()), 2)
         mine = round(float(contrast["my_rating"].mean()), 2)
         gap = abs(mine - crowd)
-        verdict = ("You thought you were unusual. You are exactly average." if gap < 0.15
-                   else "You are noticeably kinder than the crowd." if mine > crowd
-                   else "You are noticeably harsher than the crowd.")
+        verdict = ("You thought your taste was special. It's extremely average." if gap < 0.15
+                   else "You rate kinder than the crowd. A soft touch." if mine > crowd
+                   else "You rate harsher than the crowd. Nobody's safe.")
         pool = [f"{v:.2f}" for v in (crowd - 0.5, crowd + 0.45, crowd + 0.9) if v != mine][:3]
         options, answer = _shuffled(f"{mine:.2f}", pool, rng)
         questions.append(_question(
             "mirror", "The mirror",
-            f"Letterboxd averages {crowd:.2f} across these films. And you?",
+            f"The crowd rates these films {crowd:.2f} on average. Where do you land?",
             options, answer,
             f"You {mine:.2f}, the crowd {crowd:.2f}. {verdict}",
             "amber", kind="rating",
@@ -305,9 +319,10 @@ def build_full_quiz(df: pd.DataFrame, seed: int | None = None) -> list[dict]:
         options, answer = _shuffled(pick["title_of_movie"], distractors, rng)
         questions.append(_question(
             "cast", "The cast list",
-            "These three names share which film?",
+            "These three actors all showed up in the same film. Which one?",
             options, answer,
-            f"{pick['title_of_movie']} — {pick.get('Director') or 'director unknown'}",
+            f"{pick['title_of_movie']}, directed by {pick.get('Director') or 'director unknown'}. "
+            "You knew that instantly, right?",
             "violet", kind="cast",
         ))
         questions[-1]["hint"] = pick["Actors"][:3]
