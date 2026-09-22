@@ -9,11 +9,10 @@ web
 ## Users
 
 Anyone with a Letterboxd account who wants insight into their own film taste.
-The interface is Turkish-only today, but that is a starting point, not a
-scope limit — the intent is to serve any Letterboxd user, with additional
-languages as a plausible (not yet started) future direction. Users arrive
-with no account on this app itself: they export their data from Letterboxd
-and upload the ZIP.
+The interface is English throughout — it was Turkish-only until the launch
+pass, and was converted deliberately to reach the whole Letterboxd audience
+rather than one country's share of it. Users arrive with no account on this
+app itself: they export their data from Letterboxd and upload the ZIP.
 
 ## Product Purpose
 
@@ -70,17 +69,27 @@ fresh container starts warm. Session data expires after 30 days regardless.
   (`MIN_DIRECTOR_FILMS` / `MIN_ACTOR_FILMS`, currently 4) as both a minimum
   sample size and prior weight, so a two-film director can't outrank one
   followed for years on one great rating.
-- Undecided: whether/when to support languages beyond Turkish. Undecided:
+- Undecided: whether to add languages beyond English. Undecided:
   monetization (none exists today; the stated goal is organic growth via
   shareable results, not revenue).
 
 ## Brand Commitments
 
-"Letterboxd Wrapped" is a **working title, not a locked name** — it
-deliberately borrows Letterboxd's brand and the Spotify "Wrapped" format as
-a placeholder, and the user expects the name to change before any wider
-release. Future work should not treat this name, or design decisions
-anchored to it, as durable.
+The product is **Close-Up**, subtitled *for Letterboxd*. The name is a real
+film term — the shot scale, and Kiarostami's 1990 film — that also names what
+the product does: a closer look at the person doing the watching.
+
+It deliberately does **not** lead with "Letterboxd". Letterboxd's terms of use
+make "LETTERBOXD" a trademark and grant only a revocable, limited licence to
+use the logo when linking to the service; nothing licenses the name as part of
+a third-party product's name. "Wrapped" was also dropped — it is Spotify's
+format and reads as a borrowed one. Naming the integration in the subtitle is
+the safe and conventional pattern, and it still tells a visitor immediately
+what the thing plugs into.
+
+`closeup.film` is the intended domain (checked available, not yet registered).
+Until a domain exists, nothing in the UI prints one — a share card carrying a
+hostname that does not resolve is worse than one carrying none.
 
 ## Evidence on Hand
 

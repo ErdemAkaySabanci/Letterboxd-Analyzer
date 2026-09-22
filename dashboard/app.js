@@ -2,7 +2,7 @@
    Orchestration: upload → quiz → result → dashboard
    ============================================================ */
 
-const KEY = 'lbxw';
+const KEY = 'closeup';
 const $ = (id) => document.getElementById(id);
 
 let session = null;
@@ -10,15 +10,68 @@ let wrapped = null;
 let quizResult = null;
 let charts = {};
 
+/**
+ * The example library's session id, learned from /api/demo.
+ *
+ * Demo mode is derived from the session rather than kept as its own boolean,
+ * because every way out of the demo — the reset buttons, the hash hooks, a
+ * real upload — already replaces `session`. A separate flag would have to be
+ * cleared in all of them, and the one that got missed would leave the example
+ * library's copy and chapters sitting under a stranger's own result.
+ */
+let demoId = null;
+const isDemo = () => !!session && session === demoId;
+
 /* ── helpers ─────────────────────────────────────────────────── */
 
-function show(page) {
+/**
+ * The three screens, as real addresses.
+ *
+ * Two reasons they are not just CSS classes. The back button: on a phone it is
+ * the main way out of a screen, and without history the only thing it could do
+ * from the result was leave the site, taking the run with it. And the funnel:
+ * Cloudflare Web Analytics has no custom-event API, but it does count SPA route
+ * changes, so pushing a path per screen is what makes landing -> quiz -> result
+ * readable as drop-off instead of one undifferentiated pile of pageviews.
+ *
+ * server.py serves index.html on all three, so a reload or a shared link lands
+ * somewhere real rather than on a 404.
+ */
+const PATHS = { landing: '/', play: '/quiz', wrapped: '/result' };
+
+/**
+ * The example result reuses the `wrapped` screen but gets its own address.
+ *
+ * It is not in PATHS for that reason: it is a second way into an existing
+ * screen, not a fourth screen. Keeping it off /result is what keeps the
+ * funnel readable — a visitor browsing the example never took the test, and
+ * counting them as someone who finished it would make the completion number
+ * meaningless. It also gives the example a link worth sharing.
+ */
+const DEMO_PATH = '/example';
+
+function show(page, push = true) {
     document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === page));
     window.scrollTo({ top: 0 });
+    if (push && PATHS[page] && location.pathname !== PATHS[page]) {
+        try { history.pushState({ page }, '', PATHS[page]); } catch { /* not fatal */ }
+    }
     // Watched here as well as after the fetch, so a failed analysis load can
     // never leave the chapters hidden.
     if (page === 'wrapped') watchReveals();
 }
+
+// Going back re-shows the screen without pushing it again, which would other-
+// wise trap the reader in a history loop they cannot get out of.
+window.addEventListener('popstate', (event) => {
+    // The path is read before the history state because the example lives at
+    // an address that is not one of the three screens, and because runHook()
+    // nulls the state out from under it. Coming back to /example has to
+    // re-open the example rather than restore whatever was painted there.
+    if (location.pathname === DEMO_PATH) { openDemo(); return; }
+    const page = event.state?.page;
+    show(page && PATHS[page] ? page : 'landing', false);
+});
 
 function toast(message, isError = false) {
     const el = $('toast');
@@ -30,9 +83,17 @@ function toast(message, isError = false) {
 }
 
 async function api(path) {
-    const res = await fetch(path);
+    let res;
+    try {
+        res = await fetch(path);
+    } catch {
+        // fetch only rejects on a transport failure — a 404 or a 500 resolves
+        // normally. Separating the two is the difference between "your network
+        // dropped" and "the server said no", which are not the same advice.
+        throw new Error('Lost the connection. Check your network and try again.');
+    }
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+    if (!res.ok) throw new Error(body.error || `Something went wrong (HTTP ${res.status}).`);
     return body;
 }
 
@@ -63,7 +124,7 @@ function wireLanding() {
     const pick = (file) => {
         if (!file) return;
         if (!file.name.toLowerCase().endsWith('.zip')) {
-            toast('Lütfen Letterboxd export ZIP dosyasını seç', true);
+            toast('That is not a ZIP file. Pick the export Letterboxd gave you.', true);
             return;
         }
         chosen = file;
@@ -81,20 +142,27 @@ function wireLanding() {
     drop.addEventListener('drop', e => pick(e.dataTransfer.files[0]));
 
     $('go').addEventListener('click', () => chosen && upload(chosen));
+    $('btn-demo').addEventListener('click', () => openDemo());
 }
 
 /* ── upload & quiz run ───────────────────────────────────────── */
 
 async function upload(file) {
     $('go').disabled = true;
-    $('go').textContent = 'Yükleniyor…';
+    $('go').textContent = 'Uploading…';
 
     try {
         const form = new FormData();
         form.append('file', file);
-        const res = await fetch('/api/upload-zip', { method: 'POST', body: form });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
+
+        let res;
+        try {
+            res = await fetch('/api/upload-zip', { method: 'POST', body: form });
+        } catch {
+            throw new Error('Lost the connection while uploading. Try again.');
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'That upload did not work. Try again.');
 
         session = data.session_id;
         quizResult = null;
@@ -103,7 +171,50 @@ async function upload(file) {
     } catch (err) {
         toast(err.message, true);
         $('go').disabled = false;
-        $('go').textContent = 'Başla';
+        $('go').textContent = 'Start';
+    }
+}
+
+/**
+ * Open the example library: one real result, read-only, no upload.
+ *
+ * It walks the ordinary session endpoints and skips the quiz, which is the
+ * only honest thing to do with it — the test asks how well you know your own
+ * taste, and a stranger answering it about someone else's library is just
+ * guessing. What they came for is the result and the chapters.
+ *
+ * Nothing here is saved: the example must never end up in localStorage, or
+ * the next visit would resume into somebody else's library instead of the
+ * landing page.
+ */
+async function openDemo() {
+    if (isDemo() && wrapped) { show('wrapped', false); return; }
+
+    const btn = $('btn-demo');
+    btn.disabled = true;
+    try {
+        const { session_id } = await api('/api/demo');
+        demoId = session_id;
+        session = session_id;
+        // Never sat the test, so the result reads as an unscored one.
+        quizResult = { score: 0, total: 0, skipped: true };
+        wrapped = await api(`/api/wrapped?session=${session}`);
+        resetAnalysis();
+        renderResult();
+        // Pushed by hand rather than through show(), so the run is never
+        // recorded against /result. See DEMO_PATH.
+        show('wrapped', false);
+        if (location.pathname !== DEMO_PATH) {
+            try { history.pushState({ page: 'wrapped' }, '', DEMO_PATH); } catch { /* not fatal */ }
+        }
+        loadAnalysis();
+        loadProfile();
+    } catch (err) {
+        session = null;
+        demoId = null;
+        toast(err.message, true);
+    } finally {
+        btn.disabled = false;
     }
 }
 
@@ -123,10 +234,10 @@ async function startQuiz(scrapeState) {
     const pending = scrapeState?.total ?? 0;
     if (pending > 0) {
         Quiz.expect(6);                       // roughly what phase 2 adds
-        setScrapePill(`${pending} film taranıyor`, false);
+        setScrapePill(`fetching ${pending} films`, false);
         followScrape();
     } else {
-        setScrapePill('hazır', true);
+        setScrapePill('ready', true);
         loadFullPhase();
     }
 }
@@ -155,7 +266,7 @@ function followScrape() {
     // A scrape that hangs still has to let the quiz end.
     giveUp = setTimeout(() => {
         stream.close();
-        setScrapePill('tarama uzun sürdü', true);
+        setScrapePill('this took too long', true);
         loadFullPhase(true);
     }, 90000);
 
@@ -163,7 +274,7 @@ function followScrape() {
         const state = JSON.parse(event.data);
         if (state.status === 'running') {
             const left = Math.max(state.total - state.done, 0);
-            setScrapePill(`${left} film kaldı`, false);
+            setScrapePill(`${left} films to go`, false);
             const progress = state.total ? state.done / state.total : 0;
             if (progress >= nextPull) {
                 nextPull += 0.2;
@@ -172,11 +283,11 @@ function followScrape() {
             return;
         }
         stop();
-        setScrapePill(state.status === 'done' ? 'hazır' : 'bazı filmler eksik', true);
+        setScrapePill(state.status === 'done' ? 'ready' : 'some films missing', true);
         loadFullPhase(true);
         refreshAfterScrape();
     };
-    stream.onerror = () => { stop(); setScrapePill('bağlantı koptu', true); loadFullPhase(true); };
+    stream.onerror = () => { stop(); setScrapePill('connection lost', true); loadFullPhase(true); };
 }
 
 async function loadFullPhase(final = true) {
@@ -196,12 +307,30 @@ async function finishQuiz(score, total, skipped = false) {
     try {
         wrapped = await api(`/api/wrapped?session=${session}`);
     } catch (err) {
+        // The question card is spent by now — its options are disabled and
+        // nothing re-renders it, so a toast alone strands the reader on a
+        // dead screen with no way forward. Put the way out in the body.
         toast(err.message, true);
+        showQuizFailure(err.message, () => finishQuiz(score, total, skipped));
         return;
     }
     renderResult();
     show('wrapped');
     loadAnalysis();          // ready by the time they scroll down to it
+    loadProfile();
+}
+
+/** Replace the spent question card with the reason and a way to retry. */
+function showQuizFailure(message, retry) {
+    const body = $('quiz-body');
+    if (!body) return;
+    body.innerHTML = `
+        <div class="q-fail">
+            <p class="q-eyebrow">Could not build your result</p>
+            <p class="q-fail-msg">${esc(message)}</p>
+            <button class="btn-solid" id="q-retry">Try again</button>
+        </div>`;
+    $('q-retry').addEventListener('click', () => { body.innerHTML = ''; retry(); }, { once: true });
 }
 
 /**
@@ -214,10 +343,42 @@ async function refreshAfterScrape() {
     try {
         wrapped = await api(`/api/wrapped?session=${session}`);
         renderResult();
-        loadAnalysis.done = false;
+        resetAnalysis();
+        loadProfile();
         await loadAnalysis();
-        toast('Film bilgileri tamamlandı, analiz güncellendi');
+        toast('Film details finished loading — the analysis is up to date.');
     } catch { /* keep what's on screen */ }
+}
+
+/**
+ * The written taste profile. Asked for after every render of the result and
+ * again when the scrape lands; the server answers `pending` until it has the
+ * whole library, `disabled` when no model is configured, and keeps the text
+ * once written, so asking twice costs nothing. Anything but `ready` leaves
+ * the block hidden — a spinner here would promise a paragraph that may
+ * never come.
+ */
+async function loadProfile() {
+    if (!session) return;
+    const asked = session;
+    let res;
+    try { res = await api(`/api/profile?session=${asked}`); } catch { return; }
+    // The reader may have started over while the model was writing.
+    if (asked !== session || res.status !== 'ready' || !res.text) return;
+
+    const box = $('taste-text');
+    box.innerHTML = '';
+    res.text.split(/\n\s*\n/).forEach(para => {
+        const p = document.createElement('p');
+        p.textContent = para.trim();
+        box.appendChild(p);
+    });
+    $('taste-profile').hidden = false;
+}
+
+function clearProfile() {
+    $('taste-profile').hidden = true;
+    $('taste-text').innerHTML = '';
 }
 
 function renderResult() {
@@ -230,19 +391,30 @@ function renderResult() {
     $('r-score').hidden = noScore;
     $('quiz-row').hidden = noScore;
 
-    if (noScore) {
-        $('r-verdict').textContent = 'İşte kütüphanen.';
-        $('r-note').textContent = 'Testi atladın — istersen aşağıda detaylı analiz var.';
+    // Set on every render rather than toggled on the way in and out of the
+    // example, so there is no restore step that can be missed.
+    $('btn-again').textContent = isDemo() ? 'Upload your own export' : 'Upload another export';
+
+    if (noScore && isDemo()) {
+        $('r-verdict').textContent = "This is Erdem's library.";
+        // Read off the data rather than written down, so the number cannot
+        // drift away from the library it describes.
+        $('r-note').textContent =
+            `${wrapped.total_movies ?? 'Every'} films, every rating and every watch date. `
+            + 'Yours will look like this.';
+    } else if (noScore) {
+        $('r-verdict').textContent = 'Here is your library.';
+        $('r-note').textContent = 'You skipped the test — the full analysis is below.';
     } else {
         $('r-score').innerHTML = `${score}<small>/${total}</small>`;
         $('r-verdict').textContent =
-            pct >= 80 ? 'Kendini iyi tanıyorsun.' :
-            pct >= 55 ? 'Fena değil — ama birkaç sürpriz vardı.' :
-            pct >= 30 ? 'Zevkin seni yanıltıyor.' :
-                        'Kendi kütüphaneni tanımıyorsun.';
+            pct >= 80 ? 'You know your own taste.' :
+            pct >= 55 ? 'Close — but your taste had a few surprises.' :
+            pct >= 30 ? 'Your taste is not quite what you think it is.' :
+                        'You do not know your own library.';
         $('r-note').textContent = skipped
-            ? `Yarıda bıraktın — ${total} sorudan ${score} doğru.`
-            : `${total} sorudan ${score} doğru.`;
+            ? `You stopped early — ${score} of ${total} right.`
+            : `${score} of ${total} right.`;
     }
 
     const fav = wrapped.top_director;
@@ -254,9 +426,15 @@ function renderResult() {
     $('s-dirs').textContent = wrapped.unique_directors ?? '—';
     $('s-avg').textContent = wrapped.avg_rating ?? '—';
     $('s-fav').textContent = fav ? `${fav.name} (${fav.my_avg})` : '—';
-    $('s-most').textContent = most ? `${most.name} · ${most.movie_count} film` : '—';
-    $('s-actor').textContent = actor ? `${actor.name} · ${actor.movie_count} film` : '—';
+    $('s-most').textContent = most ? `${most.name} · ${most.movie_count} films` : '—';
+    $('s-actor').textContent = actor ? `${actor.name} · ${actor.movie_count} films` : '—';
     $('s-quiz').textContent = `${score}/${total}`;
+
+    // Only once the scrape has placed the library; a "—" here would look
+    // like a type that could not be found.
+    const type = wrapped.persona;
+    $('type-row').hidden = !type;
+    $('s-type').textContent = type ? `${type.name.replace(/^The /, '')} · ${type.match_pct}%` : '';
 }
 
 /* ── dashboard ───────────────────────────────────────────────── */
@@ -339,64 +517,6 @@ function chart(id, config) {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
     c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/**
- * Letterboxd's genre, country, and language fields come back in English —
- * they're scraped, not translated. Everywhere else on this page is Turkish,
- * so an untranslated "Drama" or "USA" reads as a seam. These maps cover
- * Letterboxd's genre taxonomy in full and the countries/languages real
- * libraries hit most; anything missing falls back to the English original
- * rather than showing nothing.
- */
-const GENRE_TR = {
-    'Action': 'Aksiyon', 'Adventure': 'Macera', 'Animation': 'Animasyon',
-    'Comedy': 'Komedi', 'Crime': 'Suç', 'Documentary': 'Belgesel',
-    'Drama': 'Dram', 'Family': 'Aile', 'Fantasy': 'Fantastik',
-    'History': 'Tarih', 'Horror': 'Korku', 'Music': 'Müzik',
-    'Mystery': 'Gizem', 'Romance': 'Romantik', 'Science Fiction': 'Bilim Kurgu',
-    'TV Movie': 'TV Filmi', 'Thriller': 'Gerilim', 'War': 'Savaş', 'Western': 'Vahşi Batı',
-};
-const COUNTRY_TR = {
-    'USA': 'ABD', 'United States': 'ABD', 'United States of America': 'ABD',
-    'UK': 'İngiltere', 'United Kingdom': 'İngiltere', 'Turkey': 'Türkiye',
-    'France': 'Fransa', 'Germany': 'Almanya', 'Italy': 'İtalya', 'Spain': 'İspanya',
-    'Canada': 'Kanada', 'Australia': 'Avustralya', 'Japan': 'Japonya',
-    'South Korea': 'Güney Kore', 'North Korea': 'Kuzey Kore', 'China': 'Çin',
-    'Hong Kong': 'Hong Kong', 'Taiwan': 'Tayvan', 'India': 'Hindistan',
-    'Russia': 'Rusya', 'Netherlands': 'Hollanda', 'Belgium': 'Belçika',
-    'Sweden': 'İsveç', 'Norway': 'Norveç', 'Denmark': 'Danimarka',
-    'Finland': 'Finlandiya', 'Iceland': 'İzlanda', 'Poland': 'Polonya',
-    'Austria': 'Avusturya', 'Switzerland': 'İsviçre', 'Ireland': 'İrlanda',
-    'Portugal': 'Portekiz', 'Greece': 'Yunanistan', 'Hungary': 'Macaristan',
-    'Czech Republic': 'Çekya', 'Romania': 'Romanya', 'Bulgaria': 'Bulgaristan',
-    'Ukraine': 'Ukrayna', 'Croatia': 'Hırvatistan', 'Serbia': 'Sırbistan',
-    'Mexico': 'Meksika', 'Brazil': 'Brezilya', 'Argentina': 'Arjantin',
-    'Chile': 'Şili', 'Colombia': 'Kolombiya', 'Peru': 'Peru',
-    'New Zealand': 'Yeni Zelanda', 'South Africa': 'Güney Afrika',
-    'Israel': 'İsrail', 'Iran': 'İran', 'Egypt': 'Mısır', 'Morocco': 'Fas',
-    'Thailand': 'Tayland', 'Indonesia': 'Endonezya', 'Malaysia': 'Malezya',
-    'Philippines': 'Filipinler', 'Vietnam': 'Vietnam', 'Singapore': 'Singapur',
-    'Lebanon': 'Lübnan', 'Saudi Arabia': 'Suudi Arabistan',
-    'Malawi': 'Malavi', 'Nigeria': 'Nijerya', 'Kenya': 'Kenya',
-};
-const LANG_TR = {
-    'English': 'İngilizce', 'Turkish': 'Türkçe', 'French': 'Fransızca',
-    'German': 'Almanca', 'Italian': 'İtalyanca', 'Spanish': 'İspanyolca',
-    'Portuguese': 'Portekizce', 'Russian': 'Rusça', 'Chinese': 'Çince',
-    'Cantonese': 'Kantonca', 'Mandarin': 'Mandarin Çincesi', 'Japanese': 'Japonca',
-    'Korean': 'Korece', 'Hindi': 'Hintçe', 'Arabic': 'Arapça', 'Hebrew (modern)': 'İbranice',
-    'Persian (Farsi)': 'Farsça', 'Dutch': 'Felemenkçe', 'Swedish': 'İsveççe',
-    'Norwegian': 'Norveççe', 'Danish': 'Danca', 'Finnish': 'Fince',
-    'Icelandic': 'İzlandaca', 'Polish': 'Lehçe', 'Czech': 'Çekçe',
-    'Slovak': 'Slovakça', 'Hungarian': 'Macarca', 'Romanian': 'Rumence',
-    'Bulgarian': 'Bulgarca', 'Greek (modern)': 'Yunanca', 'Ukrainian': 'Ukraynaca',
-    'Croatian': 'Hırvatça', 'Serbo-Croatian': 'Sırp-Hırvatça', 'Latin': 'Latince',
-    'Thai': 'Tayca', 'Vietnamese': 'Vietnamca', 'Indonesian': 'Endonezce',
-    'Malay': 'Malayca', 'Tagalog': 'Tagalogca', 'Swahili': 'Svahilice',
-    'Urdu': 'Urduca', 'Estonian': 'Estonca', 'Yiddish': 'Yidiş',
-};
-const trGenre = (g) => g == null ? g : (GENRE_TR[g] || g);
-const trCountry = (c) => c == null ? c : (COUNTRY_TR[c] || c);
-const trLang = (l) => l == null ? l : (LANG_TR[l] || l);
 
 /**
  * A screen-reader-only data table, kept in sync beside a canvas the chart
@@ -488,17 +608,17 @@ async function drill(host, params, label) {
         const query = new URLSearchParams({ session, limit: 24, ...params });
         data = await api('/api/films?' + query);
     } catch {
-        box.innerHTML = '<p class="empty">Filmler alınamadı</p>';
+        box.innerHTML = '<p class="empty">Could not load those films.</p>';
         return;
     }
 
     const rated = data.rated_count
-        ? `${data.rated_count} tanesi puanlı, ortalaman ${data.my_avg}`
-        : 'hiçbiri puanlanmamış';
+        ? `${data.rated_count} rated, you average ${data.my_avg}`
+        : 'none of them rated';
     box.innerHTML =
         `<div class="drill-head">
-            <span><b>${esc(label)}</b> · ${data.count} film, ${esc(rated)}</span>
-            <button class="drill-close">Kapat</button>
+            <span><b>${esc(label)}</b> · ${data.count} films, ${esc(rated)}</span>
+            <button class="drill-close">Close</button>
         </div>
         <div class="film-strip">${filmCards(data.films || [])}</div>`;
     box.querySelector('.drill-close').addEventListener('click', () => box.remove());
@@ -519,7 +639,7 @@ function openable(el, params, label) {
 
 /** Poster, title, and your rating against the crowd's. */
 function filmCards(films) {
-    if (!films.length) return '<p class="empty">Film bulunamadı</p>';
+    if (!films.length) return '<p class="empty">No films here.</p>';
     return films.map(f => `
         <div class="film-card">
             ${f.poster
@@ -541,12 +661,13 @@ function filmCards(films) {
  *
  * `drillKey` names the /api/films filter a row stands for, which is what
  * turns a ranking into a way into the library rather than a list to read.
+ * Row names are the raw API values, so a row filters on what it displays.
  */
 function ranking(el, rows, max = null, zoom = false, drillKey = null) {
     const node = $(el);
     if (!node) return;
     if (!rows.length) {
-        node.innerHTML = '<p class="empty">Yeterli veri yok</p>';
+        node.innerHTML = '<p class="empty">Not enough data yet.</p>';
         return;
     }
     const values = rows.map(r => Number(r.bar) || 0);
@@ -564,16 +685,29 @@ function ranking(el, rows, max = null, zoom = false, drillKey = null) {
 
     if (!drillKey) return;
     node.querySelectorAll('.rank-row').forEach((row, i) =>
-        // `filterName` is the raw value the API filters on (e.g. English
-        // country names); `name` may be a translated display label and the
-        // two have to stay independent.
-        openable(row, { [drillKey]: rows[i].filterName ?? rows[i].name }, rows[i].name));
+        openable(row, { [drillKey]: rows[i].name }, rows[i].name));
 }
 
 /**
  * Fill the analysis chapters. They live on the same page as the summary, so
  * this only loads data — the reader reaches them by scrolling.
  */
+/**
+ * Drop everything the analysis renders only once.
+ *
+ * Three separate one-shot guards exist — loadAnalysis.done, loadPeople.done,
+ * and the poster wall's own childElementCount check — and clearing only the
+ * first leaves the previous library's directors, faces and posters on screen
+ * under the next one's numbers. Anything that means to re-render the analysis
+ * for a different library has to go through here.
+ */
+function resetAnalysis() {
+    loadAnalysis.done = false;
+    loadPeople.done = false;
+    $('dash-bg').innerHTML = '';
+    clearProfile();
+}
+
 async function loadAnalysis() {
     if (loadAnalysis.done) return;
 
@@ -595,6 +729,7 @@ async function loadAnalysis() {
     chapterWhat(stats);
     chapterWhen(stats);
     chapterWhere(stats);
+    chapterType(stats);
     chapterFinale(stats);
     loadPeople();                    // faces follow, the chapter does not wait
     watchReveals();
@@ -609,7 +744,7 @@ async function paintDashBg() {
     } catch { /* decorative */ }
 }
 
-/* 01 — Künye */
+/* 01 — The Record */
 function chapterOverview(stats) {
     const s = stats.summary;
     const hours = wrapped ? Math.round(wrapped.total_hours || 0) : null;
@@ -618,15 +753,15 @@ function chapterOverview(stats) {
     // varied" are different questions, and reading eight same-weight
     // numbers as one glance is not actually a glance.
     const volume = [
-        ['Film', s.total_movies],
-        ['Puanladığın', s.rated_movies],
-        ...(hours ? [['Saat', hours.toLocaleString('tr')], ['Tam gün', Math.round(hours / 24)]] : []),
+        ['Films', s.total_movies],
+        ['Rated', s.rated_movies],
+        ...(hours ? [['Hours', hours.toLocaleString('en')], ['Full days', Math.round(hours / 24)]] : []),
     ].filter(([, value]) => value != null);
     const breadth = [
-        ['Yönetmen', s.unique_directors],
-        ['Tür', s.unique_genres],
-        ['Ülke', s.unique_countries],
-        ['Dil', s.unique_languages],
+        ['Directors', s.unique_directors],
+        ['Genres', s.unique_genres],
+        ['Countries', s.unique_countries],
+        ['Languages', s.unique_languages],
     ].filter(([, value]) => value != null);
 
     const group = (label, cells) => `
@@ -637,18 +772,18 @@ function chapterOverview(stats) {
             </div>
         </div>`;
 
-    $('big-stats').innerHTML = group('Ne kadar izledin', volume) + group('Ne kadar çeşitli', breadth);
-    titleCard(1, s.total_movies, 'film',
-        `${s.rated_movies} tanesi puanlanmış. Ortalaman ${s.avg_my_rating ?? '—'}.`);
+    $('big-stats').innerHTML = group('How much you watched', volume) + group('How varied it is', breadth);
+    titleCard(1, s.total_movies, 'films',
+        `${s.rated_movies} of them rated. You average ${s.avg_my_rating ?? '—'}.`);
 }
 
-/* 02 — Nasıl puanlıyorsun */
+/* 02 — How You Rate */
 function chapterRatings(stats) {
     const dist = stats.rating_distribution;
     const peak = dist.counts.indexOf(Math.max(...dist.counts));
-    titleCard(2, dist.ratings[peak], 'en sık verdiğin',
-        `${dist.counts[peak]} film bu puanda. Ortalaman ${stats.crowd_comparison?.yours ?? '—'}, `
-        + `kitlenin ${stats.crowd_comparison?.crowd ?? '—'}.`);
+    titleCard(2, dist.ratings[peak], 'your most common score',
+        `${dist.counts[peak]} films sit there. You average ${stats.crowd_comparison?.yours ?? '—'}, `
+        + `the crowd ${stats.crowd_comparison?.crowd ?? '—'}.`);
 
     chart('c-ratings', {
         type: 'bar',
@@ -662,14 +797,14 @@ function chapterRatings(stats) {
             interaction: { mode: 'index', intersect: false },
             onClick: (_e, hits) => hits.length && drill(
                 $('c-ratings'), { rating: dist.ratings[hits[0].index] },
-                `${dist.ratings[hits[0].index]} verdiğin filmler`),
+                `Films you rated ${dist.ratings[hits[0].index]}`),
             onHover: (e, hits) => { e.native.target.style.cursor = hits.length ? 'pointer' : 'default'; },
-            plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} film` } } },
+            plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} films` } } },
         },
     });
-    describeChart('c-ratings', `Puan dağılımı: en sık verdiğin puan ${dist.ratings[peak]}, ${dist.counts[peak]} film.`);
+    describeChart('c-ratings', `Rating distribution: your most common score is ${dist.ratings[peak]}, given to ${dist.counts[peak]} films.`);
     $('c-ratings').insertAdjacentHTML('afterend', srTable('c-ratings-table',
-        'Puan dağılımı', ['Puan', 'Film sayısı'],
+        'Rating distribution', ['Rating', 'Films'],
         dist.ratings.map((r, i) => [r, dist.counts[i]])));
 
     const points = stats.scatter?.points || [];
@@ -689,14 +824,14 @@ function chapterRatings(stats) {
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label: (ctx) => `${ctx.raw.t} — sen ${ctx.raw.y}, kitle ${ctx.raw.x}`,
+                        label: (ctx) => `${ctx.raw.t} — you ${ctx.raw.y}, crowd ${ctx.raw.x}`,
                     },
                 },
             },
             scales: {
-                x: { title: { display: true, text: 'Kitlenin puanı', color: '#8E8EA3' },
+                x: { title: { display: true, text: 'Crowd rating', color: '#8E8EA3' },
                      ticks: AXIS, grid: GRID, min: 0, max: 5 },
-                y: { title: { display: true, text: 'Senin puanın', color: '#8E8EA3' },
+                y: { title: { display: true, text: 'Your rating', color: '#8E8EA3' },
                      ticks: AXIS, grid: GRID, min: 0, max: 5 },
             },
         },
@@ -705,11 +840,11 @@ function chapterRatings(stats) {
     const c = stats.correlation_my_vs_avg;
     const cmp = stats.crowd_comparison || {};
     $('corr-note').textContent = c?.r != null
-        ? `Kitleyle uyumun r = ${c.r} (${c.n} film). Senin ortalaman ${cmp.yours}, kitlenin ${cmp.crowd}.`
+        ? `You track the crowd at r = ${c.r} across ${c.n} films. You average ${cmp.yours}, they average ${cmp.crowd}.`
         : '';
     describeChart('c-scatter', c?.r != null
-        ? `Senin puanların kitle ortalamasına karşı, ${c.n} film. Uyum r = ${c.r}.`
-        : 'Senin puanların kitle ortalamasına karşı dağılım grafiği.');
+        ? `Your ratings against the crowd average, ${c.n} films. Correlation r = ${c.r}.`
+        : 'Scatter plot of your ratings against the crowd average.');
 
     $('r-contro').innerHTML = (stats.controversial?.controversial || []).slice(0, 8).map(m => `
         <div class="film-card">
@@ -721,26 +856,26 @@ function chapterRatings(stats) {
         </div>`).join('');
 }
 
-/* 03 — Kimleri izliyorsun */
+/* 03 — Who You Watch */
 function chapterPeople(stats) {
     const fav = (stats.bayesian_directors?.directors || [])[0];
     const most = (stats.most_watched?.directors || [])[0];
-    titleCard(3, most?.name ?? '—', most ? `${most.count} film` : '',
+    titleCard(3, most?.name ?? '—', most ? `${most.count} films` : '',
         fav && most && fav.director !== most.name
-            ? `En çok izlediğin yönetmen. Ama en yüksek ortalamayı ${fav.director} alıyor.`
-            : 'Yönetmen ve oyuncu tercihlerinin dökümü.',
+            ? `The director you watch most. But the one you rate highest is ${fav.director}.`
+            : 'Who you keep coming back to, on both sides of the camera.',
         true);
 
     // The two "most watched" rankings are now portrait shelves, filled by
     // loadPeople() — same numbers, with the faces attached.
     ranking('r-dirs', (stats.bayesian_directors?.directors || []).slice(0, 8)
-        .map(d => ({ name: d.director, sub: `${d.movie_count} film · ort. ${d.my_avg}`,
+        .map(d => ({ name: d.director, sub: `${d.movie_count} films · avg ${d.my_avg}`,
                      value: d.bayesian_avg, bar: d.bayesian_avg })), null, true, 'director');
     ranking('r-actors', (stats.bayesian_actors?.actors || []).slice(0, 8)
-        .map(a => ({ name: a.actor, sub: `${a.movie_count} film · ort. ${a.my_avg}`,
+        .map(a => ({ name: a.actor, sub: `${a.movie_count} films · avg ${a.my_avg}`,
                      value: a.bayesian_avg, bar: a.bayesian_avg })), null, true, 'actor');
     ranking('r-pairs', (stats.network?.top_collaborations || []).slice(0, 8)
-        .map(p => ({ name: p.pair, value: `${p.count} film`, bar: p.count })));
+        .map(p => ({ name: p.pair, value: `${p.count} films`, bar: p.count })));
 }
 
 /**
@@ -765,10 +900,9 @@ async function loadPeople() {
         face.innerHTML = `<img src="${esc(lead.portrait)}" alt="${esc(lead.name)}" loading="lazy" />`;
         face.hidden = false;
     }
-    // The scraped biography is deliberately not shown. Letterboxd carries it
-    // in English and this interface is Turkish throughout; one untranslated
-    // sentence in a chapter's opening card reads as a defect, not as source
-    // material. It stays in the people cache, a line away if that changes.
+    // The scraped biography is still not shown. It is a paragraph of prose
+    // dropped into a card built for one number and one name, and it would
+    // bury both. It stays in the people cache, a line away if that changes.
 }
 
 /**
@@ -781,14 +915,14 @@ async function loadPeople() {
 function shelf(id, rows) {
     const node = $(id);
     if (!node) return;
-    if (!rows.length) { node.innerHTML = '<p class="empty">Yeterli veri yok</p>'; return; }
+    if (!rows.length) { node.innerHTML = '<p class="empty">Not enough data yet.</p>'; return; }
     node.innerHTML = rows.map(p => `
         <div class="person">
             ${p.portrait
                 ? `<img src="${esc(p.portrait)}" alt="${esc(p.name)}" loading="lazy" />`
                 : '<div class="no-face"></div>'}
             <div class="n">${esc(p.name)}</div>
-            <div class="m">${esc(p.count)} film</div>
+            <div class="m">${esc(p.count)} films</div>
         </div>`).join('');
 
     const kind = id === 'shelf-actors' ? 'actor' : 'director';
@@ -796,17 +930,17 @@ function shelf(id, rows) {
         openable(card, { [kind]: rows[i].name }, rows[i].name));
 }
 
-/* 04 — Ne izliyorsun */
+/* 04 — What You Watch */
 function chapterWhat(stats) {
     const genres = (stats.genre_distribution?.genres || []).filter(g => g.count >= 10);
     const byCount = [...genres].sort((a, b) => b.count - a.count);
     const byScore = [...genres].sort((a, b) => b.avg_my_rating - a.avg_my_rating);
 
-    titleCard(4, trGenre(byCount[0]?.genre) ?? '—', byCount[0] ? `${byCount[0].count} film` : '',
+    titleCard(4, byCount[0]?.genre ?? '—', byCount[0] ? `${byCount[0].count} films` : '',
         byCount[0] && byScore[0] && byCount[0].genre !== byScore[0].genre
-            ? `En çok izlediğin tür, ortalaman ${byCount[0].avg_my_rating}. Ama en yüksek `
-              + `ortalamayı ${trGenre(byScore[0].genre)} alıyor (${byScore[0].count} film, ${byScore[0].avg_my_rating}).`
-            : 'Türlere göre dökümün.',
+            ? `The genre you watch most, and you average ${byCount[0].avg_my_rating} on it. The one you `
+              + `rate highest is ${byScore[0].genre} (${byScore[0].count} films, ${byScore[0].avg_my_rating}).`
+            : 'Your library, broken down by genre.',
         true);
 
     // Ratings bunch up between roughly 2.8 and 4.0, so a 0–5 bar makes every
@@ -824,7 +958,7 @@ function chapterWhat(stats) {
         const beats = g.avg_my_rating >= mean;
         return `
         <div class="genre-row${beats ? '' : ' below'}">
-            <span class="g">${esc(trGenre(g.genre))}<small>${g.count} film</small></span>
+            <span class="g">${esc(g.genre)}<small>${g.count} films</small></span>
             <span class="bars">
                 <i class="bar count" style="width:${(g.count / maxCount) * 100}%"></i>
                 <i class="bar score" style="width:${width}%"></i>
@@ -833,15 +967,13 @@ function chapterWhat(stats) {
         </div>`;
     }).join('')
         + `<div class="genre-legend">
-             <span class="k1">Kaç film izledin</span>
-             <span class="k2">Ortalama puanın</span>
-             <span class="k3">Genel ortalamanın (${mean}) altında</span>
+             <span class="k1">How many you watched</span>
+             <span class="k2">Your average rating</span>
+             <span class="k3">Below your overall average (${mean})</span>
            </div>`;
 
-    // The filter stays keyed on the raw English genre the API knows about;
-    // only the visible label and drill-panel heading are translated.
     $('genre-table').querySelectorAll('.genre-row').forEach((row, i) =>
-        openable(row, { genre: shown[i].genre }, trGenre(shown[i].genre)));
+        openable(row, { genre: shown[i].genre }, shown[i].genre));
 
     const rc = stats.runtime_counts, ra = stats.runtime_avg_rating;
     // Two charts sharing one x-axis, not one dual-axis plot: film count and
@@ -854,7 +986,7 @@ function chapterWhat(stats) {
             borderRadius: 6, maxBarThickness: 34, categoryPercentage: 0.62 }] },
         options: {
             interaction: { mode: 'index', intersect: false },
-            plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} film` } } },
+            plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} films` } } },
             scales: {
                 x: { ticks: { display: false }, grid: { display: false } },
                 y: { ticks: AXIS, grid: GRID },
@@ -870,7 +1002,7 @@ function chapterWhat(stats) {
         options: {
             interaction: { mode: 'index', intersect: false },
             plugins: { tooltip: { callbacks: {
-                label: (ctx) => ctx.parsed.y != null ? `ortalama ${ctx.parsed.y}` : 'veri yok',
+                label: (ctx) => ctx.parsed.y != null ? `you average ${ctx.parsed.y}` : 'no data',
             } } },
             scales: {
                 x: { ticks: AXIS, grid: { display: false } },
@@ -882,14 +1014,14 @@ function chapterWhat(stats) {
     const best = ra.labels[ra.values.indexOf(Math.max(...ra.values.filter(v => v != null)))];
     const chi = stats.chi_square;
     $('runtime-note').textContent = chi?.p_value != null
-        ? `En yüksek puanı ${best} filmlere veriyorsun. İstatistiksel testte p = ${chi.p_value.toFixed(3)} — `
-          + (chi.significant ? 'bu ilişki anlamlı.' : 'eğilim var ama kanıt zayıf.')
+        ? `You rate ${best} films highest. A chi-square test puts that at p = ${chi.p_value.toFixed(3)} — `
+          + (chi.significant ? 'strong enough to call real.' : 'a leaning, but the evidence is thin.')
         : '';
-    describeChart('c-runtime-count', 'Film uzunluğuna göre film sayısı.');
-    describeChart('c-runtime-avg', `Film uzunluğuna göre ortalama puan. En yüksek ortalama ${best} filmlerde.`);
+    describeChart('c-runtime-count', 'How many films you have watched at each runtime.');
+    describeChart('c-runtime-avg', `Your average rating by runtime. The highest average falls on ${best} films.`);
 }
 
-/* 05 — Hangi dönemi izliyorsun */
+/* 05 — When You Watch */
 function chapterWhen(stats) {
     const dec = stats.decade_ratings;
     if (dec?.labels?.length) {
@@ -905,7 +1037,7 @@ function chapterWhen(stats) {
                 onClick: (_e, hits) => hits.length && drill(
                     $('c-decades-count'), { decade: dec.decades[hits[0].index] }, dec.labels[hits[0].index]),
                 onHover: (e, hits) => { e.native.target.style.cursor = hits.length ? 'pointer' : 'default'; },
-                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} film` } } },
+                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} films` } } },
                 scales: {
                     x: { ticks: { display: false }, grid: { display: false } },
                     y: { ticks: AXIS, grid: GRID },
@@ -927,7 +1059,7 @@ function chapterWhen(stats) {
             options: {
                 interaction: { mode: 'index', intersect: false },
                 plugins: { tooltip: { callbacks: {
-                    label: (ctx) => ctx.parsed.y != null ? `ortalama ${ctx.parsed.y}` : 'yeterli film yok',
+                    label: (ctx) => ctx.parsed.y != null ? `you average ${ctx.parsed.y}` : 'not enough films',
                 } } },
                 scales: {
                     x: { ticks: AXIS, grid: { display: false } },
@@ -935,10 +1067,10 @@ function chapterWhen(stats) {
                 },
             },
         });
-        describeChart('c-decades-count', 'On yıllara göre film sayısı.');
-        describeChart('c-decades-avg', 'On yıllara göre ortalama puan.');
+        describeChart('c-decades-count', 'How many films you have watched from each decade.');
+        describeChart('c-decades-avg', 'Your average rating by decade.');
         $('c-decades-avg').insertAdjacentHTML('afterend', srTable('c-decades-table',
-            'On yıllara göre film sayısı ve ortalama puan', ['On yıl', 'Film sayısı', 'Ortalama puan'],
+            'Films watched and average rating by decade', ['Decade', 'Films', 'Your average'],
             dec.labels.map((label, i) => [label, dec.counts[i], dec.avg_ratings[i] ?? '—'])));
 
         // The story is the slope, so say it rather than leaving it to be read
@@ -950,21 +1082,21 @@ function chapterWhen(stats) {
             const best = solid.reduce((a, b) => (b.avg > a.avg ? b : a));
             const worst = solid.reduce((a, b) => (b.avg < a.avg ? b : a));
             const biggest = solid.reduce((a, b) => (b.n > a.n ? b : a));
-            titleCard(5, best.label, `ortalama ${best.avg}`,
-                `En yüksek ortalamayı bu on yıla veriyorsun. En düşüğü ${worst.label} `
-                + `(${worst.avg}) — ve kütüphanenin en kalabalık dönemi ${biggest.label}, `
-                + `${biggest.n} film.`, true);
+            titleCard(5, best.label, `you average ${best.avg}`,
+                `This is the decade you rate highest. The lowest is ${worst.label} `
+                + `(${worst.avg}) — and the busiest stretch of your library is ${biggest.label}, `
+                + `with ${biggest.n} films.`, true);
             $('decades-note').textContent =
-                'Eski filmleri daha yüksek puanlamak yaygındır: bir on yıldan bugüne ancak '
-                + 'ayakta kalanlar geliyor, yani seçim zaten senin adına yapılmış.';
+                'Rating older films higher is common, and it is mostly survivorship: only what '
+                + 'lasted is still in circulation, so the decade has already been filtered for you.';
         }
     }
 
     const b = stats.backlog;
     if (b?.categories) {
-        const LABELS = { 'Release Year': 'Çıktığı yıl', 'Recent (1-2y)': 'Yeni (1-2 yıl)',
-                         'Decade (3-10y)': '3-10 yıllık', 'Classic (11-30y)': 'Klasik (11-30 yıl)',
-                         'Old (31y+)': 'Eski (31+ yıl)' };
+        const LABELS = { 'Release Year': 'Its release year', 'Recent (1-2y)': 'Recent (1–2 yrs)',
+                         'Decade (3-10y)': '3–10 yrs old', 'Classic (11-30y)': 'Classic (11–30 yrs)',
+                         'Old (31y+)': 'Older (31+ yrs)' };
         chart('c-backlog', {
             type: 'bar',
             data: {
@@ -976,7 +1108,7 @@ function chapterWhen(stats) {
             options: {
                 indexAxis: 'y',
                 interaction: { mode: 'index', intersect: false },
-                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.x} film` } } },
+                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.x} films` } } },
                 scales: { x: { ticks: AXIS, grid: GRID }, y: { ticks: AXIS, grid: { display: false } } },
             },
         });
@@ -984,17 +1116,17 @@ function chapterWhen(stats) {
         // Say plainly what was left out. Letterboxd's watch dates are log
         // dates, and a bulk import on signup day would otherwise dominate.
         const skipped = b.excluded
-            ? ` ${b.excluded} film hesaba katılmadı: ${b.excluded_days} günde toplu eklenmişler, `
-              + 'o tarihler ne zaman izlediğini değil ne zaman kaydettiğini gösteriyor.'
+            ? ` ${b.excluded} films were left out: they were logged in bulk over ${b.excluded_days} days, `
+              + 'so those dates say when you catalogued them, not when you watched them.'
             : '';
         $('backlog-note').textContent =
-            `Kaydettiğinde filmin ortalama yaşı ${b.avg_age} yıldı. En büyük dilim: `
-            + `${LABELS[top] || top}. ${b.used} film üzerinden.${skipped}`;
-        describeChart('c-backlog', `Filmi ne zaman izlediğine göre dağılım. En büyük dilim: ${LABELS[top] || top}.`);
+            `A film was ${b.avg_age} years old on average by the time you logged it. Biggest slice: `
+            + `${LABELS[top] || top}. Measured across ${b.used} films.${skipped}`;
+        describeChart('c-backlog', `How old films were when you logged them. Biggest slice: ${LABELS[top] || top}.`);
     }
 }
 
-/* 06 — Nereden izliyorsun */
+/* 06 — Where You Watch */
 function chapterWhere(stats) {
     const countries = stats.diversity?.top_countries || [];
     const langs = stats.diversity?.top_languages || [];
@@ -1003,18 +1135,81 @@ function chapterWhere(stats) {
     // summary, or it would read as "10 countries" for everyone.
     const shown = countries.reduce((sum, c) => sum + c.count, 0);
     const top3 = countries.slice(0, 3).reduce((sum, c) => sum + c.count, 0);
-    titleCard(6, stats.summary.unique_countries ?? '—', 'ülke',
+    titleCard(6, stats.summary.unique_countries ?? '—', 'countries',
         shown
-            ? `${stats.summary.unique_languages} dil. Ama filmlerinin `
-              + `%${Math.round(top3 / shown * 100)}'i ilk üç ülkeden.`
+            ? `Across ${stats.summary.unique_languages} languages. But `
+              + `${Math.round(top3 / shown * 100)}% of your films come from just three countries.`
             : '');
 
     ranking('r-countries', countries.slice(0, 8)
-        .map(c => ({ name: trCountry(c.name), filterName: c.name, value: `${c.count} film`, bar: c.count })),
+        .map(c => ({ name: c.name, value: `${c.count} films`, bar: c.count })),
         null, false, 'country');
     ranking('r-langs', langs.slice(0, 8)
-        .map(l => ({ name: trLang(l.name), filterName: l.name, value: `${l.count} film`, bar: l.count })),
+        .map(l => ({ name: l.name, value: `${l.count} films`, bar: l.count })),
         null, false, 'language');
+}
+
+/* 07 — The Type */
+
+/**
+ * Which viewer persona the library sits nearest to. The server does the
+ * placing (personas.py); this only draws it: the radar is the library's
+ * eleven feature shares laid over the winning persona's centroid, the
+ * ranking is closeness to all five. Hidden when the scrape has not given
+ * enough films metadata to place the library at all.
+ */
+function chapterType(stats) {
+    const p = stats.persona;
+    const section = $('ch7');
+    if (!section) return;
+    section.hidden = !p;
+    if (!p) return;
+
+    titleCard(7, p.name, '',
+        `${p.tagline} A ${p.match_pct}% match, with ${p.runner_up.name} second at ${p.runner_up.pct}%.`,
+        true);
+
+    const narrow = window.innerWidth < 480;
+    chart('c-persona', {
+        type: 'radar',
+        data: {
+            labels: p.axes,
+            datasets: [
+                { label: 'You', data: p.features,
+                  borderColor: accent('c-persona'), backgroundColor: accent('c-persona', 0.22),
+                  pointBackgroundColor: accent('c-persona'), pointRadius: 3, pointHoverRadius: 5,
+                  pointHitRadius: 12, borderWidth: 2 },
+                { label: p.name, data: p.centroid,
+                  borderColor: 'rgba(242,239,230,0.55)', backgroundColor: 'transparent',
+                  borderDash: [5, 4], pointRadius: 0, pointHitRadius: 12, borderWidth: 1.5 },
+            ],
+        },
+        options: {
+            interaction: { mode: 'nearest', intersect: false },
+            // Eleven labels round a phone-width circle clip at the edges;
+            // a smaller face and a little padding keep them whole.
+            layout: { padding: narrow ? 4 : 10 },
+            plugins: { tooltip: { callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${Math.round(ctx.parsed.r * 100)}%`,
+            } } },
+            scales: { r: {
+                min: 0, max: 1,
+                ticks: { display: false, stepSize: 0.25 },
+                grid: GRID, angleLines: GRID,
+                pointLabels: { color: AXIS.color, font: { ...AXIS.font, size: narrow ? 9 : 11 } },
+            } },
+        },
+    });
+    describeChart('c-persona',
+        `Your library on eleven axes, against the ${p.name} profile. `
+        + p.axes.map((a, i) => `${a}: you ${Math.round(p.features[i] * 100)}%, type ${Math.round(p.centroid[i] * 100)}%`).join('; ') + '.');
+
+    ranking('r-personas', p.ranking.map(r => ({ name: r.name, value: `${r.pct}%`, bar: r.pct })), 100);
+
+    $('persona-why').innerHTML = p.evidence.map(line => `<li>${esc(line)}</li>`).join('');
+    $('persona-note').textContent =
+        `Placed from the ${p.films_used.toLocaleString('en')} films with full details, by nearest of five `
+        + 'hand-drawn profiles — closeness, not a verdict.';
 }
 
 /**
@@ -1027,8 +1222,8 @@ function chapterFinale(stats) {
     const n = stats.summary.total_movies;
     const line = $('finale-line');
     if (line) line.textContent = n
-        ? `${n.toLocaleString('tr')} filmlik zevkinin özeti bu. Şimdi paylaşma vakti.`
-        : 'Zevkinin özeti bu. Şimdi paylaşma vakti.';
+        ? `That is ${n.toLocaleString('en')} films, read back to you. Now go argue about it.`
+        : 'That is your taste, read back to you. Now go argue about it.';
 }
 
 /* ── boot ────────────────────────────────────────────────────── */
@@ -1037,10 +1232,10 @@ async function downloadSharePng() {
     try {
         const canvas = await html2canvas($('share-card'), { backgroundColor: '#0A0A0F', scale: 2 });
         const link = document.createElement('a');
-        link.download = 'letterboxd-wrapped.png';
+        link.download = 'close-up.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
-    } catch { toast('Görsel oluşturulamadı', true); }
+    } catch { toast('Could not build the image. Try again.', true); }
 }
 
 function wireButtons() {
@@ -1055,8 +1250,8 @@ function wireButtons() {
 
     $('btn-again').addEventListener('click', () => {
         clear(); session = null; wrapped = null; quizResult = null;
-        loadAnalysis.done = false;
-        $('go').disabled = true; $('go').textContent = 'Başla';
+        resetAnalysis();
+        $('go').disabled = true; $('go').textContent = 'Start';
         $('file-name').textContent = ''; $('drop').classList.remove('filled');
         show('landing');
     });
@@ -1071,14 +1266,14 @@ function wireButtons() {
  * URL hooks. A stored session otherwise sends every visit straight to the
  * analysis, with no way back to the test:
  *   #test  replay the quiz on the stored session, without re-uploading
- *   #yeni  drop the session and start over from the landing page
+ *   #new   drop the session and start over from the landing page
  * Returns true when the hook took over the screen.
  */
 async function runHook(hook) {
-    if (hook !== 'test' && hook !== 'yeni') return false;
+    if (hook !== 'test' && hook !== 'new') return false;
     history.replaceState(null, '', location.pathname);
 
-    if (hook === 'yeni') { $('btn-again').click(); return true; }
+    if (hook === 'new') { $('btn-again').click(); return true; }
 
     let stored = null;
     try { stored = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {}
@@ -1112,9 +1307,23 @@ async function boot() {
     window.addEventListener('hashchange', () => runHook(location.hash.slice(1)));
     if (await runHook(location.hash.slice(1))) return;
 
+    // Before the stored session is read, not after: a returning visitor who
+    // opens a shared /example link came for the example, and restoring their
+    // own result here would both show them the wrong thing and push a
+    // /result they never earned.
+    if (location.pathname === DEMO_PATH) { openDemo(); return; }
+
+    // /quiz or /result with nothing to restore is the landing page under the
+    // wrong address. Put the bar back in step so the next push is honest.
+    const landHere = () => {
+        if (location.pathname !== '/') {
+            try { history.replaceState({ page: 'landing' }, '', '/'); } catch {}
+        }
+    };
+
     let stored = null;
     try { stored = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {}
-    if (!stored?.session) return;
+    if (!stored?.session) { landHere(); return; }
 
     // Resume a previous visit if the server still has the session.
     try {
@@ -1124,8 +1333,10 @@ async function boot() {
         renderResult();
         show('wrapped');
         loadAnalysis();
+        loadProfile();
     } catch {
         clear();
+        landHere();
     }
 }
 

@@ -1,5 +1,5 @@
 /* ============================================================
-   Letterboxd Wrapped — "Kino"
+   Close-Up — "Kino"
    Full-bleed accent cards, poster-forward, editorial type.
    ============================================================ */
 
@@ -128,6 +128,26 @@ body::after {
                 var(--ink) 42%, color-mix(in srgb, var(--ink) 82%, transparent) 66%, transparent 82%);
 }
 
+/* On a phone the copy column is the whole screen. The wall's hollow middle and
+   the scrim above are both sized for a wide viewport, so at this width posters
+   run straight through the words. Widen the hollow, and cover what is left. */
+@media (max-width: 620px) {
+    .poster-wall {
+        opacity: 0.28;
+        mask-image: radial-gradient(ellipse 104% 48% at 50% 46%, transparent 44%, #000 100%);
+        -webkit-mask-image: radial-gradient(ellipse 104% 48% at 50% 46%, transparent 44%, #000 100%);
+    }
+    #landing::after {
+        background:
+            radial-gradient(ellipse 150% 54% at 50% 44%,
+                var(--ink) 54%, color-mix(in srgb, var(--ink) 88%, transparent) 78%, transparent 97%),
+            linear-gradient(180deg,
+                color-mix(in srgb, var(--ink) 82%, transparent) 0%,
+                color-mix(in srgb, var(--ink) 58%, transparent) 40%,
+                color-mix(in srgb, var(--ink) 90%, transparent) 100%);
+    }
+}
+
 .landing-inner { position: relative; z-index: 1; text-align: center; }
 
 .brandmark {
@@ -138,6 +158,19 @@ body::after {
     color: var(--muted);
     margin-bottom: 1.4rem;
 }
+.brandmark-sub {
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    color: color-mix(in srgb, var(--muted) 76%, transparent);
+}
+.brandmark-sub::before {
+    content: ''; display: inline-block;
+    width: 1px; height: 0.72em;
+    background: var(--ink-line);
+    margin-right: 0.55rem;
+    vertical-align: -0.04em;
+}
+
 .brandmark::before {
     content: ''; width: 9px; height: 9px; border-radius: 50%;
     background: var(--mint);
@@ -147,7 +180,7 @@ body::after {
 
 .hero {
     font-family: var(--display);
-    font-size: clamp(2.6rem, 8.5vw, 5.6rem);
+    font-size: clamp(2.5rem, 8.2vw, 5.1rem);
     font-weight: 800;
     line-height: 0.92;
     letter-spacing: -0.045em;
@@ -160,14 +193,57 @@ body::after {
 .hero-sub {
     font-size: clamp(0.96rem, 1.9vw, 1.1rem);
     color: var(--muted);
-    max-width: 36ch; margin: 0 auto 2rem;
+    max-width: 44ch; margin: 0 auto 1.4rem;
 }
+
+/* ── Export steps ─────────────────────────────────────────────
+   Left-aligned inside a centred column: a numbered list reads as
+   instructions only when the numbers line up. */
+.steps {
+    list-style: none;
+    max-width: 500px;
+    margin: 0 auto 1.25rem;
+    text-align: left;
+    display: grid; gap: 0.55rem;
+}
+.steps li {
+    display: grid; grid-template-columns: auto 1fr;
+    gap: 0.7rem; align-items: start;
+    font-size: 0.88rem; line-height: 1.5;
+    color: var(--muted);
+}
+.step-n {
+    width: 1.35rem; height: 1.35rem;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--ink-line);
+    font-family: var(--display);
+    font-size: 0.72rem; font-weight: 700;
+    color: var(--text);
+    margin-top: 0.08rem;
+}
+.steps b { color: var(--text); font-weight: 600; }
+.steps code {
+    font-family: var(--body); font-weight: 600;
+    color: var(--text); background: rgba(255, 255, 255, 0.06);
+    padding: 0.1rem 0.4rem; border-radius: 5px;
+}
+.steps a {
+    color: var(--mint);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in srgb, var(--mint) 45%, transparent);
+    transition: text-decoration-color 0.2s;
+}
+.steps a:hover { text-decoration-color: var(--mint); }
 
 /* Drop zone */
 .drop {
     border: 1.5px dashed var(--ink-line);
     border-radius: 18px;
-    padding: 1.8rem 1.5rem;
+    padding: 1.35rem 1.4rem;
     background: rgba(12, 12, 18, 0.72);
     backdrop-filter: blur(8px);
     transition: border-color 0.25s, background 0.25s, transform 0.25s var(--ease);
@@ -189,7 +265,7 @@ body::after {
 .file-btn:hover { background: rgba(255, 255, 255, 0.12); }
 
 .btn-go {
-    margin-top: 1.3rem;
+    margin-top: 1rem;
     padding: 0.95rem 2.6rem; border-radius: 999px;
     background: var(--paper); color: var(--ink);
     font-family: var(--display);
@@ -199,7 +275,28 @@ body::after {
 .btn-go:hover:not(:disabled) { transform: translateY(-2px); }
 .btn-go:disabled { opacity: 0.28; cursor: not-allowed; }
 
-.landing-foot { margin-top: 1.6rem; font-size: 0.8rem; color: var(--muted); }
+/* Deliberately quiet: it is the way past the upload, not a second CTA
+   competing with it. */
+.btn-example {
+    display: block; margin: 0.8rem auto 0;
+    font-size: 0.84rem; color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    text-decoration-color: transparent;
+    transition: color 0.2s, text-decoration-color 0.2s;
+}
+.btn-example:hover { color: var(--text); text-decoration-color: var(--ink-line); }
+
+/* The privacy line. It is the last thing read before uploading a personal
+   viewing history, so it gets room to breathe rather than one grey line. */
+.landing-foot {
+    margin: 1.1rem auto 0;
+    max-width: 62ch;
+    font-size: 0.74rem; line-height: 1.55;
+    color: var(--muted);
+    text-wrap: pretty;
+}
 .landing-foot code {
     font-family: var(--body); font-weight: 600; white-space: nowrap;
     color: var(--text); background: rgba(255,255,255,0.06);
@@ -497,6 +594,23 @@ body::after {
     .frame-count b { font-size: 0.8rem; }
 }
 
+/* Four items on one line at phone width. Without a gap, space-between puts
+   nothing between them once they fill the row, and each one wraps inside
+   itself instead — "Score" over "0", the arrow onto its own line. */
+@media (max-width: 560px) {
+    .quiz-meta { gap: 0.5rem; font-size: 0.74rem; }
+    .quiz-meta-right { gap: 0.55rem; flex-shrink: 0; }
+    .scrape-pill, .score, .frame-count { white-space: nowrap; }
+    .scrape-pill { gap: 0.35rem; }
+    /* Scoped to #play so it outranks the .btn-skip block further down: the
+       two are otherwise the same specificity and source order would win. */
+    #play .btn-skip {
+        padding: 0.3rem 0.6rem;
+        font-size: 0; white-space: nowrap;
+    }
+    #play .btn-skip::after { content: 'Skip \2192'; font-size: 0.74rem; }
+}
+
 .btn-skip {
     font-size: 0.82rem; color: var(--muted);
     padding: 0.35rem 0.8rem; border-radius: 999px;
@@ -518,6 +632,20 @@ body::after {
     color: var(--accent);
     margin-bottom: 0.9rem;
 }
+/* Failure card. Shown in place of a spent question when the result cannot
+   be built, so the run always ends somewhere the reader can act. */
+.q-fail {
+    max-width: 44ch; margin: 0 auto; text-align: center;
+    padding: 2.4rem 1.4rem;
+}
+.q-fail-msg {
+    font-family: var(--display);
+    font-size: clamp(1.15rem, 2.6vw, 1.6rem);
+    font-weight: 700; line-height: 1.22; letter-spacing: -0.02em;
+    margin: 0.7rem 0 1.6rem;
+    text-wrap: balance;
+}
+
 .q-prompt {
     font-family: var(--display);
     font-size: clamp(1.6rem, 4.4vw, 2.9rem);
@@ -597,8 +725,8 @@ body::after {
     letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
 }
 
-/* person — a name, billed like a marquee. No uppercase: the page is
-   lang="tr", so CSS would turn "Fiennes" into "FİENNES". */
+/* person — a name, billed like a marquee. Never uppercased: a real
+   person's name is set the way they spell it, not shouted. */
 .quiz-body[data-kind="person"] .opt {
     font-family: var(--display); font-weight: 700;
     font-size: clamp(1.05rem, 2.4vw, 1.5rem); line-height: 1.08;
@@ -651,6 +779,90 @@ body::after {
 @keyframes shake {
     0%,100% { transform: translateX(0); }
     25% { transform: translateX(-6px); } 75% { transform: translateX(6px); }
+}
+
+/* slider — a magnitude guessed by dragging, not picked from four options.
+   `q.slider` (quiz.py) sets the bounds; correctness is a tolerance band
+   around the real value, marked on the track once locked in. */
+.slider-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 1.4rem; padding-top: 0.4rem; }
+.slider-value {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
+    letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+    color: var(--accent);
+}
+.slider-track-wrap { position: relative; width: 100%; max-width: 420px; padding: 0.6rem 0; }
+.slider-input {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px; border-radius: 999px;
+    background: var(--ink-line); display: block;
+}
+.slider-input::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--paper);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4); cursor: pointer;
+}
+.slider-input::-moz-range-thumb {
+    width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--paper);
+    background: var(--accent); box-shadow: 0 4px 14px rgba(0,0,0,0.4); cursor: pointer;
+}
+.slider-input:disabled { opacity: 0.55; }
+.slider-marker {
+    position: absolute; top: 50%; width: 4px; height: 22px;
+    background: var(--mint); border-radius: 2px;
+    transform: translate(-50%, -50%); pointer-events: none;
+}
+.slider-wrap.locked-hit .slider-value { color: var(--mint); }
+.slider-wrap.locked-miss .slider-value { color: var(--crimson); }
+
+/* rank — a small set put in order by tapping, not picked from four options.
+   `q.items` (quiz.py) is the shuffled pool; `q.order` is the correct order. */
+.rank-wrap { display: flex; flex-direction: column; gap: 1.1rem; }
+.rank-slots { list-style: none; margin: 0; display: grid; gap: 0.6rem; }
+.rank-slot {
+    display: flex; align-items: center; gap: 0.8rem;
+    min-height: 3.2rem; padding: 0.6rem 1rem;
+    border-radius: 12px; border: 1.5px dashed var(--ink-line);
+    color: var(--muted); cursor: pointer;
+}
+.rank-slot.filled { border-style: solid; color: var(--text); background: var(--ink-raised); cursor: pointer; }
+.rank-wrap.locked .rank-slot { cursor: default; }
+.rank-slot-n {
+    font-family: var(--display); font-weight: 700; color: var(--accent);
+    width: 1.4em; flex: none;
+}
+.rank-slot-label { font-weight: 600; }
+.rank-slot.match { border-color: var(--mint); background: color-mix(in srgb, var(--mint) 16%, var(--ink-raised)); }
+.rank-slot.miss { border-color: var(--crimson); background: color-mix(in srgb, var(--crimson) 14%, var(--ink-raised)); }
+.rank-pool { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.rank-chip {
+    padding: 0.65rem 1.1rem; border-radius: 999px;
+    background: var(--ink-raised); border: 1.5px solid var(--ink-line);
+    font-weight: 600; transition: transform 0.18s var(--ease), border-color 0.18s;
+}
+.rank-chip:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--accent); }
+.rank-chip:disabled { opacity: 0.3; cursor: default; }
+.rank-wrap.locked .rank-pool { display: none; }
+
+/* Shared "commit your guess" button for slider/rank, distinct from .btn-next
+   (which only ever appears after a question is already answered). */
+.btn-lock {
+    align-self: flex-start;
+    padding: 0.8rem 1.8rem; border-radius: 999px;
+    background: transparent; color: var(--accent);
+    border: 1.5px solid var(--accent);
+    font-family: var(--display); font-weight: 700;
+    transition: background 0.18s, color 0.18s;
+}
+.btn-lock:hover:not(:disabled) { background: var(--accent); color: var(--accent-ink); }
+.btn-lock:disabled { opacity: 0.35; cursor: default; }
+
+.reveal-guess { color: var(--muted); font-size: 0.92rem; margin-bottom: 0.5rem; }
+
+@media (max-width: 620px) {
+    .slider-value { font-size: clamp(2rem, 11vw, 2.8rem); }
+    .rank-chip { padding: 0.6rem 0.95rem; font-size: 0.95rem; }
 }
 
 /* Reveal */
@@ -737,6 +949,32 @@ body::after {
     letter-spacing: -0.02em; margin-top: 0.6rem;
 }
 .result-note { color: var(--muted); margin-top: 0.5rem; }
+
+/* The written taste profile, between the verdict and the share card. */
+.taste-profile {
+    max-width: 540px; margin: 0 auto 1.5rem;
+    padding: 1.4rem 1.6rem 1.1rem;
+    background: var(--ink-raised);
+    border: 1px solid var(--ink-line);
+    border-left: 3px solid var(--accent);
+    border-radius: 18px;
+    animation: taste-in 0.7s var(--ease) both;
+}
+.taste-profile .q-eyebrow { margin-bottom: 0.7rem; }
+.taste-text p {
+    font-size: 1.02rem; line-height: 1.6;
+    color: var(--text);
+}
+.taste-text p + p { margin-top: 0.8rem; }
+.taste-foot {
+    margin-top: 0.9rem;
+    font-size: 0.74rem; line-height: 1.4;
+    color: var(--muted);
+}
+@keyframes taste-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+}
 
 /* Shareable card */
 .share-card {
@@ -945,6 +1183,21 @@ body::after {
     color: var(--muted); text-align: right;
 }
 .ev canvas { max-height: 300px; }
+.ev canvas.radar { max-height: 360px; }
+.persona-why {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 0.6rem;
+    max-width: 62ch;
+}
+.persona-why li {
+    padding-left: 1.3rem; position: relative;
+    font-size: 1.02rem; line-height: 1.5;
+}
+.persona-why li::before {
+    content: ""; position: absolute; left: 0; top: 0.62em;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+}
 .ev-foot {
     margin-top: 1.1rem; font-size: 0.88rem; color: var(--muted);
     max-width: 68ch; text-wrap: pretty;
@@ -1080,8 +1333,7 @@ body::after {
     margin-bottom: 0.75rem;
 }
 .person .no-face { box-shadow: inset 0 0 0 1px var(--ink-line); }
-/* Never uppercased: the page is lang="tr", which would turn Fiennes into
-   FİENNES. */
+/* Never uppercased: a real person's name is set the way they spell it. */
 .person .n {
     font-family: var(--display); font-weight: 700;
     font-size: 0.98rem; line-height: 1.15; letter-spacing: -0.01em;
@@ -1138,6 +1390,9 @@ body::after {
 .genre-row .bar.score { background: var(--accent); }
 .genre-row .s { font-weight: 700; color: var(--accent); text-align: right; font-variant-numeric: tabular-nums; }
 .genre-legend { display: flex; gap: 1.2rem; margin-top: 1rem; font-size: 0.8rem; color: var(--muted); }
+@media (max-width: 620px) {
+    .genre-legend { flex-direction: column; gap: 0.4rem; }
+}
 .genre-legend span::before {
     content: ''; display: inline-block; width: 10px; height: 6px;
     border-radius: 2px; margin-right: 0.45rem; vertical-align: middle;
@@ -1225,7 +1480,7 @@ body::after {
    Declared last: the :hover lift on the same elements is written earlier,
    and at equal specificity the later rule is the one that wins. */
 .btn-go:active:not(:disabled), .btn-next:active, .btn-solid:active,
-.btn-ghost:active, .btn-skip:active, .file-btn:active,
+.btn-ghost:active, .btn-skip:active, .file-btn:active, .btn-example:active,
 .opt:active:not(:disabled), .scroll-cue:active {
     transform: translateY(1px) scale(0.99);
 }

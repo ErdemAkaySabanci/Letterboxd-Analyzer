@@ -1,10 +1,27 @@
-# Letterboxd Wrapped
+# Close-Up
+
+*for Letterboxd*
 
 Upload your Letterboxd data export and get a "how well do you know yourself"
 quiz built from your own viewing history, followed by a six-chapter visual
 analysis of your taste.
 
-The interface is in Turkish; this README is in English.
+The interface is English throughout. The name does not lead with Letterboxd's
+trademark on purpose: their terms license the logo for linking to the service,
+not the name for a product built on it.
+
+## Regenerating the social card
+
+`dashboard/og.png` is the LinkedIn/Twitter preview image. It is built as an
+HTML page and screenshotted, so it inherits the site's own type and colour
+tokens rather than approximating them:
+
+```bash
+py -3.12 make_og.py        # needs playwright + pillow, dev-only
+```
+
+Both are dev dependencies and deliberately absent from `requirements.txt` —
+the PNG is committed, and the server never generates it.
 
 ## The constraint that shapes everything
 
