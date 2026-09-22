@@ -1,7 +1,7 @@
 # Letterboxd Wrapped
 
 Upload your Letterboxd data export and get a "how well do you know yourself"
-quiz built from your own viewing history, followed by a seven-chapter visual
+quiz built from your own viewing history, followed by a six-chapter visual
 analysis of your taste.
 
 The interface is in Turkish; this README is in English.
@@ -47,16 +47,9 @@ cache hits, and their results appear almost instantly.
 director you have seen twice cannot outrank one you have followed for ten films
 on the strength of a single five-star rating.
 
-`ml_models.py` trains regressors (linear, ridge, random forest) on genre and
-cast one-hot features, runtime, release year, and director habits, then reports
-feature importance in plain language with the one-hot columns rolled back up
-into human-readable groups. The output the user sees is the explanation, not
-the prediction — "you rate crime films 0.4 stars above your own average" is
-more interesting than a predicted score.
-
 ## Stack
 
-FastAPI, pandas, scikit-learn, BeautifulSoup. The frontend is plain HTML, CSS
+FastAPI, pandas, BeautifulSoup. The frontend is plain HTML, CSS
 and JavaScript with no framework and no build step; Chart.js and html2canvas
 come from a CDN.
 
@@ -101,7 +94,6 @@ landing page.
 | `data_manager.py` | Film scraper (schema.org LD+JSON) and shared cache |
 | `analyzer.py` | Pure statistics functions |
 | `quiz.py` | Question generation, with distractors drawn from real user data |
-| `ml_models.py` | Model training and plain-language feature importance |
 | `dashboard/` | Frontend — `app.js` orchestrates, `quiz.js` is the quiz engine |
 
 `playwright_scraper.py` is a leftover from the original scrape-the-profile

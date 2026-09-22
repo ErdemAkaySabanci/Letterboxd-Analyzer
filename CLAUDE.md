@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Install dependencies (no requirements.txt — install manually)
-pip install pandas numpy scikit-learn scipy fastapi uvicorn beautifulsoup4 requests
+# Install dependencies (pinned — the deploy image installs the same file)
+pip install -r requirements.txt
 
 # Run the server (FastAPI + static frontend) at http://localhost:8000
 py -3.12 server.py
@@ -22,6 +22,31 @@ node --check dashboard/app.js && node --check dashboard/quiz.js
 `py -3.12` is the interpreter that has the dependencies — bare `python` on this
 machine does not. There is no test suite, linter, or frontend build step; the
 frontend is plain HTML/CSS/JS served as static files.
+
+## Branches and deployment
+
+**Push to `dev`, never to `main`.** The app is live at
+https://letterboxd-analyzer.onrender.com and Render deploys from `main`, so a
+push there goes straight to the public site. Day-to-day work — every commit,
+every experiment — belongs on `dev`.
+
+`main` moves only when a change has been checked and is meant to ship:
+
+```bash
+git checkout main && git merge dev && git push origin main
+git checkout dev
+```
+
+Deploy notes that constrain what can safely change:
+
+- **One worker only.** Scrape job state lives in a module-level dict and the
+  film cache is a single lock-guarded file. Render sets `WEB_CONCURRENCY=1`;
+  anything that assumes multiple processes will lose job state.
+- **No persistent disk on the free tier.** `sessions/` and `film_cache.json`
+  reset on every deploy, which is why `film_cache.seed.json` is committed and
+  copied into place by the Dockerfile — a fresh container starts warm instead
+  of re-scraping hundreds of films on 0.1 vCPU.
+- `ALLOWED_ORIGINS`, `PORT`, and `SCRAPE_WORKERS` come from the environment.
 
 ## Architecture
 
@@ -52,7 +77,6 @@ The user exports their data from `letterboxd.com/settings/data/` and uploads the
 
 - **[analyzer.py](analyzer.py)** — pure `DataFrame -> dict` functions. `instant_summary()` (ZIP-only) and `full_analysis()` (needs metadata) are the aggregate entry points. `MIN_DIRECTOR_FILMS` / `MIN_ACTOR_FILMS` (both 4) act as *both* the minimum film count and the Bayesian prior weight — lower values let a two-film director outrank one you've followed for ten.
 - **[quiz.py](quiz.py)** — builds "how well do you know yourself" questions from the user's own library, with distractors drawn from their real data. `build_instant_quiz()` works the moment the ZIP lands; `build_full_quiz()` needs the scrape. Questions ship ready to render; the client never derives facts.
-- **[ml_models.py](ml_models.py)** — `explain_predictions()` trains the models and reports feature importance in plain language (genre/actor one-hots rolled up). The raw metrics and the director-based recommender are no longer surfaced.
 
 ### Frontend ([dashboard/](dashboard/))
 
@@ -60,7 +84,7 @@ No framework, no build step. Chart.js and html2canvas via CDN.
 
 - `quiz.js` — the quiz engine. Questions can be appended mid-run, which is how phase-2 questions join once the scrape finishes.
 - `app.js` — orchestration: upload → quiz → result → analysis, plus all chapter rendering.
-- The result summary and the 7 analysis chapters live on **one continuous page** (`#wrapped`); there is no separate dashboard page.
+- The result summary and the 6 analysis chapters live on **one continuous page** (`#wrapped`); there is no separate dashboard page.
 
 Design language is dark, poster-forward, with a per-section accent (`data-accent` on an ancestor sets `--accent`).
 

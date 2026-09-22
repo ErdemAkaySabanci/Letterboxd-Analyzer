@@ -20,6 +20,7 @@ import os
 import re
 import threading
 import time
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
@@ -264,6 +265,142 @@ def scrape_films(urls, progress_cb=None, max_workers: int = MAX_WORKERS) -> dict
     if failures:
         cache["__failures__"] = failures
     return cache
+
+
+# ---------------------------------------------------------------------------
+# People
+# ---------------------------------------------------------------------------
+#
+# Letterboxd keeps a portrait and a biography on every director and actor
+# page. Both are useful and neither is in the export, so they are scraped and
+# cached the same way films are: one shared file, lock-guarded, seeded into
+# the deploy image.
+
+PEOPLE_CACHE_FILE = os.path.join(os.path.dirname(__file__), "people_cache.json")
+_people_lock = threading.Lock()
+
+
+def load_people_cache() -> dict:
+    """Load the people cache, keyed by "<kind>:<slug>"."""
+    if os.path.exists(PEOPLE_CACHE_FILE):
+        try:
+            with open(PEOPLE_CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return {}
+    return {}
+
+
+def save_people_cache(cache: dict) -> None:
+    """Persist atomically, like the film cache."""
+    tmp = PEOPLE_CACHE_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, PEOPLE_CACHE_FILE)
+
+
+def person_slug(name: str) -> str:
+    """Letterboxd's person slug: unaccented, lowercased, punctuation dropped."""
+    plain = unicodedata.normalize("NFKD", name or "")
+    plain = "".join(c for c in plain if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", "-", plain.lower()).strip("-")
+
+
+def scrape_person(name: str, kind: str = "director") -> dict | None:
+    """
+    One person page: the portrait and biography Letterboxd holds for them.
+
+    Nothing in the export names a person's page, so this is the one place in
+    this codebase that builds a slug from a name. It is proved rather than
+    trusted: a bad guess 404s, and a slug that happens to resolve to somebody
+    else fails the og:title check below. A mismatch therefore yields no card
+    rather than the wrong face.
+
+    None means the page could not be fetched at all. A confirmed "no such
+    person" comes back as a record with found=False, so it is cached once
+    instead of being retried on every request.
+    """
+    slug = person_slug(name)
+    if not slug:
+        return {"name": name, "kind": kind, "found": False}
+
+    url = f"{DOMAIN}/{kind}/{slug}/"
+    response = None
+    for attempt in range(RETRIES):
+        try:
+            response = _session().get(url, timeout=20)
+            if response.status_code == 200:
+                break
+            if response.status_code == 404:
+                return {"name": name, "kind": kind, "slug": slug, "found": False}
+            if response.status_code in (403, 429, 500, 502, 503):
+                time.sleep(2 * (attempt + 1))
+                continue
+            return None
+        except requests.RequestException:
+            time.sleep(2 * (attempt + 1))
+    if response is None or response.status_code != 200:
+        return None
+
+    soup = BeautifulSoup(response.content, "html.parser")
+
+    # "Films directed by Christopher Nolan" / "Films starring Brad Pitt".
+    og = soup.find("meta", property="og:title")
+    heading = (og.get("content") if og else "") or ""
+    if name.lower() not in heading.lower():
+        return {"name": name, "kind": kind, "slug": slug, "found": False}
+
+    # The portrait is lazy-loaded, so the URL lives in data-image, not src.
+    img = soup.select_one("img.js-tmdb-person[data-image]")
+    bio = soup.select_one(".js-tmdb-bio p")
+
+    return {
+        "name": name,
+        "kind": kind,
+        "slug": slug,
+        "url": url,
+        "portrait": img["data-image"] if img else None,
+        "tmdb_id": img.get("data-tmdb-id") if img else None,
+        "bio": bio.get_text(" ", strip=True) if bio else None,
+        "found": True,
+    }
+
+
+def scrape_people(people, max_workers: int = 8) -> dict:
+    """
+    Fetch every (name, kind) pair not already cached, and return the cache.
+
+    Sixteen people is a couple of seconds of work, so there is no progress
+    stream here the way there is for films; the caller just waits. The shared
+    request semaphore still applies, so this cannot flood Letterboxd even
+    when several sessions ask at once.
+    """
+    cache = load_people_cache()
+    todo = [(n, k) for n, k in dict.fromkeys(people)
+            if n and f"{k}:{person_slug(n)}" not in cache]
+    if not todo:
+        return cache
+
+    def work(item):
+        name, kind = item
+        with _request_slots:
+            data = scrape_person(name, kind)
+        if data is None:
+            return                    # transient failure: retry next request
+        with _people_lock:
+            cache[f"{kind}:{person_slug(name)}"] = data
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        list(pool.map(work, todo))
+
+    save_people_cache(cache)
+    return cache
+
+
+def person_record(cache: dict, name: str, kind: str) -> dict | None:
+    """The cached page for one person, or None if they were never confirmed."""
+    entry = cache.get(f"{kind}:{person_slug(name)}")
+    return entry if entry and entry.get("found") else None
 
 
 # ---------------------------------------------------------------------------

@@ -9,3 +9,7 @@ letterboxd-erdemstein-*/
 .DS_Store
 test_export.zip
 my_movie_dataset.csv
+people_cache.json
+people_cache.json.tmp
+.impeccable/config.local.json
+.impeccable/hook.cache.json

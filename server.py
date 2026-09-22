@@ -36,9 +36,10 @@ mimetypes.add_type('text/css', '.css')
 mimetypes.add_type('application/javascript', '.js')
 
 import sessions
-from analyzer import films_matching, full_analysis, instant_summary, wrapped_summary
-from data_manager import load_cache as load_film_cache, scrape_films
-from ml_models import explain_predictions
+from analyzer import (films_matching, full_analysis, instant_summary,
+                      most_watched_people, wrapped_summary)
+from data_manager import (load_cache as load_film_cache, person_record,
+                          scrape_films, scrape_people)
 from quiz import build_full_quiz, build_instant_quiz
 
 # ---------------------------------------------------------------------------
@@ -302,13 +303,76 @@ async def get_instant(session: str = ""):
 
 
 @app.get("/api/posters")
-async def get_posters(n: int = 40):
-    """A sample of poster URLs from the shared cache, for the landing wall."""
-    cache = load_film_cache()
-    urls = [film["poster"] for film in cache.values()
-            if isinstance(film, dict) and film.get("poster")]
-    random.shuffle(urls)
+async def get_posters(n: int = 40, session: str = ""):
+    """
+    Poster URLs for the decorative walls.
+
+    With a session these are the visitor's own films: the quiz plays its reel
+    behind the library being asked about, not a stranger's. The shared cache
+    tops the list up when their own scrape has not caught up yet, and is the
+    whole answer for the landing wall, which runs before any upload exists.
+    """
+    urls: list[str] = []
+    if session:
+        df = load_dataset(session)
+        if df is not None and "poster" in df.columns:
+            urls = [u for u in df["poster"].tolist() if isinstance(u, str) and u]
+            random.shuffle(urls)
+
+    if len(urls) < n:
+        cache = load_film_cache()
+        shared = [film["poster"] for film in cache.values()
+                  if isinstance(film, dict) and film.get("poster")]
+        random.shuffle(shared)
+        seen = set(urls)
+        urls += [u for u in shared if u not in seen]
+
     return {"posters": urls[:max(0, min(n, 120))]}
+
+
+@app.get("/api/people")
+async def get_people(session: str = "", n: int = 8):
+    """
+    Portraits and biographies for the people this library watches most.
+
+    Kept out of /api/stats because it is the one analysis call that leaves
+    the machine: the chapter renders from the stats straight away and the
+    faces arrive when they arrive. Scraping runs in a worker thread so a cold
+    cache does not block the event loop for everyone else.
+    """
+    df, error = _require(session)
+    if error:
+        return error
+    try:
+        n = max(1, min(n, 12))
+        watched = most_watched_people(df)
+        directors = (watched.get("directors") or [])[:n]
+        actors = (watched.get("actors") or [])[:n]
+
+        wanted = [(d["name"], "director") for d in directors if d.get("name")]
+        wanted += [(a["name"], "actor") for a in actors if a.get("name")]
+
+        cache = await asyncio.to_thread(scrape_people, wanted)
+
+        def dress(rows, kind):
+            out = []
+            for row in rows:
+                found = person_record(cache, row.get("name") or "", kind) or {}
+                out.append({
+                    **row,
+                    "portrait": found.get("portrait"),
+                    "bio": found.get("bio"),
+                    "url": found.get("url"),
+                })
+            return out
+
+        return clean_nans({
+            "directors": dress(directors, "director"),
+            "actors": dress(actors, "actor"),
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 @app.get("/api/quiz")
@@ -362,7 +426,8 @@ async def get_stats(session: str = ""):
 @app.get("/api/films")
 async def get_films(session: str = "", director: str = "", actor: str = "",
                     genre: str = "", country: str = "", language: str = "",
-                    decade: int | None = None, limit: int = 60):
+                    decade: int | None = None, rating: float | None = None,
+                    limit: int = 60):
     """
     The films behind a chapter row — the drill-down a click opens.
 
@@ -382,21 +447,9 @@ async def get_films(session: str = "", director: str = "", actor: str = "",
             country=country or None,
             language=language or None,
             decade=decade,
+            rating=rating,
             limit=max(1, min(limit, 300)),
         ))
-    except Exception as e:
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-
-@app.get("/api/explain")
-async def get_explain(session: str = ""):
-    """What actually drives this user's ratings, in plain language."""
-    df, error = _require(session)
-    if error:
-        return error
-    try:
-        return clean_nans(explain_predictions(df))
     except Exception as e:
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"error": str(e)})
