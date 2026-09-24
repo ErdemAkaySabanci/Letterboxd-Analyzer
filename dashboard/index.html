@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/dashboard/style.css?v=r13" />
+<link rel="stylesheet" href="/dashboard/style.css?v=r14" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 </head>
@@ -71,12 +71,13 @@
             <p class="drop-hint" id="file-name" style="margin-top:.8rem"></p>
         </div>
 
-        <button class="btn-go" id="go" disabled>Start</button>
-
-        <!-- The export is a real errand. Let someone see the result first and
-             decide whether it is worth it — a real button, since this is
-             also how a recruiter with no export to upload gets in. -->
-        <button class="btn-example" id="btn-demo">See an example result &rarr;</button>
+        <!-- Equal-weight pair: a first-time visitor with no ZIP on hand —
+             a recruiter, most often — needs this to read as a second front
+             door, not a footnote under the real one. -->
+        <div class="landing-ctas">
+            <button class="btn-go" id="go" disabled>Start</button>
+            <button class="btn-example" id="btn-demo">Don't have a ZIP? See an example result &rarr;</button>
+        </div>
 
         <p class="landing-foot">
             Your ZIP is read in memory and discarded. Only the title, year, your rating
@@ -368,8 +369,8 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="/dashboard/quiz.js?v=r13"></script>
-<script src="/dashboard/app.js?v=r13"></script>
+<script src="/dashboard/quiz.js?v=r14"></script>
+<script src="/dashboard/app.js?v=r14"></script>
 
 <!-- Cloudflare Web Analytics. No cookies and no localStorage, so it needs no
      consent banner and the privacy line above stays true. It has no custom
