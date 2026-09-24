@@ -275,18 +275,21 @@ body::after {
 .btn-go:hover:not(:disabled) { transform: translateY(-2px); }
 .btn-go:disabled { opacity: 0.28; cursor: not-allowed; }
 
-/* Deliberately quiet: it is the way past the upload, not a second CTA
-   competing with it. */
+/* A real secondary button — outlined rather than filled, so it stays
+   subordinate to .btn-go without disappearing into a plain text link. */
 .btn-example {
-    display: block; margin: 0.8rem auto 0;
-    font-size: 0.84rem; color: var(--muted);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-thickness: 1px;
-    text-decoration-color: transparent;
-    transition: color 0.2s, text-decoration-color 0.2s;
+    display: block; margin: 0.9rem auto 0;
+    padding: 0.7rem 1.6rem; border-radius: 999px;
+    background: transparent; color: var(--text);
+    border: 1.5px solid var(--ink-line);
+    font-size: 0.88rem; font-weight: 600;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s var(--ease);
 }
-.btn-example:hover { color: var(--text); text-decoration-color: var(--ink-line); }
+.btn-example:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--text);
+    transform: translateY(-1px);
+}
 
 /* The privacy line. It is the last thing read before uploading a personal
    viewing history, so it gets room to breathe rather than one grey line. */
